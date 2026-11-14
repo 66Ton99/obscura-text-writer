@@ -117,6 +117,10 @@ def _manual_snapshot(repo,scene,head,*,day_selectors=False):
     if start:
         # SERIES: a first scene's text was written against the start snapshot (written only when there is one).
         select('scene',scene.id,'series_start',start);source(start)
+    from ..memory.story_time import is_flashback
+    if is_flashback(scene):
+        # STORY-TIME: author_text is a flashback scope; without the selector a flashback's own text was stale at once.
+        select('scene',scene.id,'flashback',True)
     if day_selectors:
         # An MCP draft was written from writing-context with its day_change note; the author's own text was not.
         from ..storage.snapshots import memory_core_selectors

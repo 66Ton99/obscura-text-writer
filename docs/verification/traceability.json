@@ -2016,7 +2016,7 @@
       "scope": "Секція зразка лише в draft, rewrite і повному edit; JSON стилю без зразка; brief, memory, patches/diff і оцінювач без зразка; твір без зразка з незмінним запитом; межа 3000.",
       "tests": [
         "tests/generation/test_tone_sample.py::test_draft_rewrite_and_full_edit_get_the_sample_section",
-      "tests/generation/test_tone_sample.py::test_english_story_gets_the_english_label",
+        "tests/generation/test_tone_sample.py::test_english_story_gets_the_english_label",
         "tests/generation/test_tone_sample.py::test_brief_memory_and_patches_do_not_get_the_sample",
         "tests/generation/test_tone_sample.py::test_evaluator_style_document_has_no_sample",
         "tests/generation/test_tone_sample.py::test_story_without_sample_keeps_the_same_request",
@@ -2029,8 +2029,8 @@
       "scope": "Зміна лише зразка: завдання свіже в сховищі, compare_snapshot і перевірці впливу; чернетка й завдання без знімка застарівають; зміна тону — як раніше.",
       "tests": [
         "tests/generation/test_tone_sample_staleness.py::test_sample_change_keeps_brief_fresh",
-      "tests/generation/test_tone_sample_staleness.py::test_scene_with_only_a_brief_is_not_marked_for_review",
-      "tests/generation/test_tone_sample_staleness.py::test_sample_change_keeps_an_evaluation_fresh",
+        "tests/generation/test_tone_sample_staleness.py::test_scene_with_only_a_brief_is_not_marked_for_review",
+        "tests/generation/test_tone_sample_staleness.py::test_sample_change_keeps_an_evaluation_fresh",
         "tests/generation/test_tone_sample_staleness.py::test_sample_change_stales_the_draft",
         "tests/generation/test_tone_sample_staleness.py::test_other_style_change_still_stales_brief",
         "tests/generation/test_tone_sample_staleness.py::test_brief_without_snapshot_goes_stale",
@@ -5923,6 +5923,79 @@
         "procedure": "docs/verification/manual.md#series-browser",
         "reason": "Діалог фактів і блок джерел на екрані серії перевіряє Playwright (series.spec.mjs), який не входить у pytest."
       }
+    },
+    {
+      "id": "SERIES-BIBLE-S01",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Позначка біблії, одна на серію, без номера й старту, видалення серії, протагоністи. Вісь хронології й приквели біблії не бачать.",
+      "tests": [
+        "tests/series/test_series_bible_entity.py::test_a_bible_has_a_series_without_a_number",
+        "tests/series/test_series_bible_entity.py::test_a_bible_refuses_a_number_or_a_start",
+        "tests/series/test_series_bible_entity.py::test_one_bible_per_series_even_in_the_trash",
+        "tests/series/test_series_bible_entity.py::test_a_book_that_becomes_the_bible_loses_its_number_and_snapshot_link",
+        "tests/series/test_series_bible_entity.py::test_a_series_with_a_bible_cannot_be_deleted",
+        "tests/series/test_series_bible_entity.py::test_create_bible",
+        "tests/series/test_series_bible_entity.py::test_a_bible_tracks_no_protagonists",
+        "tests/series/test_series_bible_entity.py::test_the_chronology_axis_ignores_the_bible"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S02",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Знімок книги 1 і книги 2 з біблії, поточні факти біблії після оновлення.",
+      "tests": [
+        "tests/series/test_series_bible_snapshot.py::test_book_one_takes_its_snapshot_from_the_bible",
+        "tests/series/test_series_bible_snapshot.py::test_book_two_takes_the_current_bible_not_the_copy_from_book_one"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S03",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Стани знімка: біблія без підсумку, у кошику, змінена, додана пізніше.",
+      "tests": [
+        "tests/series/test_series_bible_snapshot.py::test_a_bible_without_a_summary_blocks_the_snapshot_and_a_trashed_one_is_no_source",
+        "tests/series/test_series_bible_snapshot.py::test_book_two_takes_the_current_bible_not_the_copy_from_book_one",
+        "tests/series/test_series_bible_snapshot.py::test_a_bible_added_later_changes_no_snapshot"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S04",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Факти біблії — минуле приквела; головна книга перемагає приквел.",
+      "tests": [
+        "tests/series/test_series_bible_snapshot.py::test_bible_facts_are_the_past_of_a_prequel",
+        "tests/series/test_series_bible_snapshot.py::test_the_main_book_still_wins_over_a_prequel"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S05",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Запит і межі пам’яті біблії, старі межі спогаду, незмінний запит звичайної книги, селектор біблії.",
+      "tests": [
+        "tests/series/test_series_bible_memory.py::test_bible_memory_request_has_facts_only",
+        "tests/series/test_series_bible_memory.py::test_bible_flashback_scene_also_gets_ten",
+        "tests/series/test_series_bible_memory.py::test_check_accepts_ten_facts_and_refuses_eleven_or_a_state",
+        "tests/series/test_series_bible_memory.py::test_old_flashback_bounds_keep_the_limit_of_six",
+        "tests/series/test_series_bible_memory.py::test_an_ordinary_book_memory_request_is_unchanged",
+        "tests/series/test_series_bible_memory.py::test_bible_flag_set_later_stales_the_memory"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S06",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Ручна проза нової сцени без плану — у звичайній книзі й біблії, зокрема сцени-спогаду (сховище; браузер — у плані обв’язки).",
+      "tests": [
+        "tests/series/test_series_bible_scene_without_plan.py::test_new_scene_takes_manual_prose_at_once"
+      ]
+    },
+    {
+      "id": "SERIES-BIBLE-S07",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Серія без біблії: книга 1 без знімка, знімок книги 2 без bible_keys.",
+      "tests": [
+        "tests/series/test_series_bible_snapshot.py::test_without_a_bible_book_one_has_no_snapshot",
+        "tests/series/test_series_bible_snapshot.py::test_a_series_without_a_bible_keeps_its_snapshots"
+      ]
     }
   ]
 }

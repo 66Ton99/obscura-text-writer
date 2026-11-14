@@ -91,6 +91,8 @@ class Story(StoryCreate):
     series_number: int | None = Field(default=None,ge=1,le=1000000)
     series_start: SeriesStart | None = None
     series_start_version_id: str | None = None
+    # SERIES-BIBLE: the world bible of its series — no number, no start, no snapshot; a source of every book's snapshot.
+    series_bible: bool = False
     created_at: str = Field(default_factory=now)
 
 

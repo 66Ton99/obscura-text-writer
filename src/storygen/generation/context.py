@@ -332,8 +332,10 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         everyone=scene_tracked(story,cards,scenes,scene)
         from ..memory.story_time import flashback_mode, is_flashback
         # STORY-TIME: a flashback decides no core and sees no day change; in short prose it gets no catalog either.
-        flashback=is_flashback(scene)
-        simple=flashback and flashback_mode(story,scenes)=='simple'
+        # SERIES-BIBLE: a world bible scene uses the facts-only bounds of a flashback with its own limit.
+        bible=bool(story.series_bible)
+        flashback=is_flashback(scene) or bible
+        simple=flashback and not bible and flashback_mode(story,scenes)=='simple'
         tracked=[] if flashback else [cid for cid in everyone if cid in scene.character_ids]
         changed={cid:day_change(scenes,scene,cid,story) for cid in tracked}
         names={card.id:card.name for card in cards}
@@ -342,9 +344,16 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         def catalog_sections(keep=None):
             catalog=memory_catalog_v4(past,tracked,names,all_tracked=everyone,keep=keep)
             parts=json.loads(catalog)
-            bounds=schema_bounds_v4(past,prose_text,scene.character_ids,everyone,changed,keep=keep,flashback=flashback)
+            from ..memory.wire_v4 import BIBLE_FACT_LIMIT
+            bounds=schema_bounds_v4(past,prose_text,scene.character_ids,everyone,changed,keep=keep,flashback=flashback,
+                                    fact_limit=BIBLE_FACT_LIMIT if bible else None)
             return catalog,parts,bounds,stage_sections(parts)
         def stage_sections(parts):
+            if bible:
+                return [label('bible_facts',language),
+                    label('memory_claims',language)+'\n'+dump({'mutable':parts['mutable'],'immutable':parts['immutable']}),
+                    label('allowed_ids',language)+'\n'+json.dumps(scene.character_ids,ensure_ascii=False),
+                    label('prose_fragments',language,id=prose_id)+'\n'+render_fragments(prose_text)]
             sections=[] if simple else [label('memory_core',language)+'\n'+dump({'names':parts['names'],'core':parts['core']}),
                 label('memory_threads',language)+'\n'+dump(parts['threads']),
                 label('memory_claims',language)+'\n'+dump({'mutable':parts['mutable'],'immutable':parts['immutable']})]

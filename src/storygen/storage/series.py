@@ -9,6 +9,8 @@ SERIES_TITLE_TAKEN = 'Серія з такою назвою вже є'
 SERIES_NUMBER_TAKEN = 'Номер {number} у серії вже зайнятий'
 SERIES_NOT_EMPTY = 'Серію можна видалити лише без книг, зокрема в кошику'
 SERIES_PAIR = 'Серія й номер задаються разом'
+SERIES_BIBLE_TAKEN = 'У серії вже є біблія світу'
+SERIES_BIBLE_FIELDS = 'Біблія світу має серію, але не має номера й «Початку»'
 SERIES_MISSING = 'Серії не знайдено'
 CONFLICT = 'Серію вже змінено. Відкрийте її заново.'
 STORY_CONFLICT = 'Твір уже змінено. Відкрийте його заново.'
@@ -90,10 +92,14 @@ def delete_series(repo, id: str, expected_revision: int) -> None:
 
 
 def set_story_series(repo, story_id: str, series_id: str | None, number: int | None, start: SeriesStart | None,
-                     expected_revision: int) -> Story:
+                     expected_revision: int, *, bible: bool = False) -> Story:
     """Put the book into a series, change its number or `Початок`, or take it out (all three None). Entering a series
-    takes the start snapshot when the source book has a summary (SERIES, Task 3)."""
-    if (series_id is None) != (number is None) or (series_id is None and start is not None):
+    takes the start snapshot when the book has sources with a summary (SERIES, Task 3). `bible=True` makes the story the
+    series' world bible (SERIES-BIBLE): a series without number or start, one per series, never a snapshot."""
+    if bible:
+        if series_id is None or number is not None or start is not None:
+            raise ValueError(SERIES_BIBLE_FIELDS)
+    elif (series_id is None) != (number is None) or (series_id is None and start is not None):
         raise ValueError(SERIES_PAIR)
     with repo.db.connection() as db:
         db.execute('BEGIN IMMEDIATE')
@@ -103,15 +109,20 @@ def set_story_series(repo, story_id: str, series_id: str | None, number: int | N
         entering = series_id is not None and story.series_id != series_id
         if series_id is not None:
             _get(db, series_id)
-            if any(b.series_number == number and b.id != story_id for b in _books(db, series_id)):
+            if bible and any(b.series_bible and b.id != story_id for b in _books(db, series_id)):
+                raise ValueError(SERIES_BIBLE_TAKEN)
+            if not bible and any(b.series_number == number and b.id != story_id for b in _books(db, series_id)):
                 raise ValueError(SERIES_NUMBER_TAKEN.format(number=number))
-        update = {'series_id': series_id, 'series_number': number, 'series_start': start, 'revision': story.revision + 1}
-        if series_id is None or entering:
+        update = {'series_id': series_id, 'series_number': number, 'series_start': start, 'series_bible': bible,
+                  'revision': story.revision + 1}
+        if series_id is None or entering or bible:
             update['series_start_version_id'] = None
         story = story.model_copy(update=update)
         repo._save_story(db, story)
-    if entering and number and number > 1:
-        return take_snapshot_if_ready(repo, story.id)
+    if entering and not bible:
+        from ..book.series import snapshot_sources
+        if snapshot_sources(repo.list_stories(include_trashed=True), story):
+            return take_snapshot_if_ready(repo, story.id)
     return story
 
 
@@ -210,9 +221,13 @@ def _snapshot(repo, story_id, expected_revision, refuse):
         source = repo.get_story(item['story_id'])
         cards_id, _ = _copy_cards(repo, repo.get_story(story_id), repo.context_view(source.id), source, refuse=False)
     fields = {'sources': memory.sources, 'resolved': memory.resolved, 'characters_version_id': cards_id}
+    if memory.sources and repo.get_story(memory.sources[0]['story_id']).series_bible:
+        fields['bible_keys'] = memory.bible_keys  # SERIES-BIBLE: the records the current bible gave this snapshot
     if prequel:
         current_keys = _keys(inherited)
-        decisions = {key: carried.get(key, 'future') for key in current_keys}
+        bible_keys = set(memory.bible_keys)
+        # SERIES-BIBLE: the world precedes every book, so a bible record is always the past of a prequel.
+        decisions = {key: 'past' if key in bible_keys else carried.get(key, 'future') for key in current_keys}
         fields['origins'] = {key: memory.origins.get(key) for key in current_keys}
         current = _save_start(repo, story_id, None, _prequel_payload(text, inherited, decisions, fields))
     else:
@@ -290,6 +305,7 @@ def _current_decisions(repo, story) -> dict:
 
 NO_SNAPSHOT = 'Книга ще не має знімка старту серії'
 NOT_PREQUEL = 'Позначки «минуле» і «майбутнє» ставляться лише для приквела'
+BIBLE_IS_PAST = 'Факти біблії світу завжди «минуле» приквела'
 UNKNOWN_KEYS = 'Цих записів немає в стартовій пам’яті: {keys}'
 BAD_DECISION = 'Позначка має бути «past» або «future»'
 CATEGORY_ORDER = ('facts', 'character_states', 'open_threads', 'timeline')
@@ -331,11 +347,15 @@ def save_decisions(repo, story_id: str, decisions: dict[str, str], expected_revi
     unknown = [key for key in decisions if key not in keys]
     if unknown:
         raise ValueError(UNKNOWN_KEYS.format(keys=', '.join(unknown)))
+    if any(decisions.get(key) == 'future' for key in data.source.get('bible_keys') or []):
+        raise ValueError(BIBLE_IS_PAST)
     merged = {**_current_decisions(repo, story), **decisions}
     first = (data.source['sources'] or [{}])[0].get('story_id')
     fields = {'sources': data.source['sources'], 'resolved': data.source['resolved'],
               'characters_version_id': data.source.get('characters_version_id'),
               'origins': data.source.get('origins') or {key: first for key in keys}}
+    if 'bible_keys' in data.source:
+        fields['bible_keys'] = data.source['bible_keys']  # SERIES-BIBLE: kept, so a later «future» is still refused
     return _save_start(repo, story_id, expected_revision, _prequel_payload(text, journal, merged, fields))
 
 
@@ -372,6 +392,15 @@ def enter_series_from_plan(repo, story_id: str, lines, invalid: bool) -> list[st
     except ValueError as error:
         return notes + [str(error)]
     return notes
+
+
+def create_bible(repo, series_id: str, title: str) -> Story:
+    """«Нова біблія світу»: a new story that is the series' world bible (SERIES-BIBLE)."""
+    from ..domain import StoryCreate
+    if any(b.series_bible for b in series_books(repo, series_id)):
+        raise ValueError(SERIES_BIBLE_TAKEN)
+    story = repo.create_story(StoryCreate(title=title))
+    return set_story_series(repo, story.id, series_id, None, None, story.revision, bible=True)
 
 
 def create_book(repo, series_id: str, title: str) -> Story:

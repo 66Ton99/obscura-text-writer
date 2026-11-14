@@ -45,6 +45,9 @@ LABELS: dict[str, dict[str, str]] = {
                      'en': 'THE FUTURE YOU MUST NOT CONTRADICT — EVENTS OF LATER BOOKS OF THE SERIES, NOT YET HAPPENED IN THIS BOOK'},
     'future_more': {'uk': '…і ще записів майбутнього, що не вмістилися: {count}',
                     'en': '…and {count} more future records that did not fit'},
+    # SERIES-BIBLE: the memory stage of a world bible scene.
+    'bible_facts': {'uk': 'БІБЛІЯ СВІТУ: УСЕ НОВЕ — ФАКТИ, ДО 10 ЗІ СЦЕНИ; БЕЗ СТАНІВ, ЛІНІЙ І ХРОНОЛОГІЇ',
+                    'en': 'WORLD BIBLE: EVERYTHING NEW IS A FACT, UP TO 10 PER SCENE; NO STATES, THREADS OR TIMELINE'},
     'memory_header': {'uk': 'ЗДІЙСНЕНІ ПОДІЇ — ПЕРЕВІРЕНА ПАМ’ЯТЬ', 'en': 'EVENTS THAT HAVE HAPPENED — VERIFIED MEMORY'},
     # STORY-TIME: facts of flashbacks of other arcs earlier than the start of this scene's arc; no structure names.
     'foreign_flashbacks': {'uk': 'МИНУЛЕ ІНШИХ АРОК — ФАКТИ СПОГАДІВ', 'en': 'THE PAST OF OTHER ARCS — FACTS FROM FLASHBACKS'},
