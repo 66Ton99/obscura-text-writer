@@ -259,3 +259,15 @@ def test_update_settings_keeps_the_writer_low_rating_variant(tmp_path):
     stored = app.state.repo.read_role_settings(created.id)['writer']
     assert stored['temperature'] == 0.9
     assert stored['low_rating_variant']['provider']['model'] == 'x/y'
+
+
+@pytest.mark.req('STYLE-SAMPLE-001')
+def test_mcp_writing_settings_carry_the_sample(tmp_path):
+    app, http = obscura(tmp_path)
+    created = story(app)
+    server = build_server(http)
+    writing = ok(call(server, 'get_settings', {'story_id': created.id}))['writing']
+    assert writing['tone_sample'] == ''
+    changed = ok(call(server, 'update_settings', {'story_id': created.id, 'section': 'writing', 'expected_fingerprint': writing['fingerprint'],
+                                                  'fields': {'tone_sample': 'Short, dry sentences.'}}))
+    assert changed['settings']['tone_sample'] == 'Short, dry sentences.' and changed['settings']['tone'] == writing['tone']

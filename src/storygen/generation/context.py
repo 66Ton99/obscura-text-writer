@@ -385,8 +385,12 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     if story.style_version_id:
         add(label('style',language),story.style_version_id)
         profile=StyleProfile.model_validate_json(repo.read_text(story.style_version_id))
-        if profile.ending_goal.strip():
-            sections[-1]=label('style',language)+f' [version_id={story.style_version_id}]\n'+profile.model_dump_json(exclude={'ending_goal'})
+        if profile.ending_goal.strip() or profile.tone_sample.strip():
+            # Both go in their own sections (CONTEXT-005, STYLE-SAMPLE-001); a profile without them keeps its text as saved.
+            sections[-1]=label('style',language)+f' [version_id={story.style_version_id}]\n'+profile.model_dump_json(exclude={'ending_goal','tone_sample'})
+        if profile.tone_sample.strip() and stage in {'draft','rewrite','edit'}:
+            # STYLE-SAMPLE-001: only the stages that write prose hear the voice; edit here is the full rewrite (patches/diff returned above).
+            sections.append(label('tone_sample',language)+'\n'+profile.tone_sample)
     if story.canon_version_id:
         add(label('canon',language),story.canon_version_id)
         warnings.append(OTHER_MATERIAL_WARNING)

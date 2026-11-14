@@ -23,7 +23,7 @@ async function checkScope(role,baseline,shared=false){
 }
 async function load(onlyRole=null){
   snapshot=await api(`/api/stories/${id}/settings`);
-  const profileForm=document.querySelector('#profile-form');if(!onlyRole||onlyRole==='writing'){for(const[key,value]of Object.entries(snapshot.profile))profileForm.elements[key].value=value;profileForm.elements.target_words.value=snapshot.story.target_words;profileBaseline=structuredClone({profile:snapshot.profile,target_words:snapshot.story.target_words});registerSettingsForm('writing',{form:profileForm,label:live(()=>(t("m_88f778367baf"))),section:'writing',reset:()=>load('writing')})}
+  const profileForm=document.querySelector('#profile-form');if(!onlyRole||onlyRole==='writing'){for(const[key,value]of Object.entries(snapshot.profile))profileForm.elements[key].value=value;toneSampleCount();profileForm.elements.target_words.value=snapshot.story.target_words;profileBaseline=structuredClone({profile:snapshot.profile,target_words:snapshot.story.target_words});registerSettingsForm('writing',{form:profileForm,label:live(()=>(t("m_88f778367baf"))),section:'writing',reset:()=>load('writing')})}
   const target=document.querySelector('#role-settings');if(!onlyRole)target.replaceChildren();
   for(const[role,name]of labelEntries(names)){
     if(onlyRole&&role!==onlyRole)continue;
@@ -127,6 +127,9 @@ async function load(onlyRole=null){
   }
   document.querySelector('#settings-loading').hidden=true;document.dispatchEvent(new CustomEvent('workspace-settings-loaded'));
 }
+// STYLE-SAMPLE-001: characters of the voice sample against its limit.
+function toneSampleCount(){const field=document.querySelector('#profile-form [name="tone_sample"]');document.querySelector('[data-tone-sample-count]').value=t('style.tone_sample_count',{p0:field.value.length,p1:field.maxLength})}
+document.querySelector('#profile-form [name="tone_sample"]').addEventListener('input',toneSampleCount);
 document.querySelector('#profile-form button').classList.add('scope-submit');
 document.querySelector('#profile-form').onsubmit=async event=>{
  event.preventDefault();const form=event.target;

@@ -100,7 +100,7 @@ def capture_target(view,version_id,*,baseline_override=None,current_sources_only
                 hidden_claim_ids=policy,forwarded_claim_ids={e.claim_id for e in journal.events}-policy,
                 tracked=scene_tracked(view.story,cards,view.peek_scenes(view.story.id),scene),names={card.id:card.name for card in cards},language=view.story.language).text
         return raw
-    def document(value,selector,old=False):
+    def document(value,selector,old=False,blind=False):
         kinds=({'plan':{'scene_plan'},'brief':{'brief'},'draft':{'draft'},'prose':{'edited','manual'},'memory':{'memory'}}.get(selector.field)
             if selector.kind=='head' else
             {'canon_version_id':{'canon'},'style_version_id':{'style'},'characters_version_id':{'character_cards'}}.get(selector.field)
@@ -112,7 +112,12 @@ def capture_target(view,version_id,*,baseline_override=None,current_sources_only
             source=view.versions[value]
             if source.kind not in kinds or source.story_id!=view.story.id or (source.scene_id!=selector.owner_id if selector.kind=='head' else source.scene_id is not None):
                 raise ValueError('Версійне джерело передумов має неправильний тип або власника')
-            return read(value,old),value
+            text=read(value,old)
+            if blind and source.kind=='style':
+                # STYLE-SAMPLE-001: a target blind to the voice sample sees the style without it.
+                from ..generation.models import style_without_sample
+                text=style_without_sample(text)
+            return text,value
         return json.dumps(value,ensure_ascii=False),None
     def visit(id):
         if id in stack:raise ValueError('Цикл залежностей')
@@ -153,12 +158,14 @@ def capture_target(view,version_id,*,baseline_override=None,current_sources_only
                 if selector.kind=='head' and selector.field=='prose' and view.peek_scene(selector.owner_id).position>=scene.position:
                     if selector.owner_id==scene.id:continue
                     raise ValueError('Невідповідна майбутня проза')
-                old_text,old_ref=document(selector.expected,selector,True);new_text,new_ref=document(current,selector)
+                from ..storage.snapshots import SAMPLE_BLIND_SCOPES
+                blind=selector.field=='style_version_id' and snapshot.scope in SAMPLE_BLIND_SCOPES
+                old_text,old_ref=document(selector.expected,selector,True,blind);new_text,new_ref=document(current,selector,blind=blind)
                 key=fingerprint([selector.model_dump(),current,old_text,new_text])
                 label=view.scenes[selector.owner_id].title if selector.owner_id in view.scenes else (context_label('field_'+selector.field,view.story.language)
                     if selector.field in SOURCE_FIELDS else selector.field)
                 change=SourceChange(id=key,label=label,input_kind=selector.kind,input_field=selector.field,owner_id=selector.owner_id,old_ref=old_ref,new_ref=new_ref,
-                    old_text=old_text,new_text=new_text,changed=old_text!=new_text or selector.expected!=current)
+                    old_text=old_text,new_text=new_text,changed=old_text!=new_text or (selector.expected!=current and not blind))
                 changes[key]=change
                 live=selector.model_copy(update={'expected':current}).model_dump()
                 live_key=fingerprint([selector.kind,selector.owner_id,selector.field])

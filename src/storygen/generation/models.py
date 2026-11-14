@@ -11,6 +11,12 @@ class StyleProfile(DomainModel):
     tense: str = 'минулий'
     rules: str = 'Українська мова. Репліки діалогу починай з довгого тире.'
     previous_tail_chars: int = Field(default=1200,ge=0,le=12000)
+    tone_sample: str = Field(default='',max_length=3000)  # STYLE-SAMPLE-001: voice sample, its own section in prose stages
+
+
+def style_without_sample(text: str) -> str:
+    """STYLE-SAMPLE-001: the style version as the stages blind to the sample see it — the JSON without `tone_sample`."""
+    return StyleProfile.model_validate_json(text).model_dump_json(exclude={'tone_sample'})
 
 
 class SourceCitation(DomainModel):

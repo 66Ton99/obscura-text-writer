@@ -2011,6 +2011,46 @@
       ]
     },
     {
+      "id": "STYLE-SAMPLE-001-S01",
+      "requirement": "STYLE-SAMPLE-001",
+      "scope": "Секція зразка лише в draft, rewrite і повному edit; JSON стилю без зразка; brief, memory, patches/diff і оцінювач без зразка; твір без зразка з незмінним запитом; межа 3000.",
+      "tests": [
+        "tests/generation/test_tone_sample.py::test_draft_rewrite_and_full_edit_get_the_sample_section",
+      "tests/generation/test_tone_sample.py::test_english_story_gets_the_english_label",
+        "tests/generation/test_tone_sample.py::test_brief_memory_and_patches_do_not_get_the_sample",
+        "tests/generation/test_tone_sample.py::test_evaluator_style_document_has_no_sample",
+        "tests/generation/test_tone_sample.py::test_story_without_sample_keeps_the_same_request",
+        "tests/generation/test_tone_sample.py::test_sample_longer_than_3000_is_rejected"
+      ]
+    },
+    {
+      "id": "STYLE-SAMPLE-001-S02",
+      "requirement": "STYLE-SAMPLE-001",
+      "scope": "Зміна лише зразка: завдання свіже в сховищі, compare_snapshot і перевірці впливу; чернетка й завдання без знімка застарівають; зміна тону — як раніше.",
+      "tests": [
+        "tests/generation/test_tone_sample_staleness.py::test_sample_change_keeps_brief_fresh",
+      "tests/generation/test_tone_sample_staleness.py::test_scene_with_only_a_brief_is_not_marked_for_review",
+      "tests/generation/test_tone_sample_staleness.py::test_sample_change_keeps_an_evaluation_fresh",
+        "tests/generation/test_tone_sample_staleness.py::test_sample_change_stales_the_draft",
+        "tests/generation/test_tone_sample_staleness.py::test_other_style_change_still_stales_brief",
+        "tests/generation/test_tone_sample_staleness.py::test_brief_without_snapshot_goes_stale",
+        "tests/generation/test_tone_sample_staleness.py::test_impact_capture_of_brief_ignores_a_sample_change"
+      ]
+    },
+    {
+      "id": "STYLE-SAMPLE-001-S03",
+      "requirement": "STYLE-SAMPLE-001",
+      "scope": "MCP налаштування письма й контекст письма з tone_sample лише за непорожнього; поле й лічильник у формі — Playwright за ручною процедурою.",
+      "tests": [
+        "tests/mcp/test_bridge_settings.py::test_mcp_writing_settings_carry_the_sample",
+        "tests/generation/test_tone_sample.py::test_writing_context_has_sample_only_when_set"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#tone-sample-browser",
+        "reason": "Поле, лічильник і збереження у формі перевіряє Playwright (tone-sample.spec.mjs), який не входить у pytest."
+      }
+    },
+    {
       "id": "R16-META-S01",
       "requirement": "R16-META",
       "scope": "R-16a: картка, CAS, UI й cover integrity; не підтверджує ще не реалізовані формати.",

@@ -33,6 +33,8 @@ In the settings of every role the **Future outline horizon** block sets how many
 
 The planner and the writer can have different horizons; memory never receives future outlines. In the **Writing profile** you can add an **Author’s ending guide** — the intended resolution, up to 12,000 characters, which the model sees separately from the outlines. The horizon limits only outlines: if the ending is already mentioned in a brief, the style or a prompt, the model will see it.
 
+The **Voice sample** field in the **Writing profile** takes a passage of up to 3,000 characters — for example, a few sentences in the rhythm the story should have. The writer takes its rhythm, vocabulary and sentence structure, but not its events, names or world. Only the draft, the comment-based rewrite and the edit in full-rewrite mode see the sample. Changing it makes drafts and scene texts stale, but not outlines and briefs. Use your own text or text you have the right to use.
+
 ## Scene statistics
 
 Below the editor you see the word and character count of the current text. Expand **Scene and context statistics** to see the size of saved materials, the prose compared with the word target, and what makes up the request of the chosen stage: outline, memory, characters, reserve. Tokens here are an estimate, not a count by the model's tokenizer. **Refresh statistics** recalculates without a model call.
