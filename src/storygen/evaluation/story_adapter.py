@@ -1,5 +1,6 @@
 from typing import Literal
 
+from ..generation.models import style_without_sample
 from pydantic import Field
 
 from ..domain import DomainModel, StageAttempt, new_id
@@ -107,7 +108,10 @@ def build_evaluation_case(repo,story_id: str,scene_id: str | None,mode: str) -> 
         if id not in {d.id for d in docs}:
             ref=repo.get_version(id)
             if ref.stale:unchecked.append('Застаріле джерело: '+id)
-            docs.append(Document(id=id,version=id,kind=kind,text=repo.read_text(id)))
+            text=repo.read_text(id)
+            # STYLE-SAMPLE-001: the evaluator is blind to the voice sample.
+            if ref.kind=='style':text=style_without_sample(text)
+            docs.append(Document(id=id,version=id,kind=kind,text=text))
     if story.canon_version_id:add(story.canon_version_id,'canon')
     if story.style_version_id:add(story.style_version_id,'canon')
     from ..characters.context import character_material

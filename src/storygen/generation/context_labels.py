@@ -36,6 +36,8 @@ LABELS: dict[str, dict[str, str]] = {
     'canon': {'uk': 'АВТОРСЬКИЙ КАНОН', 'en': 'AUTHOR CANON'},
     'global_notes': {'uk': 'ГЛОБАЛЬНІ АВТОРСЬКІ ВКАЗІВКИ', 'en': 'GLOBAL AUTHOR NOTES'},
     'future_plan': {'uk': 'МАЙБУТНІ ПОДІЇ — ПЛАН СЦЕНИ {number}', 'en': 'FUTURE EVENTS — PLAN OF SCENE {number}'},
+    'tone_sample': {'uk': 'ЗРАЗОК ЗВУЧАННЯ — НЕ СЮЖЕТ: ПЕРЕЙМИ РИТМ, ЛЕКСИКУ Й БУДОВУ РЕЧЕНЬ; НЕ БЕРИ ПОДІЙ, ІМЕН ЧИ СВІТУ',
+                    'en': 'VOICE SAMPLE — NOT PLOT: TAKE ITS RHYTHM, VOCABULARY AND SENTENCE STRUCTURE; NOT ITS EVENTS, NAMES OR WORLD'},
     'ending_goal': {'uk': 'АВТОРСЬКИЙ ОРІЄНТИР ФІНАЛУ — ЗАДУМ, НЕ ЗДІЙСНЕНІ ПОДІЇ',
                     'en': 'AUTHOR ENDING GOAL — INTENT, NOT EVENTS THAT HAVE HAPPENED'},
     # SERIES-S10: records of later books a prequel must not contradict; not memory, no quotes.
