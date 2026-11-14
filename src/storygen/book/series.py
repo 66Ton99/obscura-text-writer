@@ -87,13 +87,14 @@ class StartMemory:
     resolved: list
     missing: object = None
     origins: dict = field(default_factory=dict)  # merge key -> the source book whose events the record came from
+    bible_keys: list = field(default_factory=list)  # SERIES-BIBLE: merge keys of the current world bible's records
 
 
 def _source_rows(repo, story):
     """(sources with their views and summaries, the first source without a summary or None)."""
     from ..characters.models import load_characters
     rows = []
-    for book in start_sources(repo.list_stories(include_trashed=True), story):
+    for book in snapshot_sources(repo.list_stories(include_trashed=True), story):
         view = repo.context_view(book.id)
         summary, _ = book_summary(view, view.story)
         if summary is None:
@@ -114,39 +115,64 @@ def start_memory(repo, story) -> StartMemory | None:
     from ..memory.merge import plan_merge, build_merged_journal
     rows, missing = _source_rows(repo, story)
     from ..memory.merge import _key
+    from ..memory.journal import replay_memory
     if missing is not None:
         return StartMemory(None, {}, [row for _, _, row in rows], [], missing)
     if not rows:
         return None
+    bible = rows[0][0] if rows[0][0].series_bible else None
     journals, texts, owners = {}, {}, {}
     for book, view, row in rows:
         journals[book.id], own = summary_journal(view, row['summary_version_id'])
+        if bible and book is not bible:
+            journals[book.id] = _without_bible_keys(view, book, journals[book.id])
         texts.update(own)
         for id in journals[book.id].source_prose_ids:
             owners.setdefault(id, book.id)
     sources = [row for _, _, row in rows]
+    bible_keys = list(dict.fromkeys(_key(e) for e in replay_memory(journals[bible.id]).values())) if bible else []
 
     def origins(journal):
         return {_key(e): owners[e.source_version_id] for e in journal.events}
     if len(rows) == 1:
-        return StartMemory(journals[rows[0][0].id], texts, sources, [], origins=origins(journals[rows[0][0].id]))
+        return StartMemory(journals[rows[0][0].id], texts, sources, [], origins=origins(journals[rows[0][0].id]),
+                           bible_keys=bible_keys)
     order = [book.id for book, _, _ in rows]
-    main = rows[0][0] if not is_prequel(_series_books(repo.list_stories(include_trashed=True), story), rows[0][0]) else None
+    books = [book for book, _, _ in rows if book is not bible]
+    # The main book and the tie-break are decided among the books only: the bible has no number and no moment.
+    main = books[0] if books and not is_prequel(_series_books(repo.list_stories(include_trashed=True), story), books[0]) else None
     moments = chronology_moments([b for b in repo.list_stories(include_trashed=True)
                                   if b.series_id == story.series_id and b.series_number and not b.trashed_at])
-    numbers = {book.id: book.series_number for book, _, _ in rows}
+    numbers = {book.id: book.series_number for book in books}
     plan = plan_merge(journals, order)
     decisions, resolved = {}, []
     for conflict in plan.conflicts:
         heads = list(conflict.values)
-        winner = main.id if main and main.id in heads else max(
+        # SERIES-BIBLE: a record of the world bible is always taken from the current bible.
+        winner = bible.id if bible and bible.id in heads else main.id if main and main.id in heads else max(
             heads, key=lambda id: (id in moments, moments.get(id, (0, 0, 0)), numbers[id]))
         decisions[conflict.key] = {'choice': winner}
         resolved.append({'key': conflict.key, 'kept_story_id': winner,
                          'dropped': [{'story_id': id, 'text': conflict.values[id]} for id in heads if id != winner]})
     prose_ids = list(dict.fromkeys(id for head in order for id in journals[head].source_prose_ids))
     merged = build_merged_journal(plan, decisions, prose_ids, prose_ids[-1])
-    return StartMemory(merged, texts, sources, resolved, origins=origins(merged))
+    return StartMemory(merged, texts, sources, resolved, origins=origins(merged), bible_keys=bible_keys)
+
+
+def _without_bible_keys(view, book, journal):
+    """A source book's summary journal without the records its own snapshot took from the world bible (SERIES-BIBLE):
+    the current bible gives them, so a changed or removed bible record leaves no stale copy."""
+    from ..memory.journal import MemoryJournal
+    from ..memory.merge import _key
+    from ..memory.series_start import read_series_start
+    if not book.series_start_version_id:
+        return journal
+    keys = set(read_series_start(view.read_text(book.series_start_version_id), book.series_start_version_id)
+               .source.get('bible_keys') or [])
+    if not keys:
+        return journal
+    return MemoryJournal(schema_version=journal.schema_version, source_prose_ids=list(journal.source_prose_ids),
+                         events=[e for e in journal.events if _key(e) not in keys])
 
 
 def is_legacy_start(data) -> bool:
@@ -188,6 +214,19 @@ def start_sources(stories, story) -> list:
     return ([main] if main else []) + [b for b in earlier if b.id in prequels and b.series_number > floor]
 
 
+def series_bible_source(stories, story):
+    """SERIES-BIBLE: the world bible of the book's series, not in the trash; None for the bible itself or outside a series."""
+    if not story.series_id or story.series_bible:
+        return None
+    return next((s for s in stories if s.series_id == story.series_id and s.series_bible and not s.trashed_at), None)
+
+
+def snapshot_sources(stories, story) -> list:
+    """The sources of the book's start snapshot: the world bible first (SERIES-BIBLE), then `start_sources`."""
+    bible = series_bible_source(stories, story)
+    return ([bible] if bible else []) + start_sources(stories, story)
+
+
 def series_status(repo, story) -> SeriesStatus | None:
     status = _snapshot_status(repo, story)
     if status is not None:
@@ -214,7 +253,7 @@ def _snapshot_status(repo, story) -> SeriesStatus | None:
     snapshot = None
     if story.series_start_version_id:
         snapshot = read_series_start(repo.read_text(story.series_start_version_id), story.series_start_version_id).source
-    books = start_sources(repo.list_stories(include_trashed=True), story)
+    books = snapshot_sources(repo.list_stories(include_trashed=True), story)
     if not books:
         return SeriesStatus('source_changed' if snapshot else 'first')
     rows, missing = _source_rows(repo, story)

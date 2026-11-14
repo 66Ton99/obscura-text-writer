@@ -119,8 +119,10 @@ def set_story_series(repo, story_id: str, series_id: str | None, number: int | N
             update['series_start_version_id'] = None
         story = story.model_copy(update=update)
         repo._save_story(db, story)
-    if entering and number and number > 1:
-        return take_snapshot_if_ready(repo, story.id)
+    if entering and not bible:
+        from ..book.series import snapshot_sources
+        if snapshot_sources(repo.list_stories(include_trashed=True), story):
+            return take_snapshot_if_ready(repo, story.id)
     return story
 
 
@@ -219,9 +221,13 @@ def _snapshot(repo, story_id, expected_revision, refuse):
         source = repo.get_story(item['story_id'])
         cards_id, _ = _copy_cards(repo, repo.get_story(story_id), repo.context_view(source.id), source, refuse=False)
     fields = {'sources': memory.sources, 'resolved': memory.resolved, 'characters_version_id': cards_id}
+    if memory.sources and repo.get_story(memory.sources[0]['story_id']).series_bible:
+        fields['bible_keys'] = memory.bible_keys  # SERIES-BIBLE: the records the current bible gave this snapshot
     if prequel:
         current_keys = _keys(inherited)
-        decisions = {key: carried.get(key, 'future') for key in current_keys}
+        bible_keys = set(memory.bible_keys)
+        # SERIES-BIBLE: the world precedes every book, so a bible record is always the past of a prequel.
+        decisions = {key: 'past' if key in bible_keys else carried.get(key, 'future') for key in current_keys}
         fields['origins'] = {key: memory.origins.get(key) for key in current_keys}
         current = _save_start(repo, story_id, None, _prequel_payload(text, inherited, decisions, fields))
     else:
@@ -299,6 +305,7 @@ def _current_decisions(repo, story) -> dict:
 
 NO_SNAPSHOT = 'Книга ще не має знімка старту серії'
 NOT_PREQUEL = 'Позначки «минуле» і «майбутнє» ставляться лише для приквела'
+BIBLE_IS_PAST = 'Факти біблії світу завжди «минуле» приквела'
 UNKNOWN_KEYS = 'Цих записів немає в стартовій пам’яті: {keys}'
 BAD_DECISION = 'Позначка має бути «past» або «future»'
 CATEGORY_ORDER = ('facts', 'character_states', 'open_threads', 'timeline')
@@ -340,6 +347,8 @@ def save_decisions(repo, story_id: str, decisions: dict[str, str], expected_revi
     unknown = [key for key in decisions if key not in keys]
     if unknown:
         raise ValueError(UNKNOWN_KEYS.format(keys=', '.join(unknown)))
+    if any(decisions.get(key) == 'future' for key in data.source.get('bible_keys') or []):
+        raise ValueError(BIBLE_IS_PAST)
     merged = {**_current_decisions(repo, story), **decisions}
     first = (data.source['sources'] or [{}])[0].get('story_id')
     fields = {'sources': data.source['sources'], 'resolved': data.source['resolved'],
