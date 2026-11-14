@@ -65,7 +65,8 @@ class SeriesStatus:
     """The start snapshot of a series book against its source, computed on read and never stored. `state`: 'first'
     (no source book), 'no_summary' (no snapshot, the source has no summary), 'source_finished' (no snapshot, the
     source has a summary now), 'source_changed' (the summary, the cards or the source book differ from the
-    snapshot), 'fresh'."""
+    snapshot), 'fresh', 'bible' (the series' world bible: no snapshot; `summary` is why it has no summary yet, None
+    once it has one)."""
     state: str
     source_story_id: str | None = None
     source_number: int | None = None
@@ -73,6 +74,7 @@ class SeriesStatus:
     prequel: bool = False  # earlier on the axis than a book with a smaller number (SERIES-001, 4b)
     resolved: list = field(default_factory=list)  # conflicts the automatic merge of the start memory settled
     sources: list = field(default_factory=list)  # story IDs of the snapshot's sources, in their order
+    summary: str | None = None  # SERIES-BIBLE: the reason the bible has no summary
 
 
 @dataclass
@@ -228,6 +230,9 @@ def snapshot_sources(stories, story) -> list:
 
 
 def series_status(repo, story) -> SeriesStatus | None:
+    if story.series_id and story.series_bible:
+        view = repo.context_view(story.id)
+        return SeriesStatus('bible', summary=book_summary(view, view.story)[1])
     status = _snapshot_status(repo, story)
     if status is not None:
         from ..memory.series_start import read_series_start
