@@ -197,7 +197,8 @@ def story_series(data: dict) -> dict | None:
     if not series:
         return None
     status = series.get('status') or {}
-    return {'title': series['title'], 'number': series['number'], 'start': series.get('start'),
+    return {'title': series['title'], 'number': series['number'], 'bible': bool(series.get('bible')),
+            'start': series.get('start'),
             'status': status.get('state'), 'prequel': bool(status.get('prequel')),
             'resolved_count': len(status.get('resolved') or [])}
 

@@ -106,7 +106,8 @@ def set_story_series(repo, story_id: str, series_id: str | None, number: int | N
         story = repo._active_story(db, story_id)
         if story.revision != expected_revision:
             raise RevisionConflict(STORY_CONFLICT)
-        entering = series_id is not None and story.series_id != series_id
+        # A bible that becomes a book enters the series as a book: it takes its snapshot (SERIES-BIBLE).
+        entering = series_id is not None and (story.series_id != series_id or story.series_bible != bible)
         if series_id is not None:
             _get(db, series_id)
             if bible and any(b.series_bible and b.id != story_id for b in _books(db, series_id)):
@@ -321,8 +322,9 @@ def start_facts(repo, story_id: str) -> list[dict]:
     data, _, journal = _whole_start(repo, story)
     origins = data.source.get('origins') or {}
     first = (data.source['sources'] or [{}])[0].get('story_id')
+    bible = set(data.source.get('bible_keys') or [])
     rows = [{'key': _key(e), 'category': e.category, 'text': e.text, 'character_ids': list(e.character_ids),
-             'story_id': origins.get(_key(e), first),
+             'story_id': origins.get(_key(e), first), 'bible': _key(e) in bible,
              'decision': (data.decisions or {}).get(_key(e), 'future') if data.decisions is not None else 'past'}
             for e in replay_memory(journal).values()]
     order = {name: i for i, name in enumerate(CATEGORY_ORDER)}
@@ -370,6 +372,7 @@ def take_snapshot_if_ready(repo, story_id: str) -> Story:
 
 
 SERIES_LINES_INVALID = 'Рядки «Серія:», «Номер:» і «Початок:» не розпізнано; книгу не додано до серії.'
+SERIES_BIBLE_PLAN_TAKEN = SERIES_BIBLE_TAKEN + '; твір не додано до серії.'
 SERIES_CREATED = 'Створено нову серію «{title}»'
 
 
@@ -381,14 +384,18 @@ def enter_series_from_plan(repo, story_id: str, lines, invalid: bool) -> list[st
     if lines is None:
         return []
     item = find_series(repo, lines.title)
-    if item and any(b.series_number == lines.number and b.id != story_id for b in series_books(repo, item.id)):
+    if lines.bible and item and any(b.series_bible and b.id != story_id for b in series_books(repo, item.id)):
+        return [SERIES_BIBLE_PLAN_TAKEN]
+    if not lines.bible and item and any(b.series_number == lines.number and b.id != story_id
+                                        for b in series_books(repo, item.id)):
         return [SERIES_NUMBER_TAKEN.format(number=lines.number) + '; книгу не додано до серії.']
     notes = []
     try:
         if item is None:
             item = create_series(repo, lines.title)
             notes.append(SERIES_CREATED.format(title=item.title))
-        set_story_series(repo, story_id, item.id, lines.number, lines.start, repo.get_story(story_id).revision)
+        set_story_series(repo, story_id, item.id, lines.number, lines.start, repo.get_story(story_id).revision,
+                         bible=lines.bible)
     except ValueError as error:
         return notes + [str(error)]
     return notes

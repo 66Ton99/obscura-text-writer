@@ -153,6 +153,7 @@ def split_book_plan(text,default_title='Сцена'):
 # the plan like an arc line. «Початок» is a project 3 time mark without the hour, free text, then the anchor number.
 SERIES_LINE=re.compile(r'^(?:серія|series)\s*:\s*(.*)$',re.IGNORECASE)
 NUMBER_LINE=re.compile(r'^(?:номер|number)\s*:\s*(.*)$',re.IGNORECASE)
+BIBLE_NUMBERS={'біблія','bible'}
 SERIES_START_LINE=re.compile(r'^(?:початок|start)\s*:\s*(.*)$',re.IGNORECASE)
 OFFSET=re.compile(r'(?i)^\s*((?:(?:рік|year|місяць|month|день|day)\s+[+-]?\d+)(?:\s*,?\s*(?:рік|year|місяць|month|день|day)\s+[+-]?\d+)*)')
 OFFSET_UNITS={'рік':0,'year':0,'місяць':1,'month':1,'день':2,'day':2}
@@ -161,8 +162,9 @@ OFFSET_UNITS={'рік':0,'year':0,'місяць':1,'month':1,'день':2,'day':
 @dataclass(frozen=True)
 class SeriesLines:
     title: str
-    number: int
+    number: int | None  # None for the world bible
     start: object | None  # SeriesStart
+    bible: bool = False  # «Номер: біблія» / «Number: bible» (SERIES-BIBLE)
 
 
 def parse_series_start(text):
@@ -192,6 +194,9 @@ def cut_series_lines(preamble):
     title=' '.join(found.get('title','').split())[:300]
     number=found.get('number','')
     start=parse_series_start(found['start']) if found.get('start') else None
+    if number.lower() in BIBLE_NUMBERS:
+        if not title or found.get('start'):return text,None,True
+        return text,SeriesLines(title,None,None,True),False
     if not title or not number.isdigit() or not 1<=int(number)<=1000000 or (found.get('start') and start is None):
         return text,None,True
     return text,SeriesLines(title,int(number),start),False

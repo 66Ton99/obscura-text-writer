@@ -84,13 +84,24 @@ You decide which facts of later books have already happened before the prequel. 
 
 A book after a prequel starts from the memory of the main book — the nearest earlier book that is not a prequel — and of the prequels between them. If a prequel changed something the main book has (a character's clothes, say), the main book's value is kept; between two prequels, the one later in the chronology wins. A new prequel between the source book and the book gives a warning, and “Update from the previous book” takes it into the snapshot. On the series screen such a book has a “Sources: …” line and a collapsed “Conflicts settled automatically” block: which prequel values were dropped and whose book's value stayed.
 
+## World bible
+
+A world bible is a separate work of the series with the facts every book shares: how the world works, places, rules. You write it like an ordinary book: outline, brief, draft, prose, memory. You can also create a scene and write its prose by hand straight away. A bible has no book heroes and no hero states: all its memory is facts, up to 10 per scene.
+
+- **Creating one.** On the series screen click **New world bible**, or tick **World bible** on the series panel of the work's settings: the «Number in series» and «Start» fields disappear. In an outline preamble write `Number: bible` instead of a number (without a `Start:` line).
+- **One per series.** A second bible is refused, also while the first one is in the trash. A preamble with `Number: bible` for a series that already has a bible imports the outline without a series and explains why.
+- **Where the facts go.** Once the bible is finished (its last scene has current memory), its facts go into the snapshot of every book of the series, book 1 included. Bible facts always come from the current bible: a changed fact replaces the old copy when a book refreshes its snapshot.
+- **On the series screen** the bible stands in its own block above the books, without a number and off the chronology axis. Under the bible's title in the workspace you see «Series «…», world bible».
+- **In a prequel** bible facts are always the past: in the «Review facts of later books» dialog they are marked «from the world bible — always the past» and have no switch.
+- To turn the bible back into an ordinary book, untick the mark and give it a number.
+
 ## Export
 
 If the series fields of the [publication card](publication.md) are empty, the EPUB gets the series title and the book number as the series and the position in it.
 
 ## Chat clients
 
-Through [MCP](mcp.md) a chat sees the series, the number, `Start`, the snapshot state, whether the book is a prequel and how many conflicts were settled automatically in `get_story`; a prequel scene's context has a `future` field. A chat can add a book to a series with an outline preamble in `import_plan_and_characters`. Other series actions are available only in the app.
+Through [MCP](mcp.md) a chat sees the series, the number, whether the work is the world bible, `Start`, the snapshot state, whether the book is a prequel and how many conflicts were settled automatically in `get_story`; a prequel scene's context has a `future` field. A chat can add a book to a series or make a work the world bible with an outline preamble in `import_plan_and_characters`. Other series actions are available only in the app.
 
 ## In a build without series
 

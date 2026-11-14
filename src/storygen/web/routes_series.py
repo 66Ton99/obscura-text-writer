@@ -37,6 +37,7 @@ class StorySeries(DomainModel):
     number: int | None = Field(default=None, ge=1, le=1000000)
     start: SeriesStart | None = None
     start_text: str | None = Field(default=None, max_length=300)  # «Рік -5, опора 1» as the author types it
+    bible: bool = False  # the series' world bible: no number, no start (SERIES-BIBLE)
     expected_revision: int
 
 
@@ -54,10 +55,11 @@ def series_view(series_id: str, request: Request):
     item = store.get_series(repo, series_id)
     books = store.series_books(repo, series_id)
     placed, outside = chronology([b for b in books if not b.trashed_at])
-    outside += [b.id for b in books if b.trashed_at]
-    rows = [{'id': b.id, 'title': b.title, 'number': b.series_number, 'trashed': bool(b.trashed_at), 'start': b.series_start,
-             'status': asdict(series_status(repo, b))} for b in books]
-    return {'series': item, 'books': rows, 'placed': placed, 'outside': outside}
+    outside += [b.id for b in books if b.trashed_at and not b.series_bible]
+    rows = [{'id': b.id, 'title': b.title, 'number': b.series_number, 'bible': b.series_bible, 'trashed': bool(b.trashed_at),
+             'start': b.series_start, 'status': asdict(series_status(repo, b))} for b in books]
+    bible = next((b.id for b in books if b.series_bible), None)  # SERIES-BIBLE: shown apart from the axis
+    return {'series': item, 'books': rows, 'placed': placed, 'outside': outside, 'bible': bible}
 
 
 def _long_prose_page():
@@ -105,6 +107,14 @@ def series_new_book(series_id: str, data: SeriesIn, request: Request):
     return store.create_book(request.app.state.repo, series_id, data.title)
 
 
+@router.post('/api/series/{series_id}/bible')
+def series_new_bible(series_id: str, data: SeriesIn, request: Request):
+    """«Нова біблія світу»: a second bible of the series is refused (SERIES-BIBLE)."""
+    require_long_prose()
+    store.get_series(request.app.state.repo, series_id)
+    return store.create_bible(request.app.state.repo, series_id, data.title)
+
+
 @router.patch('/api/stories/{story_id}/series')
 def story_series(story_id: str, data: StorySeries, request: Request):
     require_long_prose()
@@ -114,7 +124,8 @@ def story_series(story_id: str, data: StorySeries, request: Request):
         start = parse_series_start(data.start_text)
         if start is None:
             raise HTTPException(422, START_UNPARSED)
-    return store.set_story_series(request.app.state.repo, story_id, data.series_id, data.number, start, data.expected_revision)
+    return store.set_story_series(request.app.state.repo, story_id, data.series_id, data.number, start, data.expected_revision,
+                                  bible=data.bible)
 
 
 @router.post('/api/stories/{story_id}/series/refresh')
@@ -158,5 +169,6 @@ def series_block(repo, story):
     from ..book.series import series_status
     from dataclasses import asdict
     item = store.get_series(repo, story.series_id)
-    return {'id': item.id, 'title': item.title, 'number': story.series_number, 'start': story.series_start,
+    return {'id': item.id, 'title': item.title, 'number': story.series_number, 'bible': story.series_bible,
+            'start': story.series_start,
             'status': asdict(series_status(repo, story))}

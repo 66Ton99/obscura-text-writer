@@ -196,6 +196,22 @@ def main():
             enter(repo, third, other, 3, ('Рік 2', 1))
             return {'series_id': item.id, 'prequel_id': prequel.id, 'sources_series_id': other.id, 'third_id': third.id}
 
+        @app.post('/test-series-bible-prequel')
+        def series_bible_prequel_fixture():
+            # SERIES-BIBLE: a series with a finished world bible, a finished book 1 and a prequel 2 (neutral texts).
+            import uuid
+            from storygen.series_models import SeriesStart
+            from storygen.storage import series as store
+            from tests.series.helpers import book
+            from tests.series.test_series_bible_snapshot import write_bible, write_book_one
+            item = store.create_series(repo, f'Сага біблії {uuid.uuid4().hex[:6]}')
+            write_bible(repo, item)
+            write_book_one(repo, item)
+            prequel, _ = book(repo, 'Приквел', written=False, cast=['A'])
+            prequel = store.set_story_series(repo, prequel.id, item.id, 2, SeriesStart(offset='Рік -10', anchor=1),
+                                             prequel.revision)
+            return {'series_id': item.id, 'prequel_id': prequel.id}
+
         @app.post('/test-brief-proposal')
         def brief_proposal():
             import json,threading
