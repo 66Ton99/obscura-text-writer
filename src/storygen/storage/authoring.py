@@ -1,4 +1,4 @@
-from ..domain import RevisionConflict, Scene, Story
+from ..domain import RevisionConflict, Scene, Story, VersionRef
 
 
 def rename_story(repo,story_id,title,expected_revision):
@@ -388,6 +388,33 @@ def register_source(repo, story_id, metadata):
             invalidate_story_materials(repo, db, story_id)
 
 
+def _sample_only(repo,db,old_id,new_id):
+    from .snapshots import sample_only_change
+    def read(id):
+        ref=repo._get(db,'versions',id,VersionRef)
+        return repo.files.read(ref.relative_path,ref.sha256).decode('utf-8')
+    return sample_only_change(read,old_id,new_id)
+
+
+def _invalidate_sample_readers(repo,db,previous):
+    """STYLE-SAMPLE-001: a style that differs only in the voice sample stales the direct readers that hear it (a version
+    without a snapshot counts as one) and what depends on them; briefs and evaluations stay fresh unless reached that way."""
+    from .invalidation import invalidate_in_transaction
+    from .snapshots import SAMPLE_BLIND_SCOPES
+    seeds=[]
+    for (id,) in db.execute('SELECT target_id FROM dependency_edges WHERE source_id=?',(previous,)).fetchall():
+        ref=repo._get(db,'versions',id,VersionRef)
+        if ref.dependency_snapshot is not None and ref.dependency_snapshot.scope in SAMPLE_BLIND_SCOPES:continue
+        seeds.append(id)
+        ref.stale=True
+        db.execute('UPDATE versions SET payload=? WHERE id=?',(ref.model_dump_json(),id))
+        if ref.scene_id:
+            scene=repo._get(db,'scenes',ref.scene_id,Scene)
+            scene.needs_review=True
+            repo._save_scene(db,scene)
+    if seeds:invalidate_in_transaction(repo,db,seeds)
+
+
 def publish_writing_settings(repo,story_id,expected_revision,target_words,style_version_id):
     with repo.db.connection() as db:
         db.execute('BEGIN IMMEDIATE')
@@ -404,6 +431,7 @@ def publish_writing_settings(repo,story_id,expected_revision,target_words,style_
         repo._save_story(db,candidate)
         if style_version_id and style_version_id!=previous:
             from .invalidation import invalidate_in_transaction,invalidate_story_materials
-            if previous:invalidate_in_transaction(repo,db,[previous])
+            if previous and _sample_only(repo,db,previous,style_version_id):_invalidate_sample_readers(repo,db,previous)
+            elif previous:invalidate_in_transaction(repo,db,[previous])
             else:invalidate_story_materials(repo,db,story_id)
         return candidate

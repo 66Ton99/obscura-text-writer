@@ -295,6 +295,11 @@ def language_only(result) -> bool:
         and r.selector.field=='prose_language' for r in result.reasons)
 
 
+# STYLE-SAMPLE-001: the scopes with a style selector whose requests never carry the voice sample.
+SAMPLE_BLIND_SCOPES = frozenset({'brief', 'evaluation'})
+from ..style_sample import sample_only_change  # noqa: E402  (re-exported for storage callers)
+
+
 def compare_snapshot(view, snapshot: DependencySnapshot | dict) -> list[DependencyChange]:
     snapshot = DependencySnapshot.model_validate(snapshot)
     changes = []
@@ -331,6 +336,9 @@ def compare_snapshot(view, snapshot: DependencySnapshot | dict) -> list[Dependen
                 changed=is_lower(from_wire(current),from_wire(selector.expected))
             else:
                 changed=current != selector.expected
+            if (changed and selector.field=='style_version_id' and snapshot.scope in SAMPLE_BLIND_SCOPES
+                    and sample_only_change(view.read_text, selector.expected, current)):
+                changed=False
             if changed:
                 changes.append(DependencyChange(selector=selector, expected=selector.expected, current=current, reason='selector_changed'))
         except (KeyError, ValueError):
