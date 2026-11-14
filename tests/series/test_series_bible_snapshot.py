@@ -10,7 +10,6 @@ from storygen.storage import series as store
 from storygen.storage.repository import Repository
 from tests.series.helpers import book, finished_book, into_series, memory, prose
 
-pytestmark = pytest.mark.req('SERIES-BIBLE-001')
 
 
 def snapshot(repo, story):
@@ -48,6 +47,7 @@ def write_book_one(repo, item, cast=('A',)):
     return repo.get_story(story.id), cloth
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_book_one_takes_its_snapshot_from_the_bible(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -61,6 +61,7 @@ def test_book_one_takes_its_snapshot_from_the_bible(tmp_path):
     assert series_status(repo, first).state == 'fresh'
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_without_a_bible_book_one_has_no_snapshot(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -69,6 +70,7 @@ def test_without_a_bible_book_one_has_no_snapshot(tmp_path):
     assert first.series_start_version_id is None and series_status(repo, first).state == 'first'
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_bible_without_a_summary_blocks_the_snapshot_and_a_trashed_one_is_no_source(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -82,6 +84,7 @@ def test_a_bible_without_a_summary_blocks_the_snapshot_and_a_trashed_one_is_no_s
     assert series_status(repo, repo.get_story(first.id)).state == 'first'
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_book_two_takes_the_current_bible_not_the_copy_from_book_one(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -99,6 +102,7 @@ def test_book_two_takes_the_current_bible_not_the_copy_from_book_one(tmp_path):
     assert texts(snapshot(repo, second).journal) == ['Магія коштує сну', 'Сусід пішов', 'Халат']
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_bible_added_later_changes_no_snapshot(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -113,6 +117,7 @@ def test_a_bible_added_later_changes_no_snapshot(tmp_path):
     assert series_status(repo, repo.get_story(first.id)).state == 'source_finished'
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_the_main_book_still_wins_over_a_prequel(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -134,6 +139,7 @@ def test_the_main_book_still_wins_over_a_prequel(tmp_path):
     assert [r['kept_story_id'] for r in result.source['resolved']] == [first.id]
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_bible_facts_are_the_past_of_a_prequel(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')
@@ -149,6 +155,7 @@ def test_bible_facts_are_the_past_of_a_prequel(tmp_path):
         store.save_decisions(repo, prequel.id, {bible_key: 'future'}, repo.get_story(prequel.id).revision)
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_series_without_a_bible_keeps_its_snapshots(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Сага')

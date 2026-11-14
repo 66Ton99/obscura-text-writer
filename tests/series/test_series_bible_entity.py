@@ -7,7 +7,6 @@ from storygen.series_models import SeriesStart
 from storygen.storage import series as store
 from storygen.storage.repository import Repository
 
-pytestmark = pytest.mark.req('SERIES-BIBLE-001')
 
 
 def bible_in(repo, series_id, title='Світ'):
@@ -15,6 +14,7 @@ def bible_in(repo, series_id, title='Світ'):
     return store.set_story_series(repo, story.id, series_id, None, None, story.revision, bible=True)
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_bible_has_a_series_without_a_number(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -23,6 +23,7 @@ def test_a_bible_has_a_series_without_a_number(tmp_path):
     assert bible.series_number is None and bible.series_start is None and bible.series_start_version_id is None
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_bible_refuses_a_number_or_a_start(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -36,6 +37,7 @@ def test_a_bible_refuses_a_number_or_a_start(tmp_path):
         store.set_story_series(repo, story.id, None, None, None, story.revision, bible=True)
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_one_bible_per_series_even_in_the_trash(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -48,6 +50,7 @@ def test_one_bible_per_series_even_in_the_trash(tmp_path):
     assert bible_in(repo, second.id, 'Інший світ').series_bible is True
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_book_that_becomes_the_bible_loses_its_number_and_snapshot_link(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -59,6 +62,7 @@ def test_a_book_that_becomes_the_bible_loses_its_number_and_snapshot_link(tmp_pa
     assert story.series_bible is False and story.series_id is None
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_series_with_a_bible_cannot_be_deleted(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -67,6 +71,7 @@ def test_a_series_with_a_bible_cannot_be_deleted(tmp_path):
         store.delete_series(repo, item.id, item.revision)
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_create_bible(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
@@ -76,6 +81,7 @@ def test_create_bible(tmp_path):
         store.create_bible(repo, item.id, 'Друга')
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_a_bible_tracks_no_protagonists(tmp_path):
     from storygen.characters.models import CharacterRecord
     repo = Repository(tmp_path)

@@ -7,11 +7,10 @@ from storygen.storage import series as store
 from storygen.storage.repository import Repository
 from storygen.storage.snapshots import compare_snapshot
 
-pytestmark = pytest.mark.req('SERIES-BIBLE-001')
-
 
 @pytest.mark.parametrize('bible', [False, True])
 @pytest.mark.parametrize('flashback', [False, True])
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_new_scene_takes_manual_prose_at_once(tmp_path, bible, flashback):
     repo = Repository(tmp_path)
     story = repo.create_story(StoryCreate(title='Світ', content_rating=ContentRating(sexual=0, violence=0, themes=0)))

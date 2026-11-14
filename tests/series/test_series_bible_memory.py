@@ -12,7 +12,6 @@ from storygen.storage import series as store
 from storygen.storage.repository import Repository
 from storygen.storage.snapshots import compare_snapshot
 
-pytestmark = pytest.mark.req('SERIES-BIBLE-001')
 LABEL = 'БІБЛІЯ СВІТУ: УСЕ НОВЕ — ФАКТИ, ДО 10 ЗІ СЦЕНИ; БЕЗ СТАНІВ, ЛІНІЙ І ХРОНОЛОГІЇ'
 PROSE = 'Магія коштує крові. Столиця стоїть на трьох річках. Зима триває пів року.'
 
@@ -44,6 +43,7 @@ def fact(i):
     return {'text': f'Факт {i}', 'evidence_ids': ['f000001']}
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_bible_memory_request_has_facts_only(tmp_path):
     repo, story, scene = world(tmp_path)
     ctx = build_context(repo, scene.id, 'memory', role())
@@ -56,12 +56,14 @@ def test_bible_memory_request_has_facts_only(tmp_path):
     assert schema['timeline']['properties']['add']['maxItems'] == 0
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_bible_flashback_scene_also_gets_ten(tmp_path):
     repo, story, scene = world(tmp_path, flashback=True)
     bounds = json.loads(build_context(repo, scene.id, 'memory', role()).fragments['memory_schema_bounds'])
     assert bounds['fact_limit'] == 10
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_check_accepts_ten_facts_and_refuses_eleven_or_a_state(tmp_path):
     repo, story, scene = world(tmp_path)
     ctx = build_context(repo, scene.id, 'memory', role())
@@ -74,6 +76,7 @@ def test_check_accepts_ten_facts_and_refuses_eleven_or_a_state(tmp_path):
     assert any(v.code == 'flashback_only_facts' for v in check_v4(wire([], character_states=state), previous, bounds))
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_old_flashback_bounds_keep_the_limit_of_six(tmp_path):
     from storygen.memory.journal import MemoryJournal
     repo, story, scene = world(tmp_path)
@@ -86,6 +89,7 @@ def test_old_flashback_bounds_keep_the_limit_of_six(tmp_path):
     assert memory_wire_v4_schema(old)['properties']['facts']['properties']['add']['maxItems'] == 6
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_an_ordinary_book_memory_request_is_unchanged(tmp_path):
     repo, story, scene = world(tmp_path, bible=False)
     ctx = build_context(repo, scene.id, 'memory', role())
@@ -95,6 +99,7 @@ def test_an_ordinary_book_memory_request_is_unchanged(tmp_path):
     assert not any(s.field == 'series_bible' for s in ctx.dependency_snapshot.selectors)
 
 
+@pytest.mark.req('SERIES-BIBLE-001')
 def test_bible_flag_set_later_stales_the_memory(tmp_path):
     repo, story, scene = world(tmp_path, bible=False)
     ctx = build_context(repo, scene.id, 'memory', role())
