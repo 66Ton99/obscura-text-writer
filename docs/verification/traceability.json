@@ -5983,10 +5983,14 @@
     {
       "id": "SERIES-BIBLE-S06",
       "requirement": "SERIES-BIBLE-001",
-      "scope": "Ручна проза нової сцени без плану — у звичайній книзі й біблії, зокрема сцени-спогаду (сховище; браузер — у плані обв’язки).",
+      "scope": "Ручна проза нової сцени без плану — у звичайній книзі й біблії, зокрема сцени-спогаду (сховище; браузер — Playwright tests/web/browser/scene-without-plan.spec.mjs).",
       "tests": [
         "tests/series/test_series_bible_scene_without_plan.py::test_new_scene_takes_manual_prose_at_once"
-      ]
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#series-bible-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/scene-without-plan.spec.mjs виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
     },
     {
       "id": "SERIES-BIBLE-S07",
@@ -5996,6 +6000,26 @@
         "tests/series/test_series_bible_snapshot.py::test_without_a_bible_book_one_has_no_snapshot",
         "tests/series/test_series_bible_snapshot.py::test_a_series_without_a_bible_keeps_its_snapshots"
       ]
+    },
+    {
+      "id": "SERIES-BIBLE-S08",
+      "requirement": "SERIES-BIBLE-001",
+      "scope": "Біблія через HTTP, екран серії, факти приквела, MCP і преамбулу плану; браузерна частина — Playwright tests/web/browser/series-bible.spec.mjs.",
+      "tests": [
+        "tests/series/test_series_bible_harness.py::test_patch_makes_a_bible_and_back_a_book",
+        "tests/series/test_series_bible_harness.py::test_new_bible_endpoint_refuses_a_second_one",
+        "tests/series/test_series_bible_harness.py::test_new_bible_needs_long_prose",
+        "tests/series/test_series_bible_harness.py::test_bible_status_names_its_summary",
+        "tests/series/test_series_bible_harness.py::test_series_screen_lists_the_bible_apart_from_the_axis",
+        "tests/series/test_series_bible_harness.py::test_prequel_facts_mark_the_bible_records",
+        "tests/series/test_series_bible_harness.py::test_mcp_get_story_shows_the_bible",
+        "tests/series/test_series_bible_harness.py::test_preamble_bible_line",
+        "tests/series/test_series_bible_harness.py::test_bible_turned_book_takes_its_snapshot"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#series-bible-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/series-bible.spec.mjs виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
     }
   ]
 }

@@ -3481,13 +3481,14 @@ Restore перевіряє complete manifest, точний inventory, кожни
 - **Позначка.** `Story.series_bible` (JSON твору). `storage/series.set_story_series(..., bible=True)` вимагає серію без номера й старту (`SERIES_BIBLE_FIELDS`), перевіряє одну біблію серед творів серії, зокрема в кошику (`SERIES_BIBLE_TAKEN`), і знімає посилання на знімок; вихід із серії знімає позначку. `create_bible(repo, series_id, title)`. `book/protagonists.scene_tracked` для біблії — `[]`. Біблія не має номера, тож `_series_books`, вісь хронології й приквели її не бачать.
 - **Пам’ять.** `memory/wire_v4.BIBLE_FACT_LIMIT=10`; `schema_bounds_v4(..., fact_limit=...)` дає межі «лише факти» (як у спогаду, `flashback: True`) з полем `fact_limit`; `check_v4` і схема беруть межу фактів із `fact_limit`, а старі межі без нього — 6. Запит пам’яті сцени біблії (`generation/context.py`): мітка `bible_facts`, чинні твердження, дозволені ID і фрагменти, без ядра, ліній і зміни дня; сцена-спогад біблії — теж 10. Селектор `scene/<id>/series_bible` пишеться в скоупі `memory` лише для біблії; відсутній означає `False`.
 - **Сцена без плану.** Знімок `author_text` ручного тексту (`generation/dependencies._manual_snapshot`) пише селектор `flashback` для сцени-спогаду; без нього ручна проза нової сцени-спогаду ставала застарілою одразу й не приймалася як поточна (усунене відхилення).
+- **Обв’язка** (план `docs/superpowers/plans/2026-11/2026-11-14-world-bible-harness.md`). `PATCH /api/stories/{id}/series` має поле `bible` (номер чи старт із ним — 400, як інші відмови домену); біблія, з якої знято позначку, входить у серію як книга й бере знімок. `POST /api/series/{id}/bible` створює біблію (друга — 400); маршрут у списку `long_prose_guard` з власною перевіркою довгої прози. `series_status` біблії — `SeriesStatus('bible', summary=<причина без підсумку або None>)`; блок `series` у поданні твору й рядки `GET /api/series/{id}` мають `bible`, відповідь — поле `bible` (ID або `None`), а біблія не входить у вісь і «поза віссю». `start_facts` позначає записи з `bible_keys` полем `bible`. MCP `get_story.series.bible`. Преамбула: `Номер: біблія` / `Number: bible` дає `SeriesLines(number=None, bible=True)`; з `Початок:` — `SERIES_LINES_INVALID`, за наявної біблії — попередження `SERIES_BIBLE_PLAN_TAKEN` й імпорт без серії. Інтерфейс: прапорець «Біблія світу» в `#story-series-form` ховає номер і `Початок`; `statusText` для `bible`; рядок «Серія «…», біблія світу»; на екрані серії блок `#series-bible` над книгами й кнопка `#series-new-bible`, поки біблії немає; діалог фактів приквела показує факт біблії без перемикача й не надсилає його ключ; панель структури книги ховає поле протагоніста.
 - **Джерела.** `book/series.series_bible_source` — біблія серії не в кошику (для самої біблії й поза серією — `None`); `snapshot_sources` — біблія першою, далі `start_sources`; за ним працюють `_source_rows`, стан і вхід у серію (знімок береться, коли джерела є, замість «номер > 1»). `start_memory`: з журналу кожної книги-джерела вилучаються події з ключами з `bible_keys` її знімка (`_without_bible_keys`); головна книга, номери й моменти рахуються лише серед книг; у конфлікті з біблією перемагає біблія; `StartMemory.bible_keys` — ключі поточного журналу біблії. Знімок із біблією серед джерел зберігає `bible_keys`; знімок приквела ставить ключам біблії `past`, а `save_decisions` відхиляє `future` для них (`BIBLE_IS_PAST`).
 
 Інваріанти: біблія ніколи не має знімка й не є приквелом; знімок серії без біблії не має `bible_keys`; запит пам’яті звичайної книги не має мітки біблії й селектора `series_bible`.
 
 Сумісність і міграція: міграції немає, `SERIES_START_SCHEMA` лишається 1, `bible_keys` і `fact_limit` необов’язкові. `_save_story` пише твір цілим, тож твори, збережені новою збіркою, мають `series_bible`, і попередня збірка зі схемою 6 їх не прочитає (`extra="forbid"`); повернення — через копію MAINT-002.
 
-Відомі обмеження: інтерфейсу, HTTP, MCP і рядка преамбули `Номер: біблія` ще немає (план обв’язки); біблію ставлять лише через сховище. Перевірка «сцена без плану» — на рівні сховища, браузерного тесту ще немає. Не перевірено, що модель справді виділяє зі сцени біблії більше трьох фактів. Суперечність змісту факту книги й біблії іншими словами не виявляється.
+Відомі обмеження: MCP показує, чи твір є біблією, але створити біблію чат може лише преамбулою плану. Не перевірено, що модель справді виділяє зі сцени біблії більше трьох фактів. Суперечність змісту факту книги й біблії іншими словами не виявляється.
 
 <a id="series-bible-s01"></a>
 #### Scenario: SERIES-BIBLE-S01 — Біблія в серії
@@ -3527,8 +3528,8 @@ Restore перевіряє complete manifest, точний inventory, кожни
 <a id="series-bible-s06"></a>
 #### Scenario: SERIES-BIBLE-S06 — Сцена без плану
 - GIVEN нова сцена звичайної книги чи біблії, зокрема сцена-спогад
-- WHEN автор одразу зберігає ручну прозу
-- THEN проза SHALL стати поточною й не бути застарілою.
+- WHEN автор одразу зберігає ручну прозу, зокрема в браузері («Додати сцену», вкладка «Проза», «Зберегти»)
+- THEN проза SHALL стати поточною й не бути застарілою, а збереження SHALL не давати помилки.
 
 <a id="series-bible-s07"></a>
 #### Scenario: SERIES-BIBLE-S07 — Серія без біблії
@@ -3536,7 +3537,14 @@ Restore перевіряє complete manifest, точний inventory, кожни
 - WHEN книги входять у серію
 - THEN книга 1 SHALL не мати знімка, а знімок книги 2 — `bible_keys`, і його джерела SHALL бути як до зміни.
 
-Перевірки: tests/series/test_series_bible_entity.py, tests/series/test_series_bible_memory.py, tests/series/test_series_bible_scene_without_plan.py, tests/series/test_series_bible_snapshot.py.
+<a id="series-bible-s08"></a>
+#### Scenario: SERIES-BIBLE-S08 — Інтерфейс, HTTP, MCP і преамбула
+- GIVEN серія з книгами
+- WHEN автор робить твір біблією в налаштуваннях чи кнопкою «Нова біблія світу», пробує другу біблію чи номер із біблією, знімає позначку з номером, відкриває екран серії, факти приквела, `get_story` у MCP або імпортує план із `Номер: біблія`
+- THEN біблія SHALL мати стан `bible` з причиною без підсумку, стояти окремо від осі, а друга біблія й номер із нею SHALL відхилятися; без позначки твір SHALL стати книгою зі знімком
+- AND факт біблії в приквелі SHALL не мати перемикача, MCP SHALL показувати `bible`, а преамбула з `Початок:` чи за наявної біблії SHALL давати попередження й імпорт без серії.
+
+Перевірки: tests/series/test_series_bible_entity.py, tests/series/test_series_bible_memory.py, tests/series/test_series_bible_scene_without_plan.py, tests/series/test_series_bible_snapshot.py, tests/series/test_series_bible_harness.py; браузер — tests/web/browser/series-bible.spec.mjs, tests/web/browser/scene-without-plan.spec.mjs.
 
 <a id="build-edition-001"></a>
 ### Requirement: BUILD-EDITION-001 — Видання збірки й межа рейтингу
