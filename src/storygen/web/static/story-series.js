@@ -10,9 +10,10 @@ async function show(){
   const series=(await api(`/api/stories/${root.dataset.storyId}`)).series;
   if(!series){line.hidden=true;return}
   const link=document.createElement('a');link.href=`/series/${series.id}`;
-  uiText(link,'textContent',()=>t('series.header',{p0:series.title,p1:series.number}));
+  uiText(link,'textContent',()=>series.bible?t('series.header_bible',{p0:series.title}):t('series.header',{p0:series.title,p1:series.number}));
   const state=document.createElement('span');state.className='series-header-status';
-  const warn=series.status.prequel||['source_changed','source_finished','no_summary'].includes(series.status.state);
+  const warn=series.status.prequel||['source_changed','source_finished','no_summary'].includes(series.status.state)
+    ||(series.status.state==='bible'&&Boolean(series.status.summary));
   uiText(state,'textContent',()=>warn?' · '+statusText(series.status):'');
   line.replaceChildren(link,state);line.hidden=false;
 }

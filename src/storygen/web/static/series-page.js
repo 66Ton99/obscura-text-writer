@@ -44,7 +44,7 @@ function sourcesBlock(book,titles){
 
 function bookCard(book){
   const card=element('article','card series-book');card.dataset.bookId=book.id;
-  card.append(element('h3','',()=>t('series.book_heading',{p0:book.number,p1:book.title})));
+  card.append(element('h3','',()=>book.bible?book.title:t('series.book_heading',{p0:book.number,p1:book.title})));
   if(book.trashed)card.append(element('p','series-trashed',()=>t('series.trashed')));
   card.append(element('p','series-status',()=>statusText(book.status)));
   card.append(...sourcesBlock(book,Object.fromEntries(view.books.map(item=>[item.id,item.title]))));
@@ -61,7 +61,12 @@ function bookCard(book){
 function renderSeries(){
   uiText(page.querySelector('#series-title'),'textContent',()=>view.series.title);
   page.querySelector('#series-rename').elements.title.value=view.series.title;
-  page.querySelector('#series-books').replaceChildren(...view.books.map(bookCard));
+  // SERIES-BIBLE: the world bible stands apart, above the books, and is off the axis.
+  const bible=view.books.find(book=>book.bible);
+  page.querySelector('#series-bible').hidden=!bible;
+  page.querySelector('[data-series-bible-card]').replaceChildren(...(bible?[bookCard(bible)]:[]));
+  page.querySelector('#series-new-bible').hidden=Boolean(bible);
+  page.querySelector('#series-books').replaceChildren(...view.books.filter(book=>!book.bible).map(bookCard));
   const byId=Object.fromEntries(view.books.map(book=>[book.id,book]));
   // The origin is the book without «Початок»; every other book on the axis shows its offset from the anchor.
   const mark=book=>book.start?book.start.offset:t('series.origin');
@@ -83,6 +88,11 @@ function installScreen(){
   page.querySelector('#series-new-book').onclick=async()=>{
     const title=await promptDialog(t('series.new_book_prompt'));if(!title||!title.trim())return;
     try{const story=await api(`/api/series/${seriesId}/books`,json('POST',{title:title.trim()}));location.href=`/stories/${story.id}`}
+    catch(error){notice(error.message,'error')}
+  };
+  page.querySelector('#series-new-bible').onclick=async()=>{
+    const title=await promptDialog(t('series.new_bible_prompt'));if(!title||!title.trim())return;
+    try{const story=await api(`/api/series/${seriesId}/bible`,json('POST',{title:title.trim()}));location.href=`/stories/${story.id}`}
     catch(error){notice(error.message,'error')}
   };
   page.querySelector('#series-delete').onclick=async()=>{

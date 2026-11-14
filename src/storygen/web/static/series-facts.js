@@ -17,7 +17,8 @@ function element(tag,className,text){
   if(text!==undefined)uiText(item,'textContent',typeof text==='function'?text:()=>text);return item;
 }
 
-const changed=()=>facts.filter(fact=>chosen[fact.key]!==fact.decision);
+// SERIES-BIBLE: a fact of the world bible is always the past: no choice, and its key is never sent.
+const changed=()=>facts.filter(fact=>!fact.bible&&chosen[fact.key]!==fact.decision);
 
 function updateCounter(){
   const count=changed().length;
@@ -48,7 +49,8 @@ function render(){
       const source=titles[fact.story_id];
       if(source)text.append(element('span','muted series-fact-source',()=>' '+t('series.facts.from',{p0:source})));
       const choices=element('div','series-fact-choices');
-      choices.append(choice(fact,index,'past'),choice(fact,index,'future'));
+      if(fact.bible)choices.append(element('span','muted series-fact-bible',()=>t('series.facts.bible')));
+      else choices.append(choice(fact,index,'past'),choice(fact,index,'future'));
       row.append(text,choices);section.append(row);index+=1;
     }
     list.append(section);
@@ -79,7 +81,7 @@ function install(){
   const button=form.querySelector('[data-series-facts]');
   button.onclick=()=>open().catch(error=>notice(error.message,'error'));
   dialog.querySelector('[data-facts-close]').onclick=()=>dialog.close();
-  dialog.querySelector('[data-facts-all-future]').onclick=()=>{for(const fact of facts)chosen[fact.key]='future';render()};
+  dialog.querySelector('[data-facts-all-future]').onclick=()=>{for(const fact of facts)if(!fact.bible)chosen[fact.key]='future';render()};
   dialog.querySelector('[data-facts-save]').onclick=()=>save();
 }
 
