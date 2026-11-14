@@ -26,7 +26,16 @@ def _content(view,story,scene,writer) -> dict:
             'rating':rating.model_dump() if rating else None,'language':scene.prose_language or story.language,
             'story_language':story.language,'target_words':scene.target_words,
             # SERIES-S10: only a book with a prequel future has the field, so other fingerprints stay the same.
-            **({'future':future} if future else {})}
+            **({'future':future} if future else {}),
+            # STYLE-SAMPLE-001: the same for the voice sample of the story.
+            **({'tone_sample':sample} if (sample:=_tone_sample(view,story)) else {})}
+
+
+def _tone_sample(view,story) -> str:
+    if not story.style_version_id:return ''
+    from ..generation.models import StyleProfile
+    profile=StyleProfile.model_validate_json(view.read_text(story.style_version_id))
+    return profile.tone_sample if profile.tone_sample.strip() else ''
 
 
 def _draft_instructions(view,story,scene,writer) -> tuple[str | None,str | None]:

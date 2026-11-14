@@ -40,7 +40,7 @@ COVER_MAX_BYTES = 10 * 1024 * 1024
 DRIVE_REMOTE = 4
 ROLES = ('planner', 'writer', 'editor', 'memory')
 SETTINGS_SECTIONS = ('writing',) + ROLES
-WRITING_FIELDS = ('target_words', 'ending_goal', 'genre', 'tone', 'point_of_view', 'tense', 'rules', 'previous_tail_chars')
+WRITING_FIELDS = ('target_words', 'ending_goal', 'genre', 'tone', 'point_of_view', 'tense', 'rules', 'previous_tail_chars', 'tone_sample')
 PROVIDER_FIELDS = ('provider', 'model', 'base_url', 'timeout', 'response_mode', 'include_usage', 'local_disable_thinking',
                    'venice_include_system_prompt', 'venice_disable_thinking', 'venice_reasoning_effort')
 ROLE_FIELDS = ('context_tokens', 'max_output_tokens', 'max_input_chars', 'temperature', 'future_plan_mode', 'future_plan_count', 'stop_sequences')

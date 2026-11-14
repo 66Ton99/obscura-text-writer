@@ -78,3 +78,14 @@ def test_sample_longer_than_3000_is_rejected():
     StyleProfile(tone_sample='я' * 3000)
     with pytest.raises(ValidationError):
         StyleProfile(tone_sample='я' * 3001)
+
+
+@pytest.mark.req('STYLE-SAMPLE-001')
+def test_writing_context_has_sample_only_when_set(tmp_path):
+    from storygen.application.writing_context import context_fingerprint, writing_context
+    repo, story, scene, draft = world(tmp_path, sample='')
+    before = context_fingerprint(repo, scene.id)
+    assert 'tone_sample' not in writing_context(repo, scene.id)
+    update_story_profile(repo, story.id, StyleProfile(tone='стримано', tone_sample=SAMPLE), repo.get_story(story.id).revision)
+    assert writing_context(repo, scene.id)['tone_sample'] == SAMPLE
+    assert context_fingerprint(repo, scene.id) != before
