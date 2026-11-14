@@ -87,7 +87,26 @@ def test_a_bible_tracks_no_protagonists(tmp_path):
     repo = Repository(tmp_path)
     item = store.create_series(repo, 'Серія')
     bible = bible_in(repo, item.id)
-    scene = repo.create_scene(bible.id, SceneCreate(title='Магія'))
+    scene = repo.create_scene(bible.id, SceneCreate(title='Магія', character_ids=['c1']))
     cards = [CharacterRecord(id='c1', name='Анна')]
-    bible = repo.get_story(bible.id).model_copy(update={'protagonist_id': 'c1'})
+    bible = repo.get_story(bible.id)
+    # The same story and cards outside the bible infer Anna as the protagonist.
+    assert scene_tracked(bible.model_copy(update={'series_bible': False}), cards, [scene], scene) == ['c1']
     assert scene_tracked(bible, cards, [scene], scene) == []
+
+
+@pytest.mark.req('SERIES-BIBLE-001')
+def test_the_chronology_axis_ignores_the_bible(tmp_path):
+    from storygen.book.series import chronology, chronology_moments, prequel_ids
+    repo = Repository(tmp_path)
+    item = store.create_series(repo, 'Серія')
+    bible = bible_in(repo, item.id)
+    first = repo.create_story(StoryCreate(title='Книга 1'))
+    first = store.set_story_series(repo, first.id, item.id, 1, None, first.revision)
+    prequel = repo.create_story(StoryCreate(title='Приквел 2'))
+    prequel = store.set_story_series(repo, prequel.id, item.id, 2, SeriesStart(offset='Рік -10', anchor=1), prequel.revision)
+    books = store.series_books(repo, item.id)
+    assert bible.id in [b.id for b in books]
+    assert set(chronology_moments(books)) == {first.id, prequel.id}
+    assert chronology(books) == ([prequel.id, first.id], [])
+    assert prequel_ids(books) == {prequel.id}

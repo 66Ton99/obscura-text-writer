@@ -21,6 +21,11 @@ def texts(journal):
     return sorted(e.text for e in replay_memory(journal).values())
 
 
+def by_key(journal):
+    from storygen.memory.merge import _key
+    return {_key(e): e.text for e in replay_memory(journal).values()}
+
+
 def write_bible(repo, item, facts=('Магія коштує крові',), finished=True):
     story = repo.create_story(StoryCreate(title='Біблія'))
     story = store.set_story_series(repo, story.id, item.id, None, None, story.revision, bible=True)
@@ -95,11 +100,14 @@ def test_book_two_takes_the_current_bible_not_the_copy_from_book_one(tmp_path):
     data = snapshot(repo, second)
     assert texts(data.journal) == ['Магія коштує крові', 'Столиця на трьох річках', 'Сусід пішов', 'Халат']
     assert [s['story_id'] for s in data.source['sources']] == [bible.id, first.id]
+    assert sorted(by_key(data.journal)[k] for k in data.source['bible_keys']) == ['Магія коштує крові', 'Столиця на трьох річках']
     rewrite_bible(repo, bible_scene, ('Магія коштує сну',))
     assert series_status(repo, repo.get_story(second.id)).state == 'source_changed'
     assert series_status(repo, repo.get_story(first.id)).state == 'source_changed'
     store.refresh_snapshot(repo, second.id, repo.get_story(second.id).revision)
-    assert texts(snapshot(repo, second).journal) == ['Магія коштує сну', 'Сусід пішов', 'Халат']
+    data = snapshot(repo, second)
+    assert texts(data.journal) == ['Магія коштує сну', 'Сусід пішов', 'Халат']
+    assert [by_key(data.journal)[k] for k in data.source['bible_keys']] == ['Магія коштує сну']
 
 
 @pytest.mark.req('SERIES-BIBLE-001')
@@ -151,6 +159,12 @@ def test_bible_facts_are_the_past_of_a_prequel(tmp_path):
     assert texts(data.journal) == ['Магія коштує крові']
     assert sorted(f['text'] for f in data.future) == ['Сусід пішов', 'Халат']
     bible_key = data.source['bible_keys'][0]
+    with pytest.raises(ValueError, match=store.BIBLE_IS_PAST):
+        store.save_decisions(repo, prequel.id, {bible_key: 'future'}, repo.get_story(prequel.id).revision)
+    # Saving other decisions keeps the bible keys, so a later «future» is still refused.
+    others = [f['key'] for f in store.start_facts(repo, prequel.id) if f['key'] != bible_key]
+    store.save_decisions(repo, prequel.id, {k: 'past' for k in others}, repo.get_story(prequel.id).revision)
+    assert snapshot(repo, prequel).source['bible_keys'] == [bible_key]
     with pytest.raises(ValueError, match=store.BIBLE_IS_PAST):
         store.save_decisions(repo, prequel.id, {bible_key: 'future'}, repo.get_story(prequel.id).revision)
 

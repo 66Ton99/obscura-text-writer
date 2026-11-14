@@ -5927,7 +5927,7 @@
     {
       "id": "SERIES-BIBLE-S01",
       "requirement": "SERIES-BIBLE-001",
-      "scope": "Позначка біблії, одна на серію, без номера й старту, видалення серії, протагоністи.",
+      "scope": "Позначка біблії, одна на серію, без номера й старту, видалення серії, протагоністи. Вісь хронології й приквели біблії не бачать.",
       "tests": [
         "tests/series/test_series_bible_entity.py::test_a_bible_has_a_series_without_a_number",
         "tests/series/test_series_bible_entity.py::test_a_bible_refuses_a_number_or_a_start",
@@ -5935,7 +5935,8 @@
         "tests/series/test_series_bible_entity.py::test_a_book_that_becomes_the_bible_loses_its_number_and_snapshot_link",
         "tests/series/test_series_bible_entity.py::test_a_series_with_a_bible_cannot_be_deleted",
         "tests/series/test_series_bible_entity.py::test_create_bible",
-        "tests/series/test_series_bible_entity.py::test_a_bible_tracks_no_protagonists"
+        "tests/series/test_series_bible_entity.py::test_a_bible_tracks_no_protagonists",
+        "tests/series/test_series_bible_entity.py::test_the_chronology_axis_ignores_the_bible"
       ]
     },
     {

@@ -354,6 +354,8 @@ def save_decisions(repo, story_id: str, decisions: dict[str, str], expected_revi
     fields = {'sources': data.source['sources'], 'resolved': data.source['resolved'],
               'characters_version_id': data.source.get('characters_version_id'),
               'origins': data.source.get('origins') or {key: first for key in keys}}
+    if 'bible_keys' in data.source:
+        fields['bible_keys'] = data.source['bible_keys']  # SERIES-BIBLE: kept, so a later «future» is still refused
     return _save_start(repo, story_id, expected_revision, _prequel_payload(text, journal, merged, fields))
 
 

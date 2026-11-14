@@ -187,7 +187,7 @@ def _series_books(stories, story):
 def prequel_ids(books) -> set[str]:
     """Books not in the trash on the chronology axis whose moment is earlier than the moment of some book not in the
     trash with a smaller number. A book off the axis is not a prequel."""
-    live = [b for b in books if not b.trashed_at]
+    live = [b for b in books if not b.trashed_at and b.series_number]
     moments = chronology_moments(live)
     by_id = {b.id: b for b in live}
     return {id for id, moment in moments.items()
@@ -275,6 +275,7 @@ def _snapshot_status(repo, story) -> SeriesStatus | None:
 
 def chronology(books) -> tuple[list[str], list[str]]:
     """The series axis by `Початок` (SERIES-001): (placed ids by moment and number, outside ids in release order)."""
+    books = [b for b in books if b.series_number]  # SERIES-BIBLE: the bible has no number and is off the axis
     ordered = sorted(books, key=lambda item: item.series_number or 0)
     moments = chronology_moments(books)
     placed = sorted(moments, key=lambda id: (moments[id], next(b.series_number for b in ordered if b.id == id)))
@@ -287,7 +288,7 @@ def chronology_moments(books) -> dict[str, tuple[int, int, int]]:
     Every other book (a second book without start, a later, missing or off-axis anchor, an offset that is not a time
     mark) is off the axis."""
     from ..memory.story_time import _relative
-    ordered = sorted(books, key=lambda item: item.series_number or 0)
+    ordered = sorted((b for b in books if b.series_number), key=lambda item: item.series_number)
     origin = next((item for item in ordered if not item.series_start), None)
     moments = {}
     if origin is not None:
