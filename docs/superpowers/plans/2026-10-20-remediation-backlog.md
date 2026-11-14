@@ -30,7 +30,7 @@
 
 Наслідок порядку, погоджений власником 10.11.2026: інсталятор іде перед довгою формою, тож перший реліз готових збірок розрахований на оповідання, а не на романи.
 
-Без місця в черзі: [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
+Без місця в черзі: [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) — R-35 скіли Obscura для Claude і кнопка «Підключити до Claude» (запит власника 14.11.2026, місце в черзі визначає власник); [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
 
 Відкладено: [#61](https://github.com/ysilvestrov/obscura-text-writer/issues/61) — автоматичні сигнали втрати запису пам'яті (з #41); береться, коли буде видно частоту пропусків пам'яті v4.
 
@@ -644,3 +644,19 @@ Read-only розбір останнього запуску06.11.2026 вияви�
 - Межі: без зміни доменних правил, черги й API та без втрати чинних можливостей; захист незбережених правок, клавіатура, desktop/mobile, UA/EN збережено.
 - Залежності: до знімків для сайту інструкцій (#29); врахувати точки входу #84 і #55.
 - Приймання: погоджений дизайн, SPEC.MD (контракти UI) + traceability; користувацька документація UA/EN з оновленими знімками на нейтральних прикладах.
+
+## R-35 — Скіли Obscura для Claude і кнопка «Підключити до Claude»
+
+**Статус:** запит власника 14.11.2026, GitHub [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173). Дослідження `docs/research/2026-11-14-claude-skills-distribution.md`. Місце в черзі не визначене; специфікацію зміни оформлюють перед реалізацією.
+
+- Мета: автор, який установив Obscura зі Store, однією кнопкою підключає її до Claude Desktop або Claude Code й отримує не лише MCP-інструменти, а й скіли, що ведуть від розмитого наміру до плану, персонажів, чернетки й публікації.
+- Поточний стан: MCP-міст (R-32) підключається вручну з робочої копії; у пакет MSIX міст не входить; скілів немає, методика є лише в інструкціях сервера й `next_steps`.
+- Обсяг:
+  - плагін Claude зі скілами `start-story`, `draft-scene`, `revise`, `publish` і довідковими файлами; перевірка сценаріями;
+  - методика в самому MCP (prompts і/або інструмент-провідник) для клієнтів без скілів;
+  - MCP-міст у збірці Store зі сталим шляхом запуску;
+  - кнопка «Підключити до Claude»: плагін у сталій теці поза `AppData` (віртуалізація MSIX), команди `claude plugin marketplace add`/`install` для Claude Code, `.mcpb` і ZIP скілів для Claude Desktop.
+- Відкриті рішення: публічний репозиторій плагіна й узгодження версій зі збірками Store; обсяг першого набору скілів; підтримка Free-плану (плагіни й `.mcpb` на Free не підтверджені документацією).
+- Межі: без хмарного розгортання й віддаленого MCP (Desktop Chat локальний MCP із плагіна не запускає — для Chat лишається `.mcpb`). Реальний модельний виклик для перевірки — лише за окремою згодою власника.
+- Залежності: R-32 (#84) і пакети MCP як пульт Obscura; #30 і #119 (збірка Store); R-33 (#88) для ліцензії публічного плагіна.
+- Приймання: SPEC.MD (компоненти, пакування, контракт MCP prompts, безпека запису поза пакетом) + traceability; користувацька документація UA/EN (`mcp`, `install`).
