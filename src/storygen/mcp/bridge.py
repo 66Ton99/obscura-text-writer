@@ -597,7 +597,7 @@ def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServe
     @server.tool()
     def update_settings(story_id: str, section: str, expected_fingerprint: str, fields: dict[str, Any]) -> dict[str, Any]:
         """Змінює лише передані поля одного розділу налаштувань поверх прочитаного (fingerprint розділу з get_settings).
-        section: writing (target_words, ending_goal, genre, tone, point_of_view, tense, rules, previous_tail_chars) або
+        section: writing (target_words, ending_goal, genre, tone, point_of_view, tense, rules, previous_tail_chars, tone_sample) або
         роль planner/writer/editor/memory (provider, model, base_url лише для local, timeout, response_mode, include_usage,
         local_disable_thinking, venice_include_system_prompt, venice_disable_thinking, venice_reasoning_effort,
         context_tokens, max_output_tokens, max_input_chars, temperature, future_plan_mode, future_plan_count,

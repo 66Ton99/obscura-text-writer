@@ -12,16 +12,17 @@ from storygen.providers.models import ProviderSettings, RoleSettings
 from storygen.storage.repository import Repository
 
 SAMPLE = 'Вітер ішов низько. Ліхтар гойднувся раз, другий — і завмер.'
-LABEL = 'ЗРАЗОК ЗВУЧАННЯ — НЕ СЮЖЕТ'
+LABEL = 'ЗРАЗОК ЗВУЧАННЯ — НЕ СЮЖЕТ: ПЕРЕЙМИ РИТМ, ЛЕКСИКУ Й БУДОВУ РЕЧЕНЬ; НЕ БЕРИ ПОДІЙ, ІМЕН ЧИ СВІТУ'
+EN_LABEL = 'VOICE SAMPLE — NOT PLOT: TAKE ITS RHYTHM, VOCABULARY AND SENTENCE STRUCTURE; NOT ITS EVENTS, NAMES OR WORLD'
 
 
 def role(**kwargs):
     return RoleSettings(provider=ProviderSettings(model='fake'), context_tokens=262144, max_output_tokens=2048, **kwargs)
 
 
-def world(tmp_path, sample=SAMPLE):
+def world(tmp_path, sample=SAMPLE, language='uk'):
     repo = Repository(tmp_path)
-    story = repo.create_story(StoryCreate(title='Звучання'))
+    story = repo.create_story(StoryCreate(title='Звучання', language=language))
     scene = repo.create_scene(story.id, SceneCreate(title='Сцена 1', beats='Анна чекає на пристані.'))
     update_story_profile(repo, story.id, StyleProfile(tone='стримано', tone_sample=sample), repo.get_story(story.id).revision)
     brief = repo.save_version(story.id, scene.id, 'brief', 'Завдання сцени.', [])
@@ -36,8 +37,16 @@ def world(tmp_path, sample=SAMPLE):
 def test_draft_rewrite_and_full_edit_get_the_sample_section(tmp_path, stage):
     repo, story, scene, draft = world(tmp_path)
     ctx = build_context(repo, scene.id, stage, role(), editor_source_id=draft.id if stage == 'rewrite' else None)
-    assert ctx.user_text.count(SAMPLE) == 1 and ctx.user_text.count(LABEL) == 1
+    assert ctx.user_text.count(SAMPLE) == 1 and ctx.user_text.count(LABEL + '\n' + SAMPLE) == 1
     assert '"tone_sample"' not in ctx.user_text and 'стримано' in ctx.user_text
+    assert ctx.user_text.index(LABEL) > ctx.user_text.index(f'[version_id={story.style_version_id}]')
+
+
+@pytest.mark.req('STYLE-SAMPLE-001')
+def test_english_story_gets_the_english_label(tmp_path):
+    repo, story, scene, draft = world(tmp_path, sample='The wind ran low.', language='en')
+    ctx = build_context(repo, scene.id, 'draft', role())
+    assert ctx.user_text.count(EN_LABEL + '\nThe wind ran low.') == 1 and LABEL not in ctx.user_text
 
 
 @pytest.mark.req('STYLE-SAMPLE-001')
