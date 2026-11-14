@@ -21,6 +21,8 @@ def arcs_of(story, scene) -> list[str]:
 
 
 def scene_tracked(story, cards, scenes, scene) -> list[str]:
+    if getattr(story, 'series_bible', False):
+        return []  # SERIES-BIBLE: a world bible has no protagonists and no core state
     from ..memory.core import tracked_characters
     inferred = tracked_characters(cards, scenes)
     arcs = arcs_of(story, scene)
