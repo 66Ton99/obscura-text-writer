@@ -106,6 +106,9 @@ def build_dependency_snapshot(
     if scope in FLASHBACK_SCOPES and is_flashback(scene):
         # STORY-TIME: written only for a flashback, so snapshots of a book without flashbacks stay byte for byte the same.
         select('scene', scene.id, 'flashback', True)
+    if scope in BIBLE_SCOPES and getattr(story, 'series_bible', False):
+        # SERIES-BIBLE: written only for a world bible, so other snapshots stay byte for byte the same.
+        select('scene', scene.id, 'series_bible', True)
     if scope in FOREIGN_FLASHBACK_SCOPES:
         from ..memory.flashbacks import flashback_facts_value
         value=flashback_facts_value(view,story,scenes,scene)
@@ -138,6 +141,8 @@ def build_dependency_snapshot(
 
 # STORY-TIME: the scopes whose input depends on the scene being a flashback (memory and every writing stage).
 FLASHBACK_SCOPES={'memory','brief','draft','prose_edit','author_text','author_rewrite'}
+# SERIES-BIBLE: the scopes whose input depends on the book being a world bible (facts-only memory).
+BIBLE_SCOPES={'memory'}
 # SERIES: the scopes whose input includes the start snapshot of a series book.
 SERIES_SCOPES={'memory','brief','draft','prose_edit','author_rewrite'}
 # STORY-TIME: the scopes whose request carries «Минуле інших арок».
@@ -202,6 +207,8 @@ def selector_value(view, selector: DependencySelector):
     if kind=='scene' and field=='flashback':
         from ..memory.story_time import is_flashback
         return is_flashback(view.peek_scene(owner))
+    if kind=='scene' and field=='series_bible':
+        return bool(view.peek_story(view.story.id).series_bible)
     if kind=='scene' and field=='flashback_facts':
         from ..memory.flashbacks import flashback_facts_value
         return flashback_facts_value(view,view.peek_story(view.story.id),view.peek_scenes(view.story.id),view.peek_scene(owner))
@@ -311,6 +318,10 @@ def compare_snapshot(view, snapshot: DependencySnapshot | dict) -> list[Dependen
         # STORY-TIME-S06: a missing flashback selector means «not a flashback»; a flag set later stales the version.
         owner=snapshot_scene(selectors)
         if owner:selectors.append(DependencySelector(kind='scene',owner_id=owner,field='flashback',expected=False))
+    if snapshot.scope in BIBLE_SCOPES and not any(s.field=='series_bible' for s in selectors):
+        # SERIES-BIBLE: a missing selector means «not a world bible»; the flag set later stales the memory.
+        owner=snapshot_scene(selectors)
+        if owner:selectors.append(DependencySelector(kind='scene',owner_id=owner,field='series_bible',expected=False))
     if snapshot.scope in FOREIGN_FLASHBACK_SCOPES and not any(s.field=='flashback_facts' for s in selectors):
         # STORY-TIME-S06: a missing selector means no visible foreign flashback; a new one stales the version.
         owner=snapshot_scene(selectors)

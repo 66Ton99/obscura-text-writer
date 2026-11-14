@@ -46,18 +46,23 @@ USED={'unchanged':(),'changed':('text','evidence_ids'),'unknown':('reason',),'in
 
 # STORY-TIME: facts are the only result of a flashback's memory stage, so it may add more of them.
 FLASHBACK_FACT_LIMIT=6
+# SERIES-BIBLE: a world bible's memory is facts only, with more of them per scene; bounds carry it as `fact_limit`.
+BIBLE_FACT_LIMIT=10
 
 
-def schema_bounds_v4(previous,prose,allowed_character_ids,tracked,day_change,*,keep=None,flashback=False) -> dict:
+def schema_bounds_v4(previous,prose,allowed_character_ids,tracked,day_change,*,keep=None,flashback=False,fact_limit=None) -> dict:
     # Captured inputs of check_v4 and the dynamic schema; day_change is computed per tracked character upstream.
     # tracked lists every tracked character of the story; only those in the cast get core decisions. Slot claims of a
     # character that is no longer tracked (former protagonist) are ordinary mutable states, never frozen.
     active=replay_memory(previous);allowed=list(allowed_character_ids)
-    if flashback:
-        # STORY-TIME: a flashback adds facts only; no core, thread or state decisions, no day change.
-        return {'fragment_ids':[f.id for f in fragment_text(prose)],'mutable':{'character_states':[]},'threads':[],
+    if flashback or fact_limit:
+        # STORY-TIME: a flashback adds facts only; no core, thread or state decisions, no day change. A world bible
+        # (SERIES-BIBLE) uses the same facts-only bounds with its own limit; bounds without `fact_limit` mean 6.
+        bounds={'fragment_ids':[f.id for f in fragment_text(prose)],'mutable':{'character_states':[]},'threads':[],
             'character_ids':allowed,'tracked':{},'unestablished':{},'day_change':{},'slot_registry':SLOT_REGISTRY_VERSION,
             'flashback':True}
+        if fact_limit:bounds['fact_limit']=fact_limit
+        return bounds
     scene=[cid for cid in tracked if cid in allowed]
     unquoted={(c.character_ids[0],c.slot) for c in active.values() if c.slot and c.source_kind=='author' and c.quote is None}
     return {'fragment_ids':[f.id for f in fragment_text(prose)],
@@ -181,7 +186,7 @@ def check_v4(data,previous,bounds) -> list[Violation]:
                 claim=active.get(item.claim_id)
                 if claim is None or claim.category!=category or category=='character_states' and claim.claim_id not in bounds['mutable']['character_states']:
                     result.append(Violation(label,'target_unknown'))
-        limit=FLASHBACK_FACT_LIMIT if flashback and category=='facts' else 3
+        limit=bounds.get('fact_limit',FLASHBACK_FACT_LIMIT) if flashback and category=='facts' else 3
         if len(data[category]['add'])>limit:result.append(Violation(f'{category}.add','add_limit'))
     # Core and thread decisions are fixed by the catalog and never count toward the limit.
     if adds>12:result.append(Violation('$','ops_limit'))
@@ -257,7 +262,7 @@ def memory_wire_v4_schema(bounds) -> dict:
         'timeline':_object({'add':_adds(fragments)})})
     if bounds.get('flashback'):
         properties=schema['properties']
-        properties['facts']['properties']['add']['maxItems']=FLASHBACK_FACT_LIMIT if fragments else 0
+        properties['facts']['properties']['add']['maxItems']=bounds.get('fact_limit',FLASHBACK_FACT_LIMIT) if fragments else 0
         for category in ('character_states','open_threads','timeline'):
             for group in properties[category]['properties'].values():group['maxItems']=0
     return schema
