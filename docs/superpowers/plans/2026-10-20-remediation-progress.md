@@ -2040,3 +2040,10 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Playwright: `series-bible.spec.mjs`, `scene-without-plan.spec.mjs` (desktop і mobile). Під час прогону помічено: сервер Playwright без `PYTHONPATH=<тека>/src` бере пакет основної теки, а не worktree.
 - SPEC.MD: технічний опис обв’язки, S06 із браузерною перевіркою, новий S08; traceability; `manual.md#series-bible-browser`; сайт `series` uk/en.
 - Перехресна перевірка (agy/gemini-3.8-flash) — 6 зауважень до тестів, усі виправлено; тест біблії в кошику виявив дефект: екран серії падав із 404, бо стан біблії відкривав подання контексту твору в кошику. Виправлено: біблія в кошику має стан `bible` без причини.
+
+## 2026-11-14 — R-35: дослідження розповсюдження скілів для Claude
+
+- Запит власника: як співвідносяться скіли й MCP і як користувач збірки зі Store отримує скіли в Claude Desktop і Claude Code.
+- Дослідження `docs/research/2026-11-14-claude-skills-distribution.md` (документація Anthropic і Microsoft станом на 14.11.2026): Desktop Chat не запускає локальний MCP із плагіна, `.mcpb` не містить скілів, локальний маркетплейс Claude Code читається з місця, нові файли MSIX у `AppData` віртуалізуються.
+- Знайдено передумову: MCP-міст не входить у пакет MSIX.
+- Створено GitHub [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) і R-35 у беклозі; місце в черзі визначає власник. Коду не змінено.
