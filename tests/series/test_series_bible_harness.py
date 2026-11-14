@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from storygen.application.settings import AppSettings
-from storygen.book.series import series_status
+from storygen.book.series import SUMMARY_NO_MEMORY, series_status
 from storygen.domain import StoryCreate
 from storygen.mcp.bridge import story_series
 from storygen.plan_sections import cut_series_lines
@@ -28,7 +28,11 @@ def test_patch_makes_a_bible_and_back_a_book(tmp_path):
     with client_for(tmp_path) as client:
         bad = client.patch(f'/api/stories/{story.id}/series', json={'series_id': item.id, 'number': 1, 'bible': True,
                                                                    'expected_revision': story.revision})
-        assert bad.status_code == 400  # a domain refusal, as a taken number
+        assert bad.status_code == 400 and store.SERIES_BIBLE_FIELDS in bad.text  # a domain refusal, as a taken number
+        started = client.patch(f'/api/stories/{story.id}/series', json={'series_id': item.id, 'bible': True,
+                                                                       'start_text': 'Рік 1, опора 1',
+                                                                       'expected_revision': story.revision})
+        assert started.status_code == 400 and store.SERIES_BIBLE_FIELDS in started.text
         made = client.patch(f'/api/stories/{story.id}/series', json={'series_id': item.id, 'bible': True,
                                                                     'expected_revision': story.revision})
         assert made.status_code == 200 and made.json()['series_bible'] is True
@@ -47,7 +51,8 @@ def test_new_bible_endpoint_refuses_a_second_one(tmp_path):
     with client_for(tmp_path) as client:
         made = client.post(f'/api/series/{item.id}/bible', json={'title': 'Біблія світу: Сага'})
         assert made.status_code == 200 and made.json()['series_bible'] is True
-        assert client.post(f'/api/series/{item.id}/bible', json={'title': 'Ще одна'}).status_code == 400
+        second = client.post(f'/api/series/{item.id}/bible', json={'title': 'Ще одна'})
+        assert second.status_code == 400 and store.SERIES_BIBLE_TAKEN in second.text
 
 
 @pytest.mark.req('SERIES-BIBLE-001')
@@ -66,7 +71,7 @@ def test_bible_status_names_its_summary(tmp_path):
     item = store.create_series(repo, 'Сага')
     bible, _ = write_bible(repo, item, finished=False)
     status = series_status(repo, bible)
-    assert status.state == 'bible' and status.summary
+    assert status.state == 'bible' and status.summary == SUMMARY_NO_MEMORY
     other = store.create_series(repo, 'Інша')
     done, _ = write_bible(repo, other)
     assert series_status(repo, done).state == 'bible' and series_status(repo, done).summary is None
@@ -84,6 +89,11 @@ def test_series_screen_lists_the_bible_apart_from_the_axis(tmp_path):
     rows = {row['id']: row for row in view['books']}
     assert rows[bible.id]['bible'] is True and rows[bible.id]['number'] is None and rows[first.id]['bible'] is False
     assert bible.id not in view['placed'] + view['outside'] and view['placed'] == [first.id]
+    repo.set_story_trashed(bible.id, repo.get_story(bible.id).revision, False)  # False: into the trash
+    with client_for(tmp_path) as client:
+        view = client.get(f'/api/series/{item.id}').json()
+    assert view['bible'] == bible.id and bible.id not in view['placed'] + view['outside']
+    assert {row['id']: row for row in view['books']}[bible.id]['trashed'] is True
 
 
 @pytest.mark.req('SERIES-BIBLE-001')
@@ -125,6 +135,7 @@ def test_preamble_bible_line(tmp_path):
     story = repo.create_story(StoryCreate(title='Світ'))
     story, warnings = run(repo, story, 'Серія: Сага\nНомер: біблія\n\n' + SCENES)
     assert story.series_bible is True and story.series_number is None
+    assert warnings == [store.SERIES_CREATED.format(title='Сага')]
     other = repo.create_story(StoryCreate(title='Ще світ'))
     other, warnings = run(repo, other, 'Серія: Сага\nНомер: біблія\n\n' + SCENES)
     assert other.series_id is None and warnings == [store.SERIES_BIBLE_PLAN_TAKEN]

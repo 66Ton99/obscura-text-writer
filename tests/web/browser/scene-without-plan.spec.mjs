@@ -23,6 +23,8 @@ async function proseWithoutPlan(page,request,storyId,title){
   const view=await(await request.get(`/api/stories/${storyId}`)).json();
   const scene=view.scenes.find(item=>item.title===title);
   expect(scene?.heads?.prose,'the prose head').toBeTruthy();
+  const prose=(await(await request.get(`/api/scenes/${scene.id}/statistics`)).json()).materials.prose;
+  expect([prose.version_id,prose.stale,prose.complete]).toEqual([scene.heads.prose,false,true]);
 }
 
 test('an ordinary book writes prose in a new scene without a plan',async({page,request})=>{

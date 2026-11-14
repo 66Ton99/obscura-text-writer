@@ -231,6 +231,8 @@ def snapshot_sources(stories, story) -> list:
 
 def series_status(repo, story) -> SeriesStatus | None:
     if story.series_id and story.series_bible:
+        if story.trashed_at:  # not a source in the trash, and a trashed story has no context view
+            return SeriesStatus('bible')
         view = repo.context_view(story.id)
         return SeriesStatus('bible', summary=book_summary(view, view.story)[1])
     status = _snapshot_status(repo, story)
