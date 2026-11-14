@@ -19,27 +19,37 @@ async function load(){
   const series=view.series;
   select.value=series?series.id:'';form.elements.number.value=series?series.number:'';
   form.elements.start.value=series?.start?`${series.start.offset}, ${series.start.anchor}`:'';
+  form.elements.bible.checked=Boolean(series?.bible);showBible();
   form.elements.new_title.closest('label').hidden=true;
   form.dataset.revision=view.story.revision;
   const status=form.querySelector('[data-series-status]');uiText(status,'textContent',()=>series?statusText(series.status):'');
   const refresh=form.querySelector('[data-series-refresh]');
-  refresh.hidden=!series||!['source_changed','source_finished'].includes(series.status.state);
+  refresh.hidden=!series||!['source_changed','source_finished'].includes(series.status.state);  // never for the bible
   // SERIES-S11: a prequel with a snapshot reviews the facts of later books (series-facts.js).
   form.querySelector('[data-series-facts]').hidden=!series?.status?.prequel||!['fresh','prequel_review'].includes(series.status.state);
   const link=form.querySelector('[data-series-link]');link.hidden=!series;if(series)link.href=`/series/${series.id}`;
 }
 
+// SERIES-BIBLE: the world bible has a series but no number and no «Початок», so both fields hide.
+function showBible(){
+  const bible=form.elements.bible.checked;
+  form.elements.number.closest('label').hidden=bible;form.elements.start.closest('label').hidden=bible;
+  form.querySelector('#story-series-help').hidden=bible;
+}
+
 function install(){
   form.hidden=false;
+  form.elements.bible.onchange=showBible;
   form.elements.series_id.onchange=()=>{form.elements.new_title.closest('label').hidden=form.elements.series_id.value!==NEW};
   form.onsubmit=async event=>{
     event.preventDefault();
     try{
       let seriesId=form.elements.series_id.value||null;
       if(seriesId===NEW)seriesId=(await api('/api/series',json('POST',{title:form.elements.new_title.value}))).id;
-      const number=form.elements.number.value?Number(form.elements.number.value):null;
-      await api(`/api/stories/${storyId}/series`,json('PATCH',{series_id:seriesId,number:seriesId?number:null,
-        start_text:seriesId?form.elements.start.value:null,expected_revision:Number(form.dataset.revision)}));
+      const bible=Boolean(seriesId)&&form.elements.bible.checked;
+      const number=form.elements.number.value&&!bible?Number(form.elements.number.value):null;
+      await api(`/api/stories/${storyId}/series`,json('PATCH',{series_id:seriesId,number:seriesId?number:null,bible,
+        start_text:seriesId&&!bible?form.elements.start.value:null,expected_revision:Number(form.dataset.revision)}));
       notice(msg('series.saved'));
     }catch(error){notice(error.message,'error')}
     await load().catch(error=>notice(error.message,'error'));

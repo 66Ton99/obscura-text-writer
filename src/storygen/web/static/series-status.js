@@ -15,6 +15,7 @@ export function statusText(status){
     source_finished:t('series.status.source_finished'),
     source_changed:t('series.status.source_changed',{p0:number})+changed,
     prequel_review:t('series.status.prequel_review'),
+    bible:status.summary?t('series.status.bible_draft'):t('series.status.bible'),
   }[status.state]||'')+prequel;
 }
 

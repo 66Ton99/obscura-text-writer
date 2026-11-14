@@ -28,7 +28,8 @@ function row(kind,p,a,item,number){
   input.setAttribute('aria-label',input.placeholder);
   input.oninput=()=>rename(buffer,p,a,input.value);
   line.append(input);
-  if(kind==='arc')line.append(protagonistField(p,a,item,input.placeholder));
+  // SERIES-BIBLE: the world bible has no protagonists.
+  if(kind==='arc'&&!view.series?.bible)line.append(protagonistField(p,a,item,input.placeholder));
   line.append(button('book.panel.up',()=>apply(move(buffer,p,a,-1))),button('book.panel.down',()=>apply(move(buffer,p,a,1))),
     button('book.panel.delete',()=>apply(remove(buffer,p,a))));
   // STORY-TIME: with a flashback in the book, an arc without a known start sees no flashbacks of other arcs.
