@@ -77,3 +77,14 @@ def test_suggestion_http_readiness_history_and_atomic_save(tmp_path):
         body['expected_revision']=1
         assert c.put(base,json=body).status_code==409
         assert c.get(base).json()['card']['annotation']=='Після перегляду'
+
+
+def test_generate_cover_http(client):
+    story=client.post('/api/stories',json={'title':'Маяк'}).json()
+    url=f"/api/stories/{story['id']}/publication/cover/generate"
+    asset=client.post(url,json={'palette':'paper','title':'Незбережена назва'}).json()
+    assert (asset['width'],asset['height'],asset['mime_type'])==(1600,2560,'image/png')
+    assert client.get(f"/api/stories/{story['id']}/publication/covers/{asset['id']}").status_code==200
+    assert client.get(f"/api/stories/{story['id']}/publication").json()['card']['cover_id'] is None
+    assert client.post(url,json={'palette':'neon'}).status_code==422
+    assert client.post(url,json={'palette':'ink','author_ids':['f'*32]}).status_code==404

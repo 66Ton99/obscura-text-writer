@@ -8,7 +8,7 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartParser, MultiPartException
 
 from ..domain import DomainModel
-from ..publication_models import PublicationData
+from ..publication_models import Identifier, PublicationData
 from ..publication_suggestions import SuggestionAcceptance
 from ..publication.covers import MAX_BYTES
 from ..publication.genres import genre_catalog
@@ -25,6 +25,15 @@ class SignatureUpdate(DomainModel):
     expected_revision: int = Field(ge=0)
     display_name: str | None = Field(default=None,min_length=1,max_length=300)
     archived: bool | None = None
+
+
+class CoverGenerate(DomainModel):
+    palette: Literal['ink','paper','wine','forest']
+    title: str = Field(default='',max_length=300)
+    cycle_title: str = Field(default='',max_length=300)
+    cycle_number: int | None = Field(default=None,ge=1,le=1000000)
+    author_ids: list[Identifier] = Field(default_factory=list,max_length=20)
+    language: str = Field(default='',max_length=63)
 
 
 class CardUpdate(DomainModel):
@@ -114,6 +123,12 @@ async def upload_cover(story_id: str,request: Request):
         return repo.publication('upload_cover',story_id=story_id,content=content)
     finally:
         await form.close()
+
+
+@router.post('/api/stories/{story_id}/publication/cover/generate')
+def generate_cover(story_id: str,body: CoverGenerate,request: Request):
+    """R16-COVER-S03: a text cover from the passed (possibly unsaved) card fields; the card itself is unchanged."""
+    return request.app.state.repo.publication('generate_cover',story_id=story_id,**body.model_dump())
 
 
 @router.get('/api/stories/{story_id}/publication/covers/{id}')

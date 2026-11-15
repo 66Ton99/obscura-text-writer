@@ -46,6 +46,20 @@ def _publication_snapshot(repo,db,story_id):
 
 
 def operation(repo,action,**data):
+    if action=='generate_cover':
+        # R16-COVER-S03: draw from the passed text, then register through the ordinary upload path.
+        from ..publication import text_cover
+        if data['palette'] not in text_cover.PALETTES:raise ValueError('Невідома палітра обкладинки')
+        text=PublicationData(title=data['title'],cycle_title=data['cycle_title'],cycle_number=data['cycle_number'],
+            author_ids=data['author_ids'],language=data['language'] or 'uk')
+        with repo.db.connection() as db:
+            db.execute('BEGIN')
+            story=repo._active_story(db,data['story_id'])
+            names=[signature(db,id).display_name for id in text.author_ids]
+        language=data['language'] or story.language
+        content=text_cover.render_text_cover(title=text.title or story.title,
+            series=text_cover.series_text(text.cycle_title,text.cycle_number,language),authors=names,palette=data['palette'])
+        return operation(repo,'upload_cover',story_id=story.id,content=content)
     if action=='upload_cover':
         from ..publication.covers import image_info
         # Check owner before decoding; repeat under write lock before registration.
