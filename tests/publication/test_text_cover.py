@@ -41,7 +41,15 @@ def test_render_is_a_valid_cover(palette):
     png = tc.render_text_cover(title='Десяточка', series='ДЕСЯТОЧНИКИ · КНИГА 1', authors=["Ім'я Автора"], palette=palette)
     assert image_info(png) == ('image/png', 1600, 2560)
     with Image.open(io.BytesIO(png)) as image:
-        assert image.convert('RGB').getpixel((5, 5)) == Image.new('RGB', (1, 1), tc.PALETTES[palette].background).getpixel((0, 0))
+        rgb = image.convert('RGB')
+        assert rgb.getpixel((5, 5)) == Image.new('RGB', (1, 1), tc.PALETTES[palette].background).getpixel((0, 0))
+        colour = lambda name: Image.new('RGB', (1, 1), getattr(tc.PALETTES[palette], name)).getpixel((0, 0))
+        def inked(box, name):
+            return sum(count for count, pixel in rgb.crop(box).getcolors(maxcolors=1 << 24) if pixel == colour(name))
+        # Glyph cores carry the exact palette colour: series in accent, title and authors in text colour.
+        assert inked((120, 180, 1480, 260), 'accent') > 300, 'series line is drawn'
+        assert inked((120, 1200, 1480, 1360), 'text') > 3000, 'title is drawn'
+        assert inked((120, 2280, 1480, 2360), 'text') > 300, 'authors line is drawn'
 
 
 def test_short_title_is_one_line_at_220():

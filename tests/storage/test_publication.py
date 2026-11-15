@@ -167,15 +167,15 @@ def test_generate_cover_registers_asset_without_touching_card(tmp_path):
     assert check_integrity(tmp_path).ok
 
 
-@pytest.mark.parametrize('case',['unknown_signature','foreign_story','trashed_story'])
-def test_generate_cover_refusals_leave_no_asset(tmp_path,case):
+@pytest.mark.parametrize('overrides,trash',[({'author_ids':['f'*32]},False),({'story_id':'e'*32},False),({},True)],
+                         ids=['unknown_signature','foreign_story','trashed_story'])
+def test_generate_cover_refusals_leave_no_asset(tmp_path,overrides,trash):
     repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Маяк'))
-    args=dict(story_id=story.id,palette='ink',title='',cycle_title='',cycle_number=None,author_ids=[],language='')
-    if case=='unknown_signature':args['author_ids']=['f'*32]
-    if case=='foreign_story':args['story_id']='e'*32
-    if case=='trashed_story':repo.set_story_trashed(story.id,0,False)
+    repo.set_story_trashed(story.id,0,False) if trash else None
+    args={**dict(story_id=story.id,palette='ink',title='',cycle_title='',cycle_number=None,author_ids=[],language=''),**overrides}
     with pytest.raises(KeyError):repo.publication('generate_cover',**args)
     with repo.db.connection() as db:assert db.execute('SELECT COUNT(*) FROM publication_assets').fetchone()[0]==0
+    assert not [p for p in tmp_path.rglob('*') if p.suffix in {'.png','.jpg'}], 'no cover file is written'
 
 
 def test_generate_cover_falls_back_to_story_title_and_language(tmp_path,monkeypatch):

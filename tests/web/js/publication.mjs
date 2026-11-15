@@ -52,7 +52,7 @@ globalThis.fetch=async(url,options={})=>{
   else if(url.endsWith('/cover/generate')){
     generateCalls++;generateBody=JSON.parse(options.body);
     if(holdGenerate)await new Promise(resolve=>releaseGenerate=resolve);
-    ok=!generateFailure;data=ok?{id:'generated'}:{detail:'cycle_number: має бути ≥ 1'};
+    ok=!generateFailure;data=ok?{id:'generated'+generateCalls}:{detail:'cycle_number: має бути ≥ 1'};
   }
   else if(url.endsWith('/cover')){ok=!uploadFailure;data=ok?{id:'cover'}:{detail:'Невірна обкладинка'};}
   else if(options.method==='PUT'){
@@ -75,6 +75,11 @@ const emptyAuthor=nodes['#publication-author-choice'].children[0];
 setLocale('en');assert.equal(emptyAuthor.textContent,'Choose a credit from the directory');
 setLocale('uk');assert.equal(emptyAuthor.textContent,'Оберіть підпис із довідника');
 assert.equal(nodes['#publication-save'].disabled,true,'Locale switch must not dirty the card');
+// R16-COVER-S04: generating from a clean card alone makes it dirty, and Save sends the generated cover_id.
+await nodes['#publication-cover-generate'].onclick();
+assert.equal(nodes['#publication-save'].disabled,false,'Generating from a clean card makes the form dirty');
+await form.onsubmit({preventDefault(){}});
+assert.equal(lastSave.data.cover_id,'generated1');assert.equal(nodes['#publication-save'].disabled,true);
 // Generation never fills the form. Review preserves a field edited during the request.
 fields.genres.append(new Option('Оповідання','short_story'));
 proposals=[{attempt_id:'attempt',fingerprint:'hash',model:'fake-planner',created_at:'now',can_apply:true,warnings:['Порожнє поле genres <img>: оберіть вручну.'],
@@ -121,19 +126,20 @@ assert.equal(fields.title.value,'Не втратити');
 const putsBefore=putCalls;
 fields.title.value='Незбережена назва';form.handlers.input({target:{name:'title'}});
 nodes['#publication-cover-palette'].value='wine';
+const callsBefore=generateCalls;
 holdGenerate=true;
 const firstGenerate=nodes['#publication-cover-generate'].onclick();await tick();
 assert.equal(nodes['#publication-cover-generate'].disabled,true,'Generate is disabled while busy');
 await nodes['#publication-cover-generate'].onclick();
 releaseGenerate();await firstGenerate;holdGenerate=false;
-assert.equal(generateCalls,1,'Busy blocks a second generate');
+assert.equal(generateCalls,callsBefore+1,'Busy blocks a second generate');
 assert.deepEqual(Object.keys(generateBody).sort(),['author_ids','cycle_number','cycle_title','language','palette','title']);
 assert.equal(generateBody.title,'Незбережена назва');assert.equal(generateBody.palette,'wine');
-assert.equal(nodes['#publication-cover'].src,'/api/stories/story/publication/covers/generated');
+const generatedSrc=`/api/stories/story/publication/covers/generated${generateCalls}`;
+assert.equal(nodes['#publication-cover'].src,generatedSrc);
 assert.equal(putCalls,putsBefore,'Generating never saves the card');
-assert.equal(nodes['#publication-save'].disabled,false,'The generated cover makes the form dirty');
 generateFailure=true;notice.dataset.kind='';
 await nodes['#publication-cover-generate'].onclick();
-assert.equal(nodes['#publication-cover'].src,'/api/stories/story/publication/covers/generated');
+assert.equal(nodes['#publication-cover'].src,generatedSrc);
 assert.equal(notice.dataset.kind,'error');assert.equal(fields.title.value,'Незбережена назва');
 console.log('publication dirty/async save/CAS/upload/text cover passed');
