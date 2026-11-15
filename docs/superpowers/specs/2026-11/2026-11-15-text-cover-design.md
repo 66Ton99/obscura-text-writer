@@ -75,6 +75,8 @@ Spec-review: codex/gpt-6.1-sol @ f043e7a (author: claude) — 2 findings: 2 fixe
 | `SPEC.MD`, `docs/verification/traceability.json` | Розширення R16-COVER, новий MCP-сценарій, зміна MCP-BRIDGE-S06 |
 | `docs/site/{uk,en}/publication.md`, `mcp.md`, знімок картки | Опис кнопки й інструмента |
 
+_Поправка 15.11.2026 (план периферії): фактична сигнатура — `render_text_cover(*, title, series, authors, palette) -> bytes`. Тут `series` — готовий рядок із `series_text(cycle_title, cycle_number, language)`, `authors` — список імен, а розкладку робить `layout_text_cover`. Розділ «Для власника» не змінюється._
+
 ### Контракт HTTP
 
 `POST /api/stories/{story_id}/publication/cover/generate`
