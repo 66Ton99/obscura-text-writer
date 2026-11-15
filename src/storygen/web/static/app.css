@@ -96,6 +96,7 @@ h3 { font-size: 15px; font-weight: 650; }
 .storybar h1 { margin: 6px 0 0; font-size: 29px; }
 .storybar > div:first-child { flex: 1; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions.cover-generate { align-items: flex-end; }
 .workbench { display: grid; grid-template-columns: 235px minmax(0, 1fr) 265px; min-height: calc(100vh - 190px); }
 .scene-panel, .context-panel { min-width: 0; padding: 24px 18px; }
 .scene-panel { border-right: 1px solid var(--border-color); }

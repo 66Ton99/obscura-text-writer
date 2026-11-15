@@ -18,8 +18,9 @@ class Element{
   set innerHTML(value){throw Error('Untrusted publication data must not use innerHTML');}
 }
 const nodes={};
-for(const key of ['page','form','save','status','reload','cover-upload','cover-remove','author-choice','author-add','translator-choice','translator-add','authors','translators','cover','cover-empty','signatures','signature-create','cover-form','suggest','suggest-cancel','suggest-status','suggestions','suggestion-history'])nodes['#publication-'+key]=new Element();
+for(const key of ['page','form','save','status','reload','cover-upload','cover-remove','author-choice','author-add','translator-choice','translator-add','authors','translators','cover','cover-empty','signatures','signature-create','cover-form','cover-palette','cover-generate','suggest','suggest-cancel','suggest-status','suggestions','suggestion-history'])nodes['#publication-'+key]=new Element();
 nodes['#publication-page'].dataset.storyId='story';
+nodes['#publication-cover-palette'].value='ink';
 const form=nodes['#publication-form'];
 const fields={};
 for(const key of ['title','language','annotation','cycle_title','publication_date','publisher','isbn','rights','source_language','cycle_number','keywords','genres'])fields[key]=new Element();
@@ -36,6 +37,7 @@ installDialogFixture(globalThis.document);
 globalThis.FormData=class{append(){}};
 let revision=0,hold=false,release,uploadFailure=false,initialRelease;
 let proposals=[],suggestionBody=null,runCalls=0,lastSave;
+let putCalls=0,generateCalls=0,generateBody=null,generateFailure=false,holdGenerate=false,releaseGenerate;
 const initialReady=new Promise(resolve=>initialRelease=resolve);
 let card={title:'',language:'uk',annotation:'',cycle_title:'',publication_date:'',publisher:'',isbn:'',rights:'',source_language:'',cycle_number:null,keywords:[],genres:[],author_ids:[],translator_ids:[],cover_id:null,story_id:'story',revision};
 const person={id:'person',display_name:'Тінь <img>',revision:0};
@@ -47,10 +49,15 @@ globalThis.fetch=async(url,options={})=>{
   else if(url.endsWith('/suggestions/readiness'))data={ready:true,roles:{planner:{model:'fake-planner'}}};
   else if(url.endsWith('/suggestions'))data={proposals,history:[],active_runs:[]};
   else if(url==='/api/runs'){runCalls++;suggestionBody=JSON.parse(options.body);data={id:'run'};}
+  else if(url.endsWith('/cover/generate')){
+    generateCalls++;generateBody=JSON.parse(options.body);
+    if(holdGenerate)await new Promise(resolve=>releaseGenerate=resolve);
+    ok=!generateFailure;data=ok?{id:'generated'}:{detail:'cycle_number: має бути ≥ 1'};
+  }
   else if(url.endsWith('/cover')){ok=!uploadFailure;data=ok?{id:'cover'}:{detail:'Невірна обкладинка'};}
   else if(options.method==='PUT'){
     const body=JSON.parse(options.body);
-    lastSave=body;
+    lastSave=body;putCalls++;
     if(hold)await new Promise(resolve=>release=resolve);
     if(body.expected_revision!==revision){ok=false;data={detail:'Конфлікт картки'};}
     else{card={...card,...body.data};revision++;data=current();}
@@ -110,4 +117,23 @@ uploadFailure=true;
 await nodes['#publication-cover-form'].onsubmit({preventDefault(){},currentTarget:nodes['#publication-cover-form']});
 assert.equal(nodes['#publication-cover'].src,'/api/stories/story/publication/covers/cover');
 assert.equal(fields.title.value,'Не втратити');
-console.log('publication dirty/async save/CAS/upload passed');
+// R16-COVER-S04: the text cover takes unsaved form values, never saves the card, and busy blocks a second request.
+const putsBefore=putCalls;
+fields.title.value='Незбережена назва';form.handlers.input({target:{name:'title'}});
+nodes['#publication-cover-palette'].value='wine';
+holdGenerate=true;
+const firstGenerate=nodes['#publication-cover-generate'].onclick();await tick();
+assert.equal(nodes['#publication-cover-generate'].disabled,true,'Generate is disabled while busy');
+await nodes['#publication-cover-generate'].onclick();
+releaseGenerate();await firstGenerate;holdGenerate=false;
+assert.equal(generateCalls,1,'Busy blocks a second generate');
+assert.deepEqual(Object.keys(generateBody).sort(),['author_ids','cycle_number','cycle_title','language','palette','title']);
+assert.equal(generateBody.title,'Незбережена назва');assert.equal(generateBody.palette,'wine');
+assert.equal(nodes['#publication-cover'].src,'/api/stories/story/publication/covers/generated');
+assert.equal(putCalls,putsBefore,'Generating never saves the card');
+assert.equal(nodes['#publication-save'].disabled,false,'The generated cover makes the form dirty');
+generateFailure=true;notice.dataset.kind='';
+await nodes['#publication-cover-generate'].onclick();
+assert.equal(nodes['#publication-cover'].src,'/api/stories/story/publication/covers/generated');
+assert.equal(notice.dataset.kind,'error');assert.equal(fields.title.value,'Незбережена назва');
+console.log('publication dirty/async save/CAS/upload/text cover passed');
