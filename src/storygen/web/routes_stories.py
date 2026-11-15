@@ -57,7 +57,14 @@ def change_story_language(id: str,data: StoryLanguageChange,request: Request):
 
 @router.get("/")
 def library(request: Request):
-    return request.app.state.templates.TemplateResponse(request=request,name="library.html",context={"stories":request.app.state.repo.list_stories()})
+    return request.app.state.templates.TemplateResponse(request=request,name="library.html",context={"entries":_library_entries(request.app.state.repo)})
+
+
+def _library_entries(repo):
+    # SERIES-LIBRARY: series books gathered into a group that stands where its newest book stands.
+    from ..book.library import library_entries
+    from ..storage import series as series_store
+    return library_entries(repo.list_stories(),series_store.list_series(repo))
 
 
 @router.get("/stories/{id}")

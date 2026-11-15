@@ -41,6 +41,8 @@ Only a series without books can be deleted, including books in the trash. A book
 
 Under the title of a series book in the workspace you see the series title and number. The link leads to the series screen.
 
+**In the library** the books of a series stand together in one group headed «Series «…»»: the world bible first, then the books by number. The group stands where its newest book would stand, and every book card shows «Series «…», book N». A book in the trash leaves the group. The group heading leads to the series screen.
+
 ## Snapshot of the previous book
 
 The snapshot is taken by itself when a book enters a series with number 2 or higher and the previous book is already **finished**: its last scene has current memory (or the book-end merge of the arcs is usable).

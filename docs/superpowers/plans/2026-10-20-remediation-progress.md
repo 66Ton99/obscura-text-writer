@@ -2047,3 +2047,10 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Дослідження `docs/research/2026-11-14-claude-skills-distribution.md` (документація Anthropic і Microsoft станом на 14.11.2026): Desktop Chat не запускає локальний MCP із плагіна, `.mcpb` не містить скілів, локальний маркетплейс Claude Code читається з місця, нові файли MSIX у `AppData` віртуалізуються.
 - Знайдено передумову: MCP-міст не входить у пакет MSIX.
 - Створено GitHub [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) і R-35 у беклозі; місце в черзі визначає власник. Коду не змінено.
+
+## 2026-11-15 — #31: серії в бібліотеці
+
+- Зауваження власника: бібліотека не групує книги серій, а картки не мають назви серії й номера. Схему погоджено власником 15.11.2026: група серії на місці найновішої книги, біблія перша, далі за номером; рядок «Серія «…», книга N» на картці; у збірці без серій групи є, але без посилання на екран серії (моє рішення).
+- `book/library.py::library_entries`, `library.html` (секція `.library-series`, рядок `.card-series`), ключі `library.series|book|bible` uk/en, стиль групи на всю ширину сітки.
+- SPEC.MD: технічний опис «Бібліотека» і SERIES-S12; traceability; `manual.md#series-library-browser`; сайт `series` uk/en.
+- Тести: `tests/series/test_series_library.py` (3), Playwright `library-series.spec.mjs` (desktop і mobile).
