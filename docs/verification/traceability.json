@@ -2098,7 +2098,7 @@
     {
       "id": "R16-COVER-S03",
       "requirement": "R16-COVER",
-      "scope": "Ядро генерації текстової обкладинки: розкладка, палітри, межі тексту, реєстрація без зміни картки, відмови. Кнопку в картці підтверджує план периферії. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Ядро генерації текстової обкладинки: розкладка, палітри, межі тексту, реєстрація без зміни картки, відмови. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
         "tests/publication/test_text_cover.py::test_palettes_are_the_four_approved",
         "tests/publication/test_text_cover.py::test_book_word_ignores_case",
@@ -2116,7 +2116,17 @@
         "tests/storage/test_publication.py::test_generate_cover_rejects_unknown_palette_and_long_title",
         "tests/web/test_publication_api.py::test_generate_cover_http",
         "tests/storage/test_publication.py::test_generate_cover_blank_effective_title_is_a_clear_refusal",
-        "tests/storage/test_publication.py::test_generate_cover_language_is_stripped_and_falls_back_to_story_language"
+        "tests/storage/test_publication.py::test_generate_cover_language_is_stripped_and_falls_back_to_story_language",
+        "tests/web/test_localization.py::test_text_cover_refusals_are_translated"
+      ]
+    },
+    {
+      "id": "R16-COVER-S04",
+      "requirement": "R16-COVER",
+      "scope": "Кнопка й вибір палітри в картці: поточні значення форми, без Save, блокування повторного запиту, відмова без зміни показу; обрізання пробілів до перевірки довжини. Вигляд перевірено вручну в застосунку. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/web/test_publication_ui.py::test_publication_dirty_async_save_conflict_and_upload",
+        "tests/web/test_publication_api.py::test_generate_cover_strips_text_before_limits"
       ]
     },
     {
