@@ -3,7 +3,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response
-from pydantic import Field
+from pydantic import Field, field_validator
 from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartParser, MultiPartException
 
@@ -34,6 +34,12 @@ class CoverGenerate(DomainModel):
     cycle_number: int | None = Field(default=None,ge=1,le=1000000)
     author_ids: list[Identifier] = Field(default_factory=list,max_length=20)
     language: str = Field(default='',max_length=63)
+
+    @field_validator('title','cycle_title','language',mode='before')
+    @classmethod
+    def strip_text(cls,value):
+        # Same order as PublicationData: trailing spaces never trip the length limit.
+        return value.strip() if isinstance(value,str) else value
 
 
 class CardUpdate(DomainModel):

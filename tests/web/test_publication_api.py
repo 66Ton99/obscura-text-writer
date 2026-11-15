@@ -88,3 +88,11 @@ def test_generate_cover_http(client):
     assert client.get(f"/api/stories/{story['id']}/publication").json()['card']['cover_id'] is None
     assert client.post(url,json={'palette':'neon'}).status_code==422
     assert client.post(url,json={'palette':'ink','author_ids':['f'*32]}).status_code==404
+
+
+def test_generate_cover_strips_text_before_limits(client):
+    story=client.post('/api/stories',json={'title':'Маяк'}).json()
+    response=client.post(f"/api/stories/{story['id']}/publication/cover/generate",
+        json={'palette':'ink','title':'Н'*300+'  ','cycle_title':' Цикл ','language':' uk '})
+    assert response.status_code==200
+    assert response.json()['width']==1600
