@@ -2081,3 +2081,10 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Пробне збирання `build_store.py --skip-msix` (15.11.2026, інтерпретатор Codex runtime, не офіційний CPython): 549 файлів, 165,2 МБ, з них міст `_mcp` 69,6 МБ; `obscura-mcp.exe --help` працює, `THIRD-PARTY-NOTICES.txt` містить `mcp 2.3.0`. Міст дублює частину залежностей головного exe — розмір пакета зріс приблизно на 70 МБ.
 - Дефект, знайдений живим запуском замороженого моста: на інтерпретаторі з `vendor_runtime_files` міст падав під час створення TLS-контексту `httpx` (файла не було в `_mcp`). Виправлено: файли кладуться й у `_mcp`, а збирання перевіряє `obscura-mcp.exe --self-check`. Повторний живий запуск із Python-клієнтом: порожня тека, Obscura запущена ~4 с, `list_stories` без помилки; Obscura закривається разом із мостом, бо Python MCP SDK тримає міст у завданні з `KILL_ON_JOB_CLOSE` без дозволу виходу — для Claude Desktop/Code це перевіряє ручна процедура.
 - Не перевірено наживо: псевдонім із підписаного пакета, вихід з завдання клієнта, відсутність вікна консолі (`manual.md#store-mcp-package`).
+
+## 2026-11-15 — Текстова обкладинка з картки публікації (поза беклогом, рішення власника)
+
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-15-text-cover-design.md` (затверджено 15.11.2026; крос-рев'ю codex: 2 зауваження, обидва виправлено), план ядра `docs/superpowers/plans/2026-11/2026-11-15-text-cover-core.md`.
+- Ядро: `publication/text_cover.py` (Pillow + Noto Serif, 4 палітри, перенос і обрізання «…»), дія сховища `generate_cover` через чинний `upload_cover`, `POST /api/stories/{id}/publication/cover/generate`, MCP-інструмент `generate_cover` (інструментів 26).
+- SPEC.MD: R16-COVER (вимога, S03, технічний опис), MCP-BRIDGE (перелік, S06, S52); traceability.
+- Далі: план периферії — кнопка й вибір палітри в картці, переклади, браузерний тест, сайт uk/en, знімок.
