@@ -10,6 +10,8 @@
 
 A Windows installer will come later (#30). Until then, install the application from source with the steps below.
 
+Obscura connects to chat clients (Claude Desktop, Claude Code) with the “Connect to Claude” button in the library; see [Chat clients (MCP)](mcp.md).
+
 ## Installing from source
 
 Download the [obscura-text-writer](https://github.com/ysilvestrov/obscura-text-writer) repository and open PowerShell in its folder:
