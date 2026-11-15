@@ -1,5 +1,7 @@
 import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -22,7 +24,7 @@ def make_site(root,pages=None):
         for lang,text in texts.items():(site/lang/f'{slug}.md').write_text(text,encoding='utf-8')
     manifest={'languages':['uk','en'],'pages':[{'slug':slug,'title':{'uk':slug,'en':slug}} for slug in pages]}
     (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
-    for name in ['template.html','site.css']:(site/name).write_text((ROOT/'docs/site'/name).read_text(encoding='utf-8'),encoding='utf-8')
+    for name in ['template.html','site.css','site.js']:(site/name).write_text((ROOT/'docs/site'/name).read_text(encoding='utf-8'),encoding='utf-8')
     (root/'docs/images/site').mkdir(parents=True,exist_ok=True)
     return site
 
@@ -63,9 +65,9 @@ def test_build_is_relative_and_deterministic(tmp_path):
             path=target.split('#',1)[0]
             if path:assert ((tmp_path/'a'/rel).parent/path).resolve().is_file(),(rel,target)
     en=(tmp_path/'a/en/install.html').read_text(encoding='utf-8')
-    assert '<html lang="en">' in en and 'href="../install.html"' in en and 'href="../site.css"' in en
+    assert '<html lang="en" data-alt="../install.html">' in en and 'href="../install.html"' in en and 'href="../site.css"' in en
     uk=(tmp_path/'a/install.html').read_text(encoding='utf-8')
-    assert '<html lang="uk">' in uk and 'href="en/install.html"' in uk
+    assert '<html lang="uk" data-alt="en/install.html">' in uk and 'href="en/install.html"' in uk
 
 
 def synced(root,**pages):
@@ -237,3 +239,78 @@ def test_heading_id_uses_visible_text_only(tmp_path):
     make_site(tmp_path,{'install':{'uk':'# Розділ з `code` і [лінком](first-story.md)\n','en':'# Install\n'},'first-story':{'uk':'# A\n','en':'# A\n'}})
     build(tmp_path,tmp_path/'_site')
     assert 'id="розділ-з-code-і-лінком"' in (tmp_path/'_site/install.html').read_text(encoding='utf-8')
+
+
+def with_base(site,base='https://obscurawriter.com/'):
+    manifest=json.loads((site/'site.json').read_text(encoding='utf-8'))
+    manifest['base_url']=base;manifest['description']={'uk':'Опис "сайту"','en':'Site description'}
+    manifest['pages'].insert(0,{'slug':'index','title':{'uk':'Про','en':'About'}})
+    for lang in ['uk','en']:(site/lang/'index.md').write_text('# Obscura\n',encoding='utf-8')
+    (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
+
+
+@pytest.mark.req('DOCS-SITE')
+def test_public_address_gives_canonical_alternates_and_seo_files(tmp_path):
+    with_base(make_site(tmp_path));out=tmp_path/'_site'
+    build(tmp_path,out)
+    uk=(out/'install.html').read_text(encoding='utf-8')
+    assert '<link rel="canonical" href="https://obscurawriter.com/install.html">' in uk
+    assert '<link rel="alternate" hreflang="uk" href="https://obscurawriter.com/install.html">' in uk
+    assert '<link rel="alternate" hreflang="en" href="https://obscurawriter.com/en/install.html">' in uk
+    assert '<link rel="alternate" hreflang="x-default" href="https://obscurawriter.com/en/install.html">' in uk
+    assert '<meta property="og:url" content="https://obscurawriter.com/install.html">' in uk and 'content="uk_UA"' in uk
+    assert '<meta name="description" content="Опис &quot;сайту&quot;">' in uk
+    assert 'data-alt="en/install.html"' in uk and 'data-lang="en"' in uk and '<script src="site.js"></script>' in uk
+    en=(out/'en/install.html').read_text(encoding='utf-8')
+    assert '<link rel="canonical" href="https://obscurawriter.com/en/install.html">' in en and 'content="en_US"' in en
+    assert 'data-alt="../install.html"' in en and '<script src="../site.js"></script>' in en
+    assert '<link rel="canonical" href="https://obscurawriter.com/">' in (out/'index.html').read_text(encoding='utf-8')
+    assert '<link rel="canonical" href="https://obscurawriter.com/en/">' in (out/'en/index.html').read_text(encoding='utf-8')
+    assert 'Sitemap: https://obscurawriter.com/sitemap.xml' in (out/'robots.txt').read_text(encoding='utf-8')
+    sitemap=(out/'sitemap.xml').read_text(encoding='utf-8')
+    for url in ['https://obscurawriter.com/','https://obscurawriter.com/en/','https://obscurawriter.com/install.html','https://obscurawriter.com/en/first-story.html']:
+        assert f'<loc>{url}</loc>' in sitemap,url
+    missing=(out/'404.html').read_text(encoding='utf-8')
+    assert 'noindex' in missing
+    links=re.findall(r'(?:href|src)="([^"]+)"',missing)
+    assert links and all(link.startswith('https://obscurawriter.com/') for link in links),links
+    build(tmp_path,tmp_path/'again')
+    for name in ['sitemap.xml','robots.txt','404.html','install.html']:assert (out/name).read_bytes()==(tmp_path/'again'/name).read_bytes(),name
+
+
+@pytest.mark.req('DOCS-SITE')
+@pytest.mark.parametrize('base',['http://obscurawriter.com/','https://obscurawriter.com','https:///','https://obscura writer.com/'])
+def test_bad_public_address_stops_the_build(tmp_path,base):
+    with_base(make_site(tmp_path),base)
+    with pytest.raises(ValueError,match='base_url'):build(tmp_path,tmp_path/'_site')
+
+
+@pytest.mark.req('DOCS-SITE')
+def test_build_without_public_address_has_no_seo_files(tmp_path):
+    make_site(tmp_path);out=tmp_path/'_site'
+    build(tmp_path,out)
+    assert not any((out/name).exists() for name in ['robots.txt','sitemap.xml','404.html'])
+    page=(out/'install.html').read_text(encoding='utf-8')
+    assert 'rel="canonical"' not in page and 'og:url' not in page and (out/'site.js').is_file()
+
+
+@pytest.mark.req('DOCS-SITE')
+def test_site_language_choice():
+    node=shutil.which('node')
+    if not node:pytest.skip('Node required')
+    result=subprocess.run([node,str(ROOT/'tests/web/js/site_lang.mjs'),str(ROOT)],capture_output=True,encoding='utf-8',errors='replace',timeout=15)
+    assert result.returncode==0,result.stdout+result.stderr
+
+
+@pytest.mark.req('DOCS-SITE')
+def test_privacy_and_report_pages_carry_their_addresses():
+    manifest=json.loads((ROOT/'docs/site/site.json').read_text(encoding='utf-8'))
+    slugs=[page['slug'] for page in manifest['pages']]
+    assert 'privacy' in slugs and 'report' in slugs
+    assert manifest['base_url']=='https://obscurawriter.com/'
+    for lang in ['uk','en']:
+        privacy=(ROOT/f'docs/site/{lang}/privacy.md').read_text(encoding='utf-8')
+        report=(ROOT/f'docs/site/{lang}/report.md').read_text(encoding='utf-8')
+        assert 'mailto:privacy@obscurawriter.com' in privacy
+        assert 'mailto:report@obscurawriter.com' in report and '(privacy.md)' in report
+    assert '--report-url https://obscurawriter.com/report.html' in (ROOT/'docs/packaging.md').read_text(encoding='utf-8')

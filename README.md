@@ -41,9 +41,9 @@ Copy-Item .env.example .env
 ./scripts/start.ps1 -DataDir "$env:LOCALAPPDATA/ObscuraTextWriter/data"
 ```
 
-Інструкції українською й англійською: [сайт Obscura](https://ysilvestrov.github.io/obscura-text-writer/) (джерело — `docs/site/`).
+Інструкції українською й англійською: [сайт Obscura](https://obscurawriter.com/) (джерело — `docs/site/`).
 
-Докладніше: [запуск і резервне копіювання](https://ysilvestrov.github.io/obscura-text-writer/install.html), [експорт FB2/EPUB](docs/verification/manual.md#ebook-formats) та [PDF A5](docs/verification/manual.md#pdf-publication).
+Докладніше: [запуск і резервне копіювання](https://obscurawriter.com/install.html), [експорт FB2/EPUB](docs/verification/manual.md#ebook-formats) та [PDF A5](docs/verification/manual.md#pdf-publication).
 Для першої проби можна імпортувати нейтральні [план](tests/fixtures/prototype/plan.md)
 та [персонажів](tests/fixtures/prototype/characters.md) тестової історії про бібліотеку.
 
@@ -92,10 +92,10 @@ See the [name and logo policy](docs/en/trademark-policy.md).
 
 
 Платні виклики потребують явного ліміту оповідання/CLI та чинного тарифу; моделі, ролі, бюджет і комплекти —
-[моделі й бюджет](https://ysilvestrov.github.io/obscura-text-writer/models.html). Технічний довідник бюджету й CLI: [бюджет модельних викликів](docs/provider-budget.md).
+[моделі й бюджет](https://obscurawriter.com/models.html). Технічний довідник бюджету й CLI: [бюджет модельних викликів](docs/provider-budget.md).
 
-Окремі теми на сайті: [робочий простір](https://ysilvestrov.github.io/obscura-text-writer/workspace.html), [персонажі](https://ysilvestrov.github.io/obscura-text-writer/characters.html),
-[пам’ять](https://ysilvestrov.github.io/obscura-text-writer/memory.html), [коментарі, промпти й горизонт](https://ysilvestrov.github.io/obscura-text-writer/writing-tools.html),
-[переписування по пам’яті](https://ysilvestrov.github.io/obscura-text-writer/ghost-mode.html), [редагування книги й перевірка впливу](https://ysilvestrov.github.io/obscura-text-writer/revision.html),
-[віковий рейтинг](https://ysilvestrov.github.io/obscura-text-writer/content-rating.html), [мова й обсяг твору](https://ysilvestrov.github.io/obscura-text-writer/story-language.html). Для розробника —
+Окремі теми на сайті: [робочий простір](https://obscurawriter.com/workspace.html), [персонажі](https://obscurawriter.com/characters.html),
+[пам’ять](https://obscurawriter.com/memory.html), [коментарі, промпти й горизонт](https://obscurawriter.com/writing-tools.html),
+[переписування по пам’яті](https://obscurawriter.com/ghost-mode.html), [редагування книги й перевірка впливу](https://obscurawriter.com/revision.html),
+[віковий рейтинг](https://obscurawriter.com/content-rating.html), [мова й обсяг твору](https://obscurawriter.com/story-language.html). Для розробника —
 [збірка локального JS bundle](docs/frontend-development.md).

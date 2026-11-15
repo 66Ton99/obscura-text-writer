@@ -1,1 +1,1 @@
-Інструкції перенесено на сайт: [Obscura Text Writer](https://ysilvestrov.github.io/obscura-text-writer/). Запуск і резервні копії — [Встановлення й запуск](https://ysilvestrov.github.io/obscura-text-writer/install.html).
+Інструкції перенесено на сайт: [Obscura Text Writer](https://obscurawriter.com/). Запуск і резервні копії — [Встановлення й запуск](https://obscurawriter.com/install.html).

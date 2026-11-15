@@ -24,4 +24,4 @@ The Obscura name and logo are governed by the [name and logo policy](https://git
 
 ## Your data
 
-The application runs on your computer, and stories are stored in a local data directory. The project author does not receive your texts, settings or keys. Text leaves your computer only when you run a stage with a cloud model: then the chosen provider receives it on its own terms. A local model sends the text nowhere.
+The application runs on your computer, and stories are stored in a local data directory. The project author does not receive your texts, settings or keys. Text leaves your computer only when you run a stage with a cloud model: then the chosen provider receives it on its own terms. A local model sends the text nowhere. See the [Privacy](privacy.md) page for details; report a result that breaks the Terms through the [Report a result](report.md) page.

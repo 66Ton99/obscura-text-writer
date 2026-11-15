@@ -1,1 +1,1 @@
-Інструкцію перенесено на сайт: [Пам’ять](https://ysilvestrov.github.io/obscura-text-writer/memory.html).
+Інструкцію перенесено на сайт: [Пам’ять](https://obscurawriter.com/memory.html).

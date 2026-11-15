@@ -5068,6 +5068,32 @@
       ]
     },
     {
+      "id": "DOCS-SITE-S08",
+      "requirement": "DOCS-SITE",
+      "scope": "Canonical, hreflang, Open Graph, robots.txt, sitemap.xml і 404.html за base_url; некоректний base_url; збірка без base_url. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_docs_site.py::test_public_address_gives_canonical_alternates_and_seo_files",
+        "tests/test_docs_site.py::test_bad_public_address_stops_the_build",
+        "tests/test_docs_site.py::test_build_without_public_address_has_no_seo_files"
+      ]
+    },
+    {
+      "id": "DOCS-SITE-S09",
+      "requirement": "DOCS-SITE",
+      "scope": "Вибір мови site.js: перехід без української в браузері зі збереженням запиту, збережений вибір, роботи, недоступне сховище, перемикач. Перевірка зазначеного сценарію в Node без браузера; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_docs_site.py::test_site_language_choice"
+      ]
+    },
+    {
+      "id": "DOCS-SITE-S10",
+      "requirement": "DOCS-SITE",
+      "scope": "Сторінки privacy і report обома мовами з адресами пошти та report-url у документації збирання Store. Перевірка зазначеного сценарію; не є доказом роботи пошти.",
+      "tests": [
+        "tests/test_docs_site.py::test_privacy_and_report_pages_carry_their_addresses"
+      ]
+    },
+    {
       "id": "MCP-BRIDGE-S01",
       "requirement": "MCP-BRIDGE",
       "scope": "Недоступний сервер дає помилку інструмента з адресою; каталог даних не створюється. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",

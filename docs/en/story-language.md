@@ -1,1 +1,1 @@
-This guide has moved to the site: [Story language and length](https://ysilvestrov.github.io/obscura-text-writer/en/story-language.html).
+This guide has moved to the site: [Story language and length](https://obscurawriter.com/en/story-language.html).

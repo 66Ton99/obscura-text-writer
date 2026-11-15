@@ -1,1 +1,1 @@
-This guide has moved to the site: [Workspace](https://ysilvestrov.github.io/obscura-text-writer/en/workspace.html).
+This guide has moved to the site: [Workspace](https://obscurawriter.com/en/workspace.html).

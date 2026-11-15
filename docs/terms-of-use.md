@@ -60,7 +60,7 @@ Obscura Text Writer (далі — «застосунок») — локальни
 
 ## 8. Контакти
 
-Повідомлення про порушення й питання щодо Умов: [ПОТРІБНО ВИЗНАЧИТИ КОНТАКТ].
+Повідомлення про порушення: [report@obscurawriter.com](mailto:report@obscurawriter.com) (див. [сторінку скарг](https://obscurawriter.com/report.html)). Питання щодо Умов і приватності: [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com).
 
 ---
 

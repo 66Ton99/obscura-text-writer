@@ -2054,3 +2054,11 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - `book/library.py::library_entries`, `library.html` (секція `.library-series`, рядок `.card-series`), ключі `library.series|book|bible` uk/en, стиль групи на всю ширину сітки.
 - SPEC.MD: технічний опис «Бібліотека» і SERIES-S12; traceability; `manual.md#series-library-browser`; сайт `series` uk/en.
 - Тести: `tests/series/test_series_library.py` (3), Playwright `library-series.spec.mjs` (desktop і mobile).
+
+## 2026-11-15 — R-36: домен obscurawriter.com, приватність, скарги, SEO і вибір мови
+
+- Власник придбав `obscurawriter.com` (Cloudflare Registrar), задав DNS на GitHub Pages і власний домен у налаштуваннях Pages; сайт за доменом відкривається (перевірено власником). Рішення: лишитися на GitHub Pages; пошта privacy@ і report@ через Cloudflare Email Routing.
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-15-site-domain-design.md`. Реалізовано: заміна адрес сайту в README, SPEC.MD, старих інструкціях і `start.ps1`; `base_url`/`description` у маніфесті; canonical, hreflang, Open Graph, `robots.txt`, `sitemap.xml`, `404.html`; `site.js` з вибором мови; сторінки `privacy` і `report` uk/en; контакти в Умовах використання uk/en; `--report-url` у `docs/packaging.md`.
+- SPEC.MD: DOCS-SITE (технічний опис, відомі обмеження, S08–S10), traceability, `manual.md#docs-site-publish`.
+- Створено GitHub [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176) і R-37 (пікселі й банер cookies) у беклозі.
+- Історичні плани й специфікації в `docs/superpowers/` зберігають стару адресу `ysilvestrov.github.io` як факт свого часу.

@@ -60,7 +60,7 @@ The project author may change these Terms. A new revision is published in the re
 
 ## 8. Contact
 
-Reports of violations and questions about these Terms: [CONTACT TO BE DEFINED].
+Reports of violations: [report@obscurawriter.com](mailto:report@obscurawriter.com) (see the [report page](https://obscurawriter.com/en/report.html)). Questions about these Terms and privacy: [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com).
 
 ---
 
