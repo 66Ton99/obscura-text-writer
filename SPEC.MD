@@ -4417,6 +4417,26 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 
 Збирання (PACKAGING-001) SHALL заморожувати міст окремим консольним виконуваним файлом `obscura-mcp.exe` (`packaging.bridge_pyinstaller_args`, `--onedir`, власна тека вмісту `_mcp`, щоб не ділити `_internal` з `Obscura.exe`; виключені лише тестові модулі) і класти його поруч з `Obscura.exe`; головний файл і далі виключає `storygen.mcp` і `mcp`. Extra `mcp` входить у `EXTRAS`, тож його компоненти мають ліцензійні повідомлення. Файли середовища `vendor_runtime_files` збирання кладе й у `_mcp`. Збирання MUST зупинятися, якщо скопійований міст не відповідає кодом 0 на `--help` (з назвою `storygen-mcp`) і на `--self-check` (створює HTTP-клієнт, як перший виклик інструмента, і друкує `storygen-mcp: ok`): самої довідки замало, бо відсутній файл середовища видно лише під час створення TLS-контексту `httpx` (виявлено живим запуском замороженого моста 15.11.2026). Власний текст моста (довідку й помилки) міст MUST писати в UTF-8: клієнт читає його через труби, які Windows відкриває в кодовій сторінці ANSI, і українська довідка інакше обривала б міст (виявлено пробним збиранням 15.11.2026). Маніфест MSIX (`appx_manifest`) SHALL оголошувати псевдонім виконання `obscura-mcp.exe` (`uap3:Extension Category="windows.appExecutionAlias"`, `desktop:ExecutionAlias`), тож у конфігурації клієнта стоїть просто `obscura-mcp.exe`, а не шлях до теки пакета, що змінюється з кожним оновленням.
 
+Відмову межі видання міст SHALL перетворювати на підказку про платну версію (`src/storygen/mcp/edition.py::edition_refusal`): тексти `NO_LONG_PROSE`, `READ_ONLY`, `READ_ONLY_SERIES` (`book/guard.py`) звіряються точно, а `EDITION_LIMIT` (`rating/guard.py`) — регулярним виразом, зібраним із самої константи (кожна підстановка — `.+?`, решта екранована, якорі). Звіряється `detail_original` відповіді (без нього — `detail`) для 400, 403, 409 і 422. Підказка містить вихідну відмову, пояснення українською й англійською разом (довга проза, серії, сцени без обмеження рейтингу) і `waitlist_url`, який міст один раз читає з `GET /api/app-info` (порожній — без посилання). Будь-яка інша відмова лишається без змін. Міст SHALL мати MCP prompt `start_story(idea)`: задум → `create_story(writing_mode="chat")` → `get_templates` → `import_plan_and_characters` → сцени (`get_scene_context`, `save_draft`) → `next_steps` і пропозиція відкрити твір у вікні Obscura; `INSTRUCTIONS` радить те саме посилання. Форма нового твору в бібліотеці видання `store` SHALL вибирати режим `chat`, інші видання — `obscura`.
+
+Бібліотека SHALL мати блок «Підключити до Claude» (`library.html`, `static/claude-connect.js`; у виданні `store` розгорнутий) з фіксованими діями `routes_connect.py` над чистим модулем `src/storygen/claude_connect.py`. Команда моста (`bridge_command`):
+- пакет — повний шлях псевдоніма `%LOCALAPPDATA%\Microsoft\WindowsApps\obscura-mcp.exe` (для Claude Code — `obscura-mcp.exe`);
+- заморожена збірка без псевдоніма — сусідній `obscura-mcp.exe`;
+- робоча копія — `storygen-mcp.exe` поруч з інтерпретатором з `--data-dir`, якщо сервер запущено `storygen-desktop` (його `instance_id` у `server.json`), інакше з `--url` поточної адреси.
+
+Нетипова тека творів додає `--data-dir`.
+- `POST /api/connect/claude-desktop` знаходить конфігурацію (`find_desktop_config`). Порядок вибору:
+  - Claude зі Store (`%LOCALAPPDATA%\Packages\Claude_*` і `%LOCALAPPDATA%\Claude-Data\claude_*\claude_desktop_config.json`);
+  - інсталятор (`%LOCALAPPDATA%\AnthropicClaude` і `%APPDATA%\Claude\claude_desktop_config.json`);
+  - обидва — новіший серед наявних файлів.
+
+  Маршрут SHALL дописати чи оновити лише `mcpServers.obscura`, зберігши решту ключів і їхній порядок. Перед кожним записом, що змінює файл, робиться копія `claude_desktop_config.json.obscura-backup`; запис атомарний і перечитується. Файл із BOM, некоректний JSON, корінь не-об’єкт чи `mcpServers` не-об’єкт MUST NOT змінюватися (422 зі шляхом і запасним шляхом), а відсутній файл дає 404 «Файла налаштувань Claude Desktop немає: запустіть Claude Desktop хоч раз і повторіть» із запасним шляхом. Інтерфейс каже, у який файл записано, і MUST NOT називати Claude Desktop підключеним.
+- `POST /api/connect/claude-desktop/bundle` збирає `.mcpb` (manifest 0.3, `server.type: binary`, `entry_point: server/obscura-mcp.exe` — копія запускача моста, `mcp_config` — та сама команда, `compatibility.platforms: [win32]`, версія застосунку) у `<тека творів>/claude/obscura.mcpb` і відкриває теку.
+- `POST /api/connect/claude-code` знаходить `claude` на `PATH` або в `%USERPROFILE%\.local\bin` і виконує `claude mcp remove --scope user obscura`, `add --scope user obscura -- <команда>`, `get obscura`. «Підключено» показується лише за кодом 0 `get` з командою у виводі. Інакше показується команда з кнопкою «Копіювати».
+- `POST /api/connect/claude-desktop/restart` (кнопка «Перезапустити Claude зараз» із попередженням про відкриту розмову й підтвердженням) закриває лише процеси `claude.exe` з шляхом у теці пакета Claude (`WindowsApps\Claude_…__…`) чи `%LOCALAPPDATA%\AnthropicClaude`. Процеси Claude Code MUST NOT зупинятися. Після цього маршрут запускає Claude Desktop знову: псевдонім `claude-desktop.exe`, інакше `explorer.exe shell:AppsFolder\<PackageFamilyName>!<AppId>` з маніфесту пакета, для інсталятора — його `claude.exe`. «Перезапущу сам» пояснює вихід через значок Claude у треї.
+
+Процеси запускаються лише з фіксованими argv, без оболонки й без даних запиту. Запит моста (`X-Obscura-Client: mcp`) до `/api/connect/` MUST отримувати 403 «Підключення до Claude виконує лише автор в Obscura», як і POST з іншого походження. Ключі в конфігурацію Claude і `.mcpb` не потрапляють.
+
 <a id="store-mcp-s01"></a>
 #### Scenario: STORE-MCP-S01 — Пошук запущеної Obscura за записом
 - GIVEN Obscura теки творів запущена на будь-якому порту
@@ -4445,12 +4465,62 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 - THEN поруч з `Obscura.exe` лежать консольний `obscura-mcp.exe` і `_mcp/`, міст відповідає на `--help` і `--self-check`, повідомлення містять `mcp`, а маніфест оголошує псевдонім `obscura-mcp.exe`
 - AND установлений підписаний пакет запускає міст за псевдонімом, і перший виклик з Claude Code піднімає Obscura у трей без вікна консолі й браузера (ручна процедура).
 
+<a id="store-mcp-s05"></a>
+#### Scenario: STORE-MCP-S05 — Межа видання в чаті з посиланням
+- GIVEN збірка `store` і запит моста, на який Obscura відповідає відмовою межі видання
+- WHEN чат викликає інструмент
+- THEN помилка інструмента містить вихідну відмову, пояснення платної версії українською й англійською та `waitlist_url` (порожній — без посилання)
+- AND іншу відмову, зокрема обрізаний текст межі, міст лишає без змін, а `app-info` читає один раз.
+
+<a id="store-mcp-s06"></a>
+#### Scenario: STORE-MCP-S06 — Почати історію
+- GIVEN підключений чат-клієнт
+- WHEN він бере prompt `start_story` з задумом
+- THEN текст веде від `create_story` через шаблони, імпорт і `save_draft` до `next_steps` і вікна Obscura
+- AND `INSTRUCTIONS` радять посилання `next_steps`.
+
+<a id="store-mcp-s07"></a>
+#### Scenario: STORE-MCP-S07 — Режим «чат» за замовчуванням у Store
+- GIVEN бібліотека
+- WHEN її відкривають у виданні `store`
+- THEN у формі нового твору вибрано «пише чат»
+- AND в інших виданнях — «пише Obscura».
+
+<a id="store-mcp-s08"></a>
+#### Scenario: STORE-MCP-S08 — Запис у конфігурацію Claude Desktop
+- GIVEN Claude Desktop зі Store, з інсталятора або обидва
+- WHEN автор натискає «Підключити Claude Desktop»
+- THEN у вибраний файл додано чи оновлено лише `mcpServers.obscura` з копією поруч, а інтерфейс називає файл і пропонує два способи перезапуску
+- AND некоректний файл не змінюється, а відсутній дає запасний шлях.
+
+<a id="store-mcp-s09"></a>
+#### Scenario: STORE-MCP-S09 — Запасний `.mcpb`
+- GIVEN файла конфігурації немає, він некоректний або автор вибрав «Інший спосіб»
+- WHEN автор готує файл розширення
+- THEN у теці творів з’являється `claude/obscura.mcpb` із маніфестом 0.3 і командою моста
+- AND інтерфейс показує кроки Settings → Desktop app → Extensions.
+
+<a id="store-mcp-s10"></a>
+#### Scenario: STORE-MCP-S10 — Claude Code
+- GIVEN автор натискає «Підключити Claude Code»
+- WHEN `claude` знайдено
+- THEN виконуються `remove`, `add --scope user obscura -- <команда>` і `get`, а «підключено» показується лише після підтвердження `get`
+- AND без `claude` чи без підтвердження показується команда з кнопкою «Копіювати».
+
+<a id="store-mcp-s11"></a>
+#### Scenario: STORE-MCP-S11 — Перезапуск лише Claude Desktop і заборона мосту
+- GIVEN запущені Claude Desktop і Claude Code
+- WHEN автор підтверджує «Перезапустити Claude зараз»
+- THEN закриваються й запускаються знову лише процеси Claude Desktop
+- AND запит моста чи іншого походження до маршрутів підключення отримує 403, і жодна дія не виконується.
+
 #### Технічний опис і сумісність (STORE-MCP-001)
 
-- **Модулі.** `storygen/mcp/launch.py` (`Connection`, `start_obscura`, `ObscuraUnavailable`, `START_TIMEOUT`); `storygen/mcp/bridge.py` (`build_server(..., connection=)`, `main`: `--url`, `--data-dir`); `storygen/packaging.py` (`BRIDGE_NAME`, `BRIDGE_CONTENTS`, `BRIDGE_ENTRY`, `bridge_pyinstaller_args`, `appx_manifest(bridge_executable=)`); `scripts/build_store.py` (`freeze_bridge`, `check_bridge`, `bridge_megabytes` у підсумку); `bridge.connection_for`, `bridge.main(--self-check)`.
+- **Модулі.** `storygen/mcp/launch.py` (`Connection`, `start_obscura`, `ObscuraUnavailable`, `START_TIMEOUT`); `storygen/mcp/bridge.py` (`build_server(..., connection=)`, `main`: `--url`, `--data-dir`); `storygen/packaging.py` (`BRIDGE_NAME`, `BRIDGE_CONTENTS`, `BRIDGE_ENTRY`, `bridge_pyinstaller_args`, `appx_manifest(bridge_executable=)`); `scripts/build_store.py` (`freeze_bridge`, `check_bridge`, `bridge_megabytes` у підсумку); `bridge.connection_for`, `bridge.main(--self-check)`. Обв’язка: `storygen/mcp/edition.py` (`edition_refusal`), prompt `start_story`, `storygen/claude_connect.py` (`Roots`, `bridge_command`, `claude_code_command`, `find_desktop_config`, `write_desktop_entry`, `UnusableConfig`, `build_mcpb`, `find_claude_code`, `connect_claude_code`, `restart_desktop`), `web/routes_connect.py`, `static/claude-connect.js`; тести тримає подалі від справжнього Claude автоматична фікстура `tests/conftest.py::isolated_claude`.
 - **Сумісність.** Наявні записи клієнтів з `--url` працюють як раніше. Запис робочої копії без аргументів поводиться як раніше (`http://127.0.0.1:8765`). Установлений міст і запис із `--data-dir` знаходять Obscura на будь-якому порту. Формат даних і HTTP API не змінюються.
 - **Межі безпеки.** Міст читає лише `server.json` теки творів і перевіряє сервер за `instance_id`; ключів не отримує; запускає лише сусідній `Obscura.exe` або модуль робочої копії, без аргументів від чату.
-- **Відомі обмеження.** Кнопки підключення (запис конфігурації Claude Desktop, запасний `.mcpb`, `claude mcp add` для Claude Code, перезапуск клієнта), повідомлення межі видання з посиланням і поведінка в чаті — наступний план обв’язки. Запуск через псевдонім із підписаного пакета, вихід з завдання клієнта й відсутність вікна консолі перевіряються лише вручну (S04). `--data-dir` разом із `--url` ігнорується. Клієнт, чиє завдання Windows закривається з `KILL_ON_JOB_CLOSE` без дозволу виходу (так робить Python MCP SDK `mcp.client.stdio`), закриває Obscura разом із мостом; запис `server.json` тоді лишається, і наступний виклик запускає Obscura знову. Живий запуск замороженого моста з цієї збірки з Python-клієнтом (15.11.2026): порожня тека творів, Obscura запущена за ~4 с, `list_stories` без помилки, повторний виклик — та сама Obscura. Obscura, запущена мостом, лишається у треї, поки автор не вийде з неї; якщо запуск триває довше 30 с (перший запуск після встановлення, повільний диск), перший виклик отримає помилку, а повторний знайде вже запущену Obscura.
+- **Заявка → доказ.** Claude Code підключено — `claude mcp get obscura` з кодом 0 і нашою командою. Запис у конфігурацію Claude Desktop є — повторне читання файлу після запису (лише про файл). Що Claude Desktop підключено, Obscura не заявляє: Claude читає конфігурацію під час запуску, а список розширень Obscura не читає. Посилання на платну версію — `waitlist_url` маркера збірки через `/api/app-info`.
+- **Відомі обмеження.** Якщо Claude змінить місце чи формат конфігурації, кнопка Claude Desktop перестане працювати до оновлення Obscura; лишається `.mcpb`, який Claude встановлює зі стандартним попередженням про розширення поза каталогом. Підказка межі видання завжди двомовна, бо відмова приходить на довільний запит, де мови твору немає (рішення плану обв’язки, відхилення від специфікації зміни). «Перезапустити Claude зараз» закриває відкриту розмову Claude Desktop. Кнопки підключення, перезапуск і `.mcpb` на справжньому Claude перевіряються лише вручну (S04). Запуск через псевдонім із підписаного пакета, вихід з завдання клієнта й відсутність вікна консолі перевіряються лише вручну (S04). `--data-dir` разом із `--url` ігнорується. Клієнт, чиє завдання Windows закривається з `KILL_ON_JOB_CLOSE` без дозволу виходу (так робить Python MCP SDK `mcp.client.stdio`), закриває Obscura разом із мостом; запис `server.json` тоді лишається, і наступний виклик запускає Obscura знову. Живий запуск замороженого моста з цієї збірки з Python-клієнтом (15.11.2026): порожня тека творів, Obscura запущена за ~4 с, `list_stories` без помилки, повторний виклик — та сама Obscura. Obscura, запущена мостом, лишається у треї, поки автор не вийде з неї; якщо запуск триває довше 30 с (перший запуск після встановлення, повільний диск), перший виклик отримає помилку, а повторний знайде вже запущену Obscura.
 
 <a id="writing-mode"></a>
 ### Requirement: WRITING-MODE — Режим твору: пише чат чи Obscura
