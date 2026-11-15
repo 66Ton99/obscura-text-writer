@@ -21,8 +21,10 @@ test('the library groups the series books and labels their cards',async({page,re
   await expect(group.locator('.card h2')).toHaveText(['Світ саги','Перша книга саги','Друга книга саги']);
   await expect(group.locator('.card-series')).toHaveText([`Серія «${title}», біблія світу`,`Серія «${title}», книга 1`,`Серія «${title}», книга 2`]);
   await page.locator('[data-ui-locale="en"]').click();
-  await expect(group.locator('.card-series').nth(1)).toHaveText(`Series «${title}», book 1`);
+  await expect(group.locator('h2').first()).toHaveText(`Series «${title}»`);
+  await expect(group.locator('.card-series')).toHaveText([`Series «${title}», world bible`,`Series «${title}», book 1`,`Series «${title}», book 2`]);
   await page.locator('[data-ui-locale="uk"]').click();
+  await expect(group.locator('.card-series')).toHaveText([`Серія «${title}», біблія світу`,`Серія «${title}», книга 1`,`Серія «${title}», книга 2`]);
   await group.locator('h2 a').first().click();
   await expect(page).toHaveURL(new RegExp(`/series/${item.id}$`));
 });

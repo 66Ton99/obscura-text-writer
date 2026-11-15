@@ -5931,7 +5931,8 @@
       "tests": [
         "tests/series/test_series_library.py::test_a_series_stands_where_its_newest_book_stands",
         "tests/series/test_series_library.py::test_library_page_groups_and_labels_the_series_books",
-        "tests/series/test_series_library.py::test_store_library_groups_without_a_series_link"
+        "tests/series/test_series_library.py::test_store_library_groups_without_a_series_link",
+        "tests/series/test_series_library.py::test_an_empty_library_shows_the_empty_state"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#series-library-browser",

@@ -37,6 +37,7 @@ def test_a_series_stands_where_its_newest_book_stands(tmp_path):
     alone = story(repo, 'Окрема')
     first = story(repo, 'Перша')
     bible = story(repo, 'Світ')
+    story(repo, 'Середня окрема')
     gone = story(repo, 'Викинута')
     newest = story(repo, 'Найновіша окрема')
     join(repo, item, second, 2)
@@ -47,7 +48,23 @@ def test_a_series_stands_where_its_newest_book_stands(tmp_path):
     lonely = join(repo, empty, story(repo, 'Сама'), 1)
     repo.set_story_trashed(lonely.id, lonely.revision, False)
     entries = library_entries(repo.list_stories(), store.list_series(repo))
-    assert shape(entries) == ['Найновіша окрема', ('Сага', ['Світ', 'Перша', 'Друга']), 'Окрема']
+    # The trashed newest book of the series does not hold the group above the standalone work created after the bible.
+    assert shape(entries) == ['Найновіша окрема', 'Середня окрема', ('Сага', ['Світ', 'Перша', 'Друга']), 'Окрема']
+
+
+def test_an_empty_library_shows_the_empty_state(tmp_path):
+    client, repo = client_for(tmp_path)
+    assert library_entries([], store.list_series(repo)) == []
+    item = store.create_series(repo, 'Сага')
+    only = join(repo, item, story(repo, 'Перша'), 1)
+    repo.set_story_trashed(only.id, only.revision, False)
+    page = client.get('/').text
+    assert '<div class="empty">' in page and '<section class="library-series"' not in page
+
+
+def heading(page):
+    found = re.search(r'<section class="library-series"[^>]*><h2>(.*?)</h2>', page, re.S)
+    return found and found[1]
 
 
 def cards(page):
@@ -62,12 +79,14 @@ def test_library_page_groups_and_labels_the_series_books(tmp_path):
     story(repo, 'Окрема')
     page = client.get('/', headers={'accept-language': 'uk'}).text
     group = re.search(r'<section class="library-series"[^>]*>(.*?)</section>', page, re.S)
-    assert group and f'href="/series/{item.id}"' in group[1]
+    assert re.sub(r'<[^>]+>', '', heading(page)) == 'Серія «Сага»'
+    assert f'<a href="/series/{item.id}">«Сага»</a>' in heading(page)
     assert 'Перша' in group[1] and 'Світ' in group[1] and 'Окрема' not in group[1]
     labels = [re.sub(r'<[^>]+>', '', c) for c in cards(page)]
     assert labels == ['Серія «Сага», біблія світу', 'Серія «Сага», книга 1']
     english = client.get('/', headers={'accept-language': 'en'}).text
     assert [re.sub(r'<[^>]+>', '', c) for c in cards(english)] == ['Series «Сага», world bible', 'Series «Сага», book 1']
+    assert re.sub(r'<[^>]+>', '', heading(english)) == 'Series «Сага»'
 
 
 def test_store_library_groups_without_a_series_link(tmp_path, store_edition):
@@ -75,5 +94,6 @@ def test_store_library_groups_without_a_series_link(tmp_path, store_edition):
     item = store.create_series(repo, 'Сага')
     join(repo, item, story(repo, 'Перша'), 1)
     page = client.get('/').text
-    assert '<section class="library-series"' in page and '/series/' not in page
+    assert heading(page) == '<span data-i18n="library.series">Серія</span> «Сага»'
+    assert '/series/' not in page
     assert [re.sub(r'<[^>]+>', '', c) for c in cards(page)] == ['Серія «Сага», книга 1']
