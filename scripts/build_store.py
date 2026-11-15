@@ -59,6 +59,37 @@ def tracked_package_files() -> list[str]:
     return [item for item in listed.stdout.decode('utf-8').split('\0') if item]
 
 
+def freeze_bridge(work: Path, bridge_work: Path, bridge_dist: Path, environment: dict) -> None:
+    """STORE-MCP: the console MCP bridge, frozen on its own so the main executable keeps excluding it."""
+    entry = work / 'obscura_mcp_entry.py'
+    entry.write_text(packaging.BRIDGE_ENTRY, encoding='utf-8')
+    arguments = packaging.bridge_pyinstaller_args(entry, bridge_dist, bridge_work, ROOT / packaging.HOOKS_DIR, SOURCE)
+    log = bridge_dist.parent / 'pyinstaller-bridge.log'
+    try:
+        with log.open('w', encoding='utf-8') as stream:
+            frozen = subprocess.run([sys.executable, '-m', 'PyInstaller', *arguments], stdout=stream, stderr=subprocess.STDOUT,
+                                    cwd=work, env=environment, timeout=FREEZE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise Refused(f'PyInstaller (міст MCP) не завершився за {FREEZE_TIMEOUT} с; див. {log}') from None
+    if frozen.returncode:
+        raise Refused(f'PyInstaller (міст MCP) завершився з кодом {frozen.returncode}; див. {log}')
+
+
+def check_bridge(target: Path) -> None:
+    """The copied bridge must start next to Obscura.exe: `--help` prints its usage and `--self-check` creates the HTTP
+    client of the first tool call (a missing runtime file only shows there); both exit with 0."""
+    for flag, expected in (('--help', b'storygen-mcp'), ('--self-check', b'storygen-mcp: ok')):
+        try:
+            answered = subprocess.run([str(target / f'{packaging.BRIDGE_NAME}.exe'), flag], capture_output=True,
+                                      timeout=SELF_CHECK_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            raise Refused(f'міст MCP не відповів на {flag} за {SELF_CHECK_TIMEOUT} с') from None
+        except OSError as error:
+            raise Refused(f'міст MCP не запустився: {type(error).__name__}') from None
+        if answered.returncode or expected not in answered.stdout:
+            raise Refused(f'міст MCP не пройшов перевірку {flag} (код виходу {answered.returncode})')
+
+
 def build(args, out: Path) -> dict:
     try:
         marker = packaging.edition_marker(args.edition, args.report_url, args.support_url, args.waitlist_url)
@@ -125,8 +156,17 @@ def build(args, out: Path) -> dict:
     (package / MANIFEST).write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
     for extra in vendor_files:
         shutil.copyfile(extra, internal / extra.name)
+    bridge_work = work / 'bridge'
+    bridge_dist = out / 'bridge-dist'
+    freeze_bridge(work, bridge_work, bridge_dist, environment)
+    shutil.copyfile(bridge_dist / packaging.BRIDGE_NAME / f'{packaging.BRIDGE_NAME}.exe', target / f'{packaging.BRIDGE_NAME}.exe')
+    shutil.copytree(bridge_dist / packaging.BRIDGE_NAME / packaging.BRIDGE_CONTENTS, target / packaging.BRIDGE_CONTENTS)
+    for extra in vendor_files:
+        # The bridge has its own runtime folder: without these files a vendor interpreter cannot create a TLS context.
+        shutil.copyfile(extra, target / packaging.BRIDGE_CONTENTS / extra.name)
+    check_bridge(target)
     try:
-        bundled = packaging.bundled_distributions(packaging.toc_sources(pyinstaller_work))
+        bundled = packaging.bundled_distributions(packaging.toc_sources(pyinstaller_work) + packaging.toc_sources(bridge_work))
         names = sorted(set(bundled) | set(packaging.ALWAYS_NOTICED))
         runtime = Path(sys.base_prefix) / 'LICENSE.txt'
         if not runtime.is_file():
@@ -154,6 +194,7 @@ def build(args, out: Path) -> dict:
     files = [path for path in target.rglob('*') if path.is_file()]
     summary = {'edition': args.edition, 'version': project['version'], 'package_version': version, 'files': len(files),
                'megabytes': round(sum(path.stat().st_size for path in files) / 1e6, 1), 'data_files': len(manifest['files']),
+               'bridge_megabytes': round(sum(path.stat().st_size for path in (target / packaging.BRIDGE_CONTENTS).rglob('*') if path.is_file()) / 1e6, 1),
                'components_with_notices': names, 'vendor_runtime_files': [path.name for path in vendor_files], 'msix': None}
     print(f"Збірка: {target} ({summary['files']} файлів, {summary['megabytes']} МБ), видання {args.edition}, версія {project['version']}")
     if args.skip_msix:

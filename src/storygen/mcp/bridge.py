@@ -10,6 +10,7 @@ import json
 import os
 import re
 import stat
+import sys
 import uuid
 from pathlib import Path
 from typing import Any, Literal
@@ -20,7 +21,7 @@ from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..publication_models import PublicationData
-from .launch import Connection, ObscuraUnavailable
+from .launch import DEFAULT_URL, Connection, ObscuraUnavailable
 
 LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
 FALLBACK_CLIENT = 'MCP client'
@@ -830,18 +831,44 @@ def build_client(url: str) -> httpx.Client:
     return httpx.Client(base_url=url, timeout=30, headers=BRIDGE_HEADERS)
 
 
+def connection_for(url: str | None, data_dir: Path | None) -> Connection:
+    """STORE-MCP: `--url` is used as given; the installed bridge or an explicit `--data-dir` searches the record and
+    starts Obscura. A checkout without arguments keeps the old address, because its `storygen` serves ./data on 8765
+    and writes no record: searching the default library there would start a second Obscura over another folder."""
+    if url is not None:
+        return Connection(None, check_url(url), client_factory=build_client)
+    if data_dir is None and not getattr(sys, 'frozen', False):
+        return Connection(None, DEFAULT_URL, client_factory=build_client)
+    if data_dir is None:
+        from ..desktop import default_data_dir
+        data_dir = default_data_dir()
+    return Connection(Path(data_dir).resolve(), None, client_factory=build_client)
+
+
+def _utf8_streams() -> None:
+    """Clients read the bridge through pipes, which Windows opens in the ANSI code page: Ukrainian help and errors
+    would crash it. The MCP transport wraps the byte stream itself, so this only changes text written by the bridge."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
+
+
 def main(argv: list[str] | None = None) -> None:
+    _utf8_streams()
     parser = argparse.ArgumentParser(prog='storygen-mcp', description='MCP-сервер (stdio) для локальної Obscura')
     parser.add_argument('--url', default=None,
-                        help='адреса запущеної Obscura; без неї міст сам знаходить Obscura теки творів і за потреби запускає її')
-    parser.add_argument('--data-dir', type=Path, default=None, help='тека творів (типово %%USERPROFILE%%\\Obscura)')
+                        help='адреса запущеної Obscura; без неї установлений міст (або міст із --data-dir) сам знаходить Obscura теки творів і за потреби запускає її')
+    parser.add_argument('--data-dir', type=Path, default=None, help='тека творів (типово %%USERPROFILE%%\\Obscura в установленій збірці)')
     parser.add_argument('--client-name', default=None, help='назва клієнта для позначки версій (типово з clientInfo)')
+    parser.add_argument('--self-check', action='store_true',
+                        help='перевірка збирання: створити HTTP-клієнт, як перший виклик інструмента, і вийти')
     args = parser.parse_args(argv)
-    if args.url is not None:
-        connection = Connection(None, check_url(args.url), client_factory=build_client)
-    else:
-        from ..desktop import default_data_dir
-        connection = Connection((args.data_dir or default_data_dir()).resolve(), None, client_factory=build_client)
+    if args.self_check:
+        # STORE-MCP: the build runs this next to Obscura.exe; `--help` alone never creates the TLS context httpx needs.
+        build_client(DEFAULT_URL).close()
+        print('storygen-mcp: ok')
+        raise SystemExit(0)
+    connection = connection_for(args.url, args.data_dir)
     try:
         build_server(None, args.client_name, connection=connection).run('stdio')
     finally:

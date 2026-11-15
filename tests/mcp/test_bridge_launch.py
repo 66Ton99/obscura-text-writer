@@ -14,9 +14,6 @@ from storygen.mcp import launch  # noqa: E402
 from storygen.mcp.bridge import build_server  # noqa: E402
 from storygen.mcp.launch import Connection  # noqa: E402
 
-pytestmark = pytest.mark.req('STORE-MCP')
-
-
 def answering(seen):
     def handler(request):
         seen.append(str(request.url))
@@ -39,6 +36,7 @@ class Sequence:
         return self.answers.pop(0) if len(self.answers) > 1 else self.answers[0]
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_running_server_is_found_through_the_record(tmp_path):
     seen, started = [], []
     connection = Connection(tmp_path, None, client_factory=factory(answering(seen)),
@@ -48,6 +46,7 @@ def test_running_server_is_found_through_the_record(tmp_path):
     assert connection.base == 'http://127.0.0.1:8770'
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_missing_server_is_started_once_and_awaited(tmp_path):
     seen, started = [], []
     locate = Sequence(None, None, 'http://127.0.0.1:8771')
@@ -57,6 +56,7 @@ def test_missing_server_is_started_once_and_awaited(tmp_path):
     assert started == [1] and seen == ['http://127.0.0.1:8771/api/stories']
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_concurrent_calls_start_obscura_once(tmp_path):
     started, ready = [], threading.Event()
 
@@ -76,6 +76,7 @@ def test_concurrent_calls_start_obscura_once(tmp_path):
     assert started == [1] and results == [200, 200, 200]
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_server_that_never_answers_is_a_human_error(tmp_path):
     connection = Connection(tmp_path, None, client_factory=factory(answering([])), locate=Sequence(None),
                             start=lambda: None, wait=0.2, poll=0.01)
@@ -84,6 +85,7 @@ def test_server_that_never_answers_is_a_human_error(tmp_path):
     assert 'не запустилася' in str(raised.value) and 'меню «Пуск»' in str(raised.value)
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_unavailable_obscura_reaches_the_chat_as_a_tool_error(tmp_path):
     connection = Connection(tmp_path, None, client_factory=factory(answering([])), locate=Sequence(None),
                             start=lambda: None, wait=0.1, poll=0.01)
@@ -96,6 +98,7 @@ def test_unavailable_obscura_reaches_the_chat_as_a_tool_error(tmp_path):
     assert result.is_error and 'меню «Пуск»' in text and 'Traceback' not in text
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_stopped_server_is_found_again(tmp_path):
     seen = []
 
@@ -111,6 +114,7 @@ def test_stopped_server_is_found_again(tmp_path):
     assert seen == ['http://127.0.0.1:8774/api/stories'] and connection.base == 'http://127.0.0.1:8774' and started == []
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_broken_answer_is_not_repeated(tmp_path):
     # Only a refused connection is retried: a request that may have reached Obscura is never sent twice.
     sent = []
@@ -125,6 +129,7 @@ def test_broken_answer_is_not_repeated(tmp_path):
     assert sent == [1]
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_explicit_url_never_starts_obscura(tmp_path):
     calls = []
 
@@ -137,6 +142,7 @@ def test_explicit_url_never_starts_obscura(tmp_path):
     assert calls == [] and connection.base == 'http://127.0.0.1:8799'
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_nothing_happens_before_the_first_tool_call(tmp_path):
     calls = []
     connection = Connection(tmp_path, None, client_factory=factory(answering([])),
@@ -149,6 +155,7 @@ def test_nothing_happens_before_the_first_tool_call(tmp_path):
     assert calls == []
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_start_obscura_runs_the_sibling_exe_without_browser(tmp_path, monkeypatch):
     (tmp_path / 'Obscura.exe').write_bytes(b'')
     monkeypatch.setattr(sys, 'frozen', True, raising=False)
@@ -163,6 +170,7 @@ def test_start_obscura_runs_the_sibling_exe_without_browser(tmp_path, monkeypatc
         assert kwargs['creationflags'] & subprocess.DETACHED_PROCESS
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_start_obscura_in_a_checkout_uses_the_desktop_module(tmp_path, monkeypatch):
     monkeypatch.delattr(sys, 'frozen', raising=False)
     calls = []
@@ -171,6 +179,7 @@ def test_start_obscura_in_a_checkout_uses_the_desktop_module(tmp_path, monkeypat
     assert calls == [[sys.executable, '-m', 'storygen.desktop', '--no-browser', '--data-dir', str(tmp_path)]]
 
 
+@pytest.mark.req('STORE-MCP-001')
 def test_start_falls_back_when_the_job_forbids_breakaway(tmp_path, monkeypatch):
     if sys.platform != 'win32':
         pytest.skip('job objects are Windows-only')
@@ -184,3 +193,46 @@ def test_start_falls_back_when_the_job_forbids_breakaway(tmp_path, monkeypatch):
     monkeypatch.setattr(launch.subprocess, 'Popen', popen)
     launch.start_obscura(tmp_path)
     assert len(flags) == 2 and not flags[1] & launch.CREATE_BREAKAWAY_FROM_JOB
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_help_survives_a_legacy_code_page(monkeypatch):
+    # A client reads the bridge through pipes, which Windows opens in the ANSI code page, not UTF-8.
+    import io
+    from storygen.mcp import bridge
+    raw = io.BytesIO()
+    monkeypatch.setattr(sys, 'stdout', io.TextIOWrapper(raw, encoding='cp1250'))
+    with pytest.raises(SystemExit) as exited:
+        bridge.main(['--help'])
+    sys.stdout.flush()
+    assert exited.value.code == 0 and 'storygen-mcp' in raw.getvalue().decode('utf-8') and 'тека творів' in raw.getvalue().decode('utf-8')
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_checkout_without_arguments_keeps_the_old_address(monkeypatch):
+    # The checkout's `storygen` serves ./data on 8765 and writes no record: searching %USERPROFILE%\Obscura there would
+    # start a second Obscura over another library.
+    from storygen.mcp import bridge
+    monkeypatch.delattr(sys, 'frozen', raising=False)
+    connection = bridge.connection_for(None, None)
+    assert connection.base == launch.DEFAULT_URL and connection._explicit
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_installed_bridge_and_explicit_folder_search_the_record(tmp_path, monkeypatch):
+    from storygen.mcp import bridge
+    assert bridge.connection_for(None, tmp_path)._data_dir == tmp_path.resolve()
+    monkeypatch.setattr(sys, 'frozen', True, raising=False)
+    monkeypatch.setattr('storygen.desktop.default_data_dir', lambda: tmp_path)
+    assert bridge.connection_for(None, None)._data_dir == tmp_path.resolve()
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_self_check_builds_the_http_client_and_exits(monkeypatch, capsys):
+    # The build runs this next to Obscura.exe: `--help` alone never creates the TLS context the first tool call needs.
+    from storygen.mcp import bridge
+    built = []
+    monkeypatch.setattr(bridge, 'build_client', lambda url: built.append(url) or httpx.Client(base_url=url))
+    with pytest.raises(SystemExit) as exited:
+        bridge.main(['--self-check'])
+    assert exited.value.code == 0 and built == [launch.DEFAULT_URL] and 'storygen-mcp: ok' in capsys.readouterr().out
