@@ -67,7 +67,16 @@ INSTRUCTIONS = ('Obscura — локальний редактор історій.
                 'result_format → save_stage_result з task_fingerprint; інструкції чернетки — поле instructions у get_scene_context. '
                 'Режим твору (writing_mode у get_story): «chat» — тексти пише чат; «obscura» — тексти пишуть моделі Obscura, '
                 'і save_draft та етапи з чату відхиляються, а етап чи пропозицію картки запускає start_run (спершу перегляд без confirm, '
-                'запуск — лише після згоди автора; стан — get_run). Режим змінює лише автор у налаштуваннях твору.')
+                'запуск — лише після згоди автора; стан — get_run). Режим змінює лише автор у налаштуваннях твору. '
+                'Після сцени чи твору дайте людині посилання з next_steps, щоб читати й правити твір у вікні Obscura.')
+START_STORY = ('Допоможіть людині написати історію з Obscura. Задум: {idea}\n'
+               '1. Розпитайте про задум коротко й створіть твір: create_story з writing_mode="chat" (тексти пишете ви).\n'
+               '2. Візьміть шаблони плану й персонажів (get_templates), заповніть їх разом із людиною.\n'
+               '3. Імпортуйте план і персонажів (import_plan_and_characters) і перевірте сцени (get_story).\n'
+               '4. Для кожної сцени: get_scene_context і get_scene_text(material=draft), напишіть чернетку мовою сцени, '
+               'збережіть її через save_draft.\n'
+               '5. Після сцени чи всього твору викличте next_steps і запропонуйте людині відкрити посилання: у вікні Obscura '
+               'вона читає й править текст. Нову історію можна почати тут же, у чаті.')
 
 
 def check_url(url: str) -> str:
@@ -223,6 +232,11 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
     if (http is None) == (connection is None):
         raise ValueError('build_server needs exactly one of http and connection')
     server = MCPServer('Obscura', instructions=INSTRUCTIONS)
+
+    @server.prompt(name='start_story', title='Почати історію')
+    def start_story(idea: str = '') -> str:
+        """STORE-MCP-001 S06: the path from an idea to the story in the Obscura window."""
+        return START_STORY.format(idea=idea.strip() or 'ще не названо — спитайте людину')
 
     def base() -> str:
         # The address of the Obscura serving now: links the chat hands out follow a restart on another port.
