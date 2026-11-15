@@ -1,12 +1,11 @@
 """DESKTOP-001-S04: tray menu of the installed build."""
-import sys
+import io
 import threading
 import time
-import types
 
 import pytest
 
-from storygen import desktop, desktop_tray
+from storygen import desktop, desktop_tray, win_tray
 from storygen.desktop_tray import TrayUnavailable, menu_items, run_tray
 
 
@@ -46,63 +45,54 @@ def test_menu_language_follows_the_system(monkeypatch, name, expected):
     assert desktop_tray.system_locale() == expected
 
 
-class FakePystray(types.ModuleType):
-    def __init__(self):
-        super().__init__('pystray')
-        self.icons = []
-        outer = self
+class RecordingIcon:
+    """Stands in for win_tray.NotifyIcon: records what run_tray builds and presses "Quit" twice from run()."""
+    made = []
 
-        class MenuItem:
-            def __init__(self, text, action, default=False):
-                self.text, self.action, self.default = text, action, default
+    def __init__(self, api, title, icon_png, items):
+        self.api, self.title, self.icon_png, self.items, self.events = api, title, icon_png, items, []
+        RecordingIcon.made.append(self)
 
-        class Menu:
-            def __init__(self, *items):
-                self.items = items
+    def run(self):
+        self.items[-1][1]()
+        self.items[-1][1]()
 
-        class Icon:
-            def __init__(self, name, image, title, menu=None):
-                self.name, self.image, self.title, self.menu = name, image, title, menu
-                self.stopped = threading.Event()
-                outer.icons.append(self)
-
-            def run(self):
-                self.stopped.wait(10)
-
-            def stop(self):
-                self.stopped.set()
-        self.MenuItem, self.Menu, self.Icon = MenuItem, Menu, Icon
+    def close(self):
+        self.events.append('close')
 
 
-def test_run_tray_builds_the_icon_and_quit_stops_everything(tmp_path, monkeypatch):
-    pytest.importorskip('PIL')
-    fake = FakePystray()
-    monkeypatch.setitem(sys.modules, 'pystray', fake)
+def test_run_tray_shows_the_menu_and_quit_stops_then_closes(tmp_path, monkeypatch):
+    RecordingIcon.made = []
+    monkeypatch.setattr(desktop_tray.os, 'name', 'nt')
+    monkeypatch.setattr(desktop_tray, '_api_factory', lambda: 'api')
+    monkeypatch.setattr(win_tray, 'NotifyIcon', RecordingIcon)
     monkeypatch.setattr(desktop_tray, 'system_locale', lambda: 'uk')
-    stops = []
-    thread = threading.Thread(target=run_tray, args=('http://127.0.0.1:1', tmp_path, tmp_path / 'none', lambda: stops.append(1)), daemon=True)
-    thread.start()
-    deadline = time.time() + 5
-    while time.time() < deadline and not fake.icons:
-        time.sleep(0.01)
-    icon = fake.icons[0]
-    assert (icon.name, icon.title) == ('Obscura', 'Obscura') and icon.image.size == (64, 64)
-    assert [item.text for item in icon.menu.items] == ['Відкрити Obscura', 'Тека творів', 'Вийти']
-    assert [item.default for item in icon.menu.items] == [True, False, False]
-    icon.menu.items[-1].action(icon, icon.menu.items[-1])
-    thread.join(5)
-    assert not thread.is_alive() and stops == [1] and icon.stopped.is_set()
+    run_tray('http://127.0.0.1:1', tmp_path, tmp_path / 'none', lambda: RecordingIcon.made[0].events.append('stop'))
+    icon = RecordingIcon.made[0]
+    assert icon.api == 'api' and icon.title == 'Obscura'
+    assert labels(icon.items) == ['Відкрити Obscura', 'Тека творів', 'Вийти']
+    assert icon.events == ['stop', 'close']
 
 
-def test_missing_tray_library_is_reported(monkeypatch, tmp_path):
-    monkeypatch.setitem(sys.modules, 'pystray', None)
+def test_no_tray_outside_windows(monkeypatch, tmp_path):
+    monkeypatch.setattr(desktop_tray.os, 'name', 'posix')
     with pytest.raises(TrayUnavailable):
         run_tray('u', tmp_path, tmp_path, lambda: None)
 
 
+def test_icon_png_is_a_png_of_the_requested_size():
+    from PIL import Image
+    image = Image.open(io.BytesIO(desktop_tray.icon_png(24)))
+    assert image.format == 'PNG' and image.size == (24, 24) and image.mode == 'RGBA'
+
+
+def unavailable():
+    raise TrayUnavailable()
+
+
 @pytest.mark.loopback
 def test_launcher_without_a_tray_keeps_running_and_logs_it(monkeypatch, tmp_path):
-    monkeypatch.setitem(sys.modules, 'pystray', None)
+    monkeypatch.setattr(desktop_tray, '_api_factory', unavailable)
     servers = []
 
     def serve(app, port):

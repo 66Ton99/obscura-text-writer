@@ -4,6 +4,7 @@ The build script trusts only this report: assumptions about the interpreter or t
 Nothing here reads or writes the user's data folder or credentials, opens a network connection or shows a window.
 """
 import hashlib
+import os
 import sys
 import tempfile
 from importlib.resources import files
@@ -65,9 +66,14 @@ def _key_store():
 
 
 def _tray():
-    import pystray  # noqa: F401 - the import itself is the check
-    from .desktop_tray import _image
-    _image()
+    # The Windows API of the icon loads and an icon is built from the picture; nothing is shown in the tray.
+    if os.name != 'nt':
+        return 'not windows'
+    from . import win_tray
+    from .desktop_tray import icon_png
+    api = win_tray.Win32Api()
+    size = api.small_icon_size()
+    api.destroy_icon(api.icon_from_png(icon_png(size), size))
     return ''
 
 
