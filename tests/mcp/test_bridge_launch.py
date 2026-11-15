@@ -100,10 +100,10 @@ def test_unavailable_obscura_reaches_the_chat_as_a_tool_error(tmp_path):
 
 @pytest.mark.req('STORE-MCP-001')
 def test_stopped_server_is_found_again(tmp_path):
-    seen = []
+    seen, stopped = [], threading.Event()
 
     def handler(request):
-        if request.url.port == 8773:
+        if request.url.port == 8773 and stopped.is_set():
             raise httpx.ConnectError('refused', request=request)
         seen.append(str(request.url))
         return httpx.Response(200, json=[])
@@ -111,7 +111,10 @@ def test_stopped_server_is_found_again(tmp_path):
     started = []
     connection = Connection(tmp_path, None, client_factory=factory(handler), locate=locate, start=lambda: started.append(1))
     assert connection.request('GET', '/api/stories').status_code == 200
-    assert seen == ['http://127.0.0.1:8774/api/stories'] and connection.base == 'http://127.0.0.1:8774' and started == []
+    stopped.set()  # Obscura is closed and started again on another port between two chat calls
+    assert connection.request('GET', '/api/stories').status_code == 200
+    assert seen == ['http://127.0.0.1:8773/api/stories', 'http://127.0.0.1:8774/api/stories']
+    assert connection.base == 'http://127.0.0.1:8774' and locate.calls == 2 and started == []
 
 
 @pytest.mark.req('STORE-MCP-001')
@@ -166,8 +169,17 @@ def test_start_obscura_runs_the_sibling_exe_without_browser(tmp_path, monkeypatc
     argv, kwargs = calls[0]
     assert argv == [str(tmp_path / 'Obscura.exe'), '--no-browser', '--data-dir', str(tmp_path / 'data')]
     assert kwargs['stdin'] is kwargs['stdout'] is kwargs['stderr'] is subprocess.DEVNULL
-    if sys.platform == 'win32':
-        assert kwargs['creationflags'] & subprocess.DETACHED_PROCESS
+
+
+@pytest.mark.req('STORE-MCP-001')
+@pytest.mark.skipif(sys.platform != 'win32', reason='process creation flags are Windows-only')
+def test_start_obscura_detaches_from_the_bridge(tmp_path, monkeypatch):
+    monkeypatch.delattr(sys, 'frozen', raising=False)
+    calls = []
+    monkeypatch.setattr(launch.subprocess, 'Popen', lambda argv, **kwargs: calls.append(kwargs))
+    launch.start_obscura(tmp_path)
+    flags = calls[0]['creationflags']
+    assert flags & launch.DETACHED_PROCESS and flags & launch.CREATE_NEW_PROCESS_GROUP and flags & launch.CREATE_BREAKAWAY_FROM_JOB
 
 
 @pytest.mark.req('STORE-MCP-001')
@@ -215,7 +227,7 @@ def test_checkout_without_arguments_keeps_the_old_address(monkeypatch):
     from storygen.mcp import bridge
     monkeypatch.delattr(sys, 'frozen', raising=False)
     connection = bridge.connection_for(None, None)
-    assert connection.base == launch.DEFAULT_URL and connection._explicit
+    assert connection.base == launch.DEFAULT_URL and connection._explicit == launch.DEFAULT_URL and connection._data_dir is None
 
 
 @pytest.mark.req('STORE-MCP-001')
@@ -228,11 +240,9 @@ def test_installed_bridge_and_explicit_folder_search_the_record(tmp_path, monkey
 
 
 @pytest.mark.req('STORE-MCP-001')
-def test_self_check_builds_the_http_client_and_exits(monkeypatch, capsys):
+def test_self_check_builds_the_http_client_and_exits(capsys):
     # The build runs this next to Obscura.exe: `--help` alone never creates the TLS context the first tool call needs.
     from storygen.mcp import bridge
-    built = []
-    monkeypatch.setattr(bridge, 'build_client', lambda url: built.append(url) or httpx.Client(base_url=url))
     with pytest.raises(SystemExit) as exited:
         bridge.main(['--self-check'])
-    assert exited.value.code == 0 and built == [launch.DEFAULT_URL] and 'storygen-mcp: ok' in capsys.readouterr().out
+    assert exited.value.code == 0 and 'storygen-mcp: ok' in capsys.readouterr().out

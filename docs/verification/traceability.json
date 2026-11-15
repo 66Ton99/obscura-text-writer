@@ -5632,6 +5632,7 @@
         "tests/mcp/test_bridge_launch.py::test_missing_server_is_started_once_and_awaited",
         "tests/mcp/test_bridge_launch.py::test_concurrent_calls_start_obscura_once",
         "tests/mcp/test_bridge_launch.py::test_start_obscura_runs_the_sibling_exe_without_browser",
+        "tests/mcp/test_bridge_launch.py::test_start_obscura_detaches_from_the_bridge",
         "tests/mcp/test_bridge_launch.py::test_start_obscura_in_a_checkout_uses_the_desktop_module",
         "tests/mcp/test_bridge_launch.py::test_start_falls_back_when_the_job_forbids_breakaway"
       ]
