@@ -167,3 +167,24 @@ def secret_store():
     secrets.set_backend(store)
     yield store
     secrets.set_backend(MemorySecretStore())
+
+
+@pytest.fixture(autouse=True)
+def isolated_claude(request, tmp_path_factory, monkeypatch):
+    """STORE-MCP-001: no test touches the author's real Claude. Connect routes see temporary folders, find no Claude Code,
+    open no Explorer window and never restart Claude Desktop; the module's own tests pass their folders explicitly."""
+    if request.node.module.__name__.endswith('test_claude_connect'):
+        return
+    from storygen import claude_connect
+    from storygen.web import routes_connect
+    base = tmp_path_factory.mktemp('claude-roots')
+    roots = claude_connect.Roots(local_appdata=base / 'Local', appdata=base / 'Roaming', userprofile=base / 'home')
+    for folder in (roots.local_appdata, roots.appdata, roots.userprofile):
+        folder.mkdir()
+    monkeypatch.setattr(routes_connect, '_roots', lambda: roots)
+    monkeypatch.setattr(routes_connect, '_open_folder', lambda path: None)
+    monkeypatch.setattr(claude_connect, 'find_claude_code', lambda found_roots, which=None: None)
+
+    def refuse(*args, **kwargs):
+        raise AssertionError('a test tried to restart the real Claude Desktop')
+    monkeypatch.setattr(claude_connect, 'restart_desktop', refuse)

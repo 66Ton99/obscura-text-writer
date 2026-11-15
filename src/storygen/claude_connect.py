@@ -95,7 +95,7 @@ def find_desktop_config(roots: Roots) -> DesktopConfig | None:
     return max(candidates, key=lambda found: found.path.stat().st_mtime_ns) if candidates else None
 
 
-def _entry(command: list[str]) -> dict:
+def desktop_entry(command: list[str]) -> dict:
     return {'command': command[0], 'args': list(command[1:])} if len(command) > 1 else {'command': command[0]}
 
 
@@ -116,7 +116,7 @@ def write_desktop_entry(config: Path, command: list[str]) -> Literal['added', 'u
     """Add or update `mcpServers.obscura`, keeping every other key and its order; copy the file first."""
     data = _read_config(config)
     servers = data.get('mcpServers', {})
-    entry = _entry(command)
+    entry = desktop_entry(command)
     if servers.get(ENTRY) == entry:
         return 'unchanged'
     result = 'updated' if ENTRY in servers else 'added'
