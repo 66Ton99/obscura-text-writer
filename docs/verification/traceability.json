@@ -1379,11 +1379,10 @@
     {
       "id": "SCENE-PLAN-TEMPLATE-S01",
       "requirement": "SCENE-PLAN-TEMPLATE",
-      "scope": "Усі шість полів переносяться з попередньої сцени через сховище й API; кнопка надсилає лише назву.",
+      "scope": "Усі шість полів переносяться з попередньої сцени через сховище й API.",
       "tests": [
         "tests/authoring/test_scene_plan_template.py::test_all_six_fields_carry_over_and_the_rest_stays_empty",
-        "tests/authoring/test_scene_plan_template.py::test_api_creates_scene_with_template_and_keeps_given_plan",
-        "tests/authoring/test_scene_plan_template.py::test_add_scene_button_sends_the_place_after_the_open_scene"
+        "tests/authoring/test_scene_plan_template.py::test_api_creates_scene_with_template_and_keeps_given_plan"
       ]
     },
     {
@@ -3601,11 +3600,16 @@
         "tests/storage/test_scene_renumber.py::test_insert_in_the_middle_takes_the_place_number_and_shifts_later_scenes",
         "tests/storage/test_scene_renumber.py::test_insert_with_an_explicit_number_is_checked_after_the_shift",
         "tests/storage/test_scene_renumber.py::test_appending_keeps_imported_numbers",
-        "tests/storage/test_scene_renumber.py::test_trash_and_restore_renumber_later_scenes",
+        "tests/storage/test_scene_renumber.py::test_trash_and_restore_renumber_the_whole_list",
+        "tests/storage/test_scene_renumber.py::test_replaced_plan_head_invalidates_its_dependants",
+        "tests/storage/test_scene_renumber.py::test_number_without_heading_changes_no_plan_and_invalidates_nothing",
         "tests/storage/test_scene_renumber.py::test_insert_joins_the_arc_of_the_scene_before",
-        "tests/storage/test_scene_renumber.py::test_insert_already_makes_other_briefs_stale",
-        "tests/authoring/test_scene_plan_template.py::test_add_scene_button_sends_the_place_after_the_open_scene"
-      ]
+        "tests/storage/test_scene_renumber.py::test_insert_already_makes_other_briefs_stale"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#scene-insert-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright case tests/web/browser/scene-insert.spec.mjs (кнопка «Додати сцену» вставляє після відкритої сцени) виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
     },
     {
       "id": "IMPORT-ADDITIVE-S03",

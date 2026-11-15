@@ -295,7 +295,7 @@ def set_scene_trashed(repo,story_id,scene_id,expected_revision,restore):
         # A changed scene boundary invalidates subsequent context even without explicit dependency edges.
         _invalidate_later(repo,db,active[index:])
         from .scene_numbering import renumber_active
-        renumber_active(repo,db,active,start=index)
+        renumber_active(repo,db,active)
         if not restore:
             from .invalidation import invalidate_in_transaction
             invalidate_in_transaction(repo,db,list(scene.heads.values()))

@@ -197,10 +197,3 @@ def test_api_creates_scene_with_template_and_keeps_given_plan(tmp_path):
         assert created['beats'] == EXPECTED and created['author_scene_number'] == 5 and created['title'] == 'Дорога'
         assert app.state.repo.get_scene(created['id']).beats == EXPECTED
 
-
-def test_add_scene_button_sends_the_place_after_the_open_scene():
-    from importlib.resources import files
-    script = files('storygen.web').joinpath('static', 'editor.js').read_text(encoding='utf-8')
-    # SCENE-RENUMBER: the plan still comes from the server template; the request adds only the place.
-    assert "const index=state.view?.scenes.findIndex(scene=>scene.id===state.scene?.id)??-1;" in script
-    assert "json('POST',index<0?{title}:{title,position:index+1})" in script

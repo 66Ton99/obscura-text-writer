@@ -57,6 +57,30 @@ def test_reorder_renumbers_beats_and_a_new_plan_version(tmp_path):
 
 
 @pytest.mark.req('IMPORT-NUMBER')
+def test_replaced_plan_head_invalidates_its_dependants(tmp_path):
+    repo, story_id = make(tmp_path, 'Сцена 1: Ранок', 'Сцена 2: Обід')
+    second = repo.list_scenes(story_id)[1]
+    second = repo.update_scene_plan(second.id, 'Сцена 2: Обід\nБ.', second.revision)
+    dependant = repo.save_version(story_id, second.id, 'brief', '{}', [second.heads['plan']])
+    assert not repo.get_version(dependant.id).stale
+    repo.create_scene(story_id, SceneCreate(title='Вставка', position=0))
+    assert repo.get_version(dependant.id).stale
+    assert repo.read_text(repo.get_scene(second.id).heads['plan']) == 'Сцена 3: Обід\nБ.'
+
+
+@pytest.mark.req('IMPORT-NUMBER')
+def test_number_without_heading_changes_no_plan_and_invalidates_nothing(tmp_path):
+    repo, story_id = make(tmp_path, 'Сцена 1: Ранок')
+    scene = repo.create_scene(story_id, SceneCreate(title='Вступ', author_scene_number=2))
+    scene = repo.update_scene_plan(scene.id, 'Вступ без номера.', scene.revision)
+    dependant = repo.save_version(story_id, scene.id, 'brief', '{}', [scene.heads['plan']])
+    repo.create_scene(story_id, SceneCreate(title='Перша', position=0, beats='Сцена 1: Перша'))
+    after = repo.get_scene(scene.id)
+    assert after.heads['plan'] == scene.heads['plan'] and after.author_scene_number is None
+    assert not repo.get_version(dependant.id).stale
+
+
+@pytest.mark.req('IMPORT-NUMBER')
 def test_unnumbered_scene_keeps_its_place_and_gets_no_versions(tmp_path):
     repo, story_id = make(tmp_path, 'Пролог\nТиша.', 'Сцена 1: Ранок', 'Сцена 2: Обід')
     prologue = repo.list_scenes(story_id)[0]
@@ -112,13 +136,19 @@ def test_appending_keeps_imported_numbers(tmp_path):
 
 
 @pytest.mark.req('IMPORT-NUMBER')
-def test_trash_and_restore_renumber_later_scenes(tmp_path):
-    repo, story_id = make(tmp_path, 'Сцена 1: Ранок', 'Сцена 2: Обід', 'Сцена 3: Вечір')
-    middle = repo.list_scenes(story_id)[1]
+def test_trash_and_restore_renumber_the_whole_list(tmp_path):
+    # Own numbering from 2: the scenes before the trashed one are renumbered too, so no number repeats.
+    repo, story_id = make(tmp_path, 'Сцена 2: Ранок', 'Сцена 3: Обід', 'Сцена 4: Вечір')
+    first, middle, last = repo.list_scenes(story_id)
+    repo.update_scene_plan(last.id, 'Сцена 4: Вечір\nВ.', last.revision)
     trashed = trash_scene(repo, story_id, middle.id, middle.revision)
-    assert [p[0] for p in plans(repo, story_id)] == ['Сцена 1: Ранок', 'Сцена 2: Вечір']
+    assert plans(repo, story_id) == [('Сцена 1: Ранок', None, 1), ('Сцена 2: Вечір\nВ.', 'Сцена 2: Вечір\nВ.', 2)]
+    repo.update_scene_metadata(first.id, {'title': 'Світанок'}, repo.get_scene(first.id).revision)  # no duplicate number
     restore_scene(repo, story_id, middle.id, trashed.revision)
-    assert [p[0] for p in plans(repo, story_id)] == ['Сцена 1: Ранок', 'Сцена 2: Обід', 'Сцена 3: Вечір']
+    assert plans(repo, story_id) == [('Сцена 1: Ранок', None, 1), ('Сцена 2: Обід', None, 2), ('Сцена 3: Вечір\nВ.', 'Сцена 3: Вечір\nВ.', 3)]
+    head = repo.list_scenes(story_id)[0]
+    trash_scene(repo, story_id, head.id, head.revision)
+    assert [p[2] for p in plans(repo, story_id)] == [1, 2]
 
 
 @pytest.mark.req('IMPORT-NUMBER')

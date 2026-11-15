@@ -36,13 +36,12 @@ def renumber_active(repo, db, active, start=0):
             repo._insert_version_row(db, version)
             scene.heads['plan'] = id
             scene.head_revisions['plan'] = scene.head_revisions.get('plan', 0) + 1
+            replaced.append(head)
         if explicit_scene_number(scene.beats) is not None:
             scene.beats = renumber_plan(scene.beats, number)
         scene.author_scene_number = number
         scene.revision += 1
         repo._save_scene(db, scene)
-        if head:
-            replaced.append(head)
     if replaced:
         invalidate_in_transaction(repo, db, replaced)
         # Invalidation marks scenes for review in the database; callers save these same objects again afterwards.
