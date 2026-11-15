@@ -41,7 +41,7 @@
 
 **Files:**
 - Create: `src/storygen/publication/text_cover.py`
-- Test: `tests/publication/test_text_cover.py` (створити теку `tests/publication/` з порожнім `__init__.py`, якщо інші теки тестів його мають — перевірити `tests/storage/__init__.py`)
+- Test: `tests/publication/test_text_cover.py` (нова тека; `__init__.py` не потрібен — інші теки тестів його не мають)
 
 **Interfaces:**
 - Produces:
