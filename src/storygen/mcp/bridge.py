@@ -21,6 +21,7 @@ from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..publication_models import PublicationData
+from .edition import edition_refusal
 from .launch import DEFAULT_URL, Connection, ObscuraUnavailable
 
 LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
@@ -149,6 +150,18 @@ def _detail(response: httpx.Response) -> str:
     return json.dumps(body, ensure_ascii=False)[:4000]
 
 
+def _original(response: httpx.Response) -> str:
+    """The server's own (untranslated) refusal text: the app sends it beside the localized `detail`."""
+    try:
+        body = response.json()
+    except ValueError:
+        return ''
+    if isinstance(body, dict):
+        value = body.get('detail_original', body.get('detail'))
+        return value if isinstance(value, str) else ''
+    return ''
+
+
 def fingerprint(value) -> str:
     """MCP-BRIDGE-S34: the content of one settings section, the same way for reading and for the check before a write."""
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')).hexdigest()
@@ -227,9 +240,30 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
         except httpx.TransportError as error:
             raise ToolError(f'Obscura не запущено за адресою {base()}: запустіть її і повторіть ({type(error).__name__})') from error
 
+    waitlist: list[str] = []
+
+    def waitlist_url() -> str:
+        # STORE-MCP-001 S05: read once from the running Obscura; the build marker is not inside the bridge folder.
+        if not waitlist:
+            try:
+                answer = raw('GET', '/api/app-info')
+                value = answer.json().get('waitlist_url', '') if answer.status_code == 200 else ''
+            except (httpx.HTTPError, ToolError, ValueError, AttributeError):
+                value = ''
+            waitlist.append(value if isinstance(value, str) else '')
+        return waitlist[0]
+
+    def edition_check(response: httpx.Response) -> None:
+        """An edition refusal becomes a hint about the paid version; any other refusal is left to the caller."""
+        if response.status_code in (400, 403, 409, 422):
+            original = _original(response)
+            if edition_refusal(original, '') is not None:
+                raise ToolError(edition_refusal(original, waitlist_url()))
+
     def request(method: str, path: str, **kwargs):
         response = send(method, path, **kwargs)
         if response.status_code >= 400:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}')
         return response.json()
 
@@ -414,6 +448,7 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             except ValueError:
                 applied = False
             note = ' План записано, властивості — ні: перечитайте сцену (get_scene_text, get_story).' if applied else ''
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}{note}')
         scene = response.json()
         result = {'id': scene['id'], 'revision': scene['revision'], 'title': scene['title']}
@@ -501,10 +536,12 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             'expected_signature_revisions': {person: revisions[person] for person in people}})
         if response.status_code == 422:
             # The server names no field: point the chat at the vocabularies it can read.
+            edition_check(response)
             raise ToolError(f'Obscura відповіла 422: {_detail(response)}. Перевірте значення полів: коди жанрів — з '
                             'get_publication(genres_language), мова — код на кшталт uk чи en, дата — РРРР-ММ-ДД, ключові слова й '
                             'списки без повторів і порожніх значень')
         if response.status_code >= 400:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}')
         return publication_view(response.json(), signatures)
 
@@ -548,6 +585,7 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
         if response.status_code == 400:
             return None  # "Оцінювач не налаштовано"
         if response.status_code >= 400:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}')
         return response.json()
 
@@ -658,9 +696,11 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             body = {'expected_revision': revision, 'role': section, 'settings': settings}
         response = send('PUT', f'/api/stories/{story_id}/settings', json=body)
         if response.status_code == 422:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла 422: {_detail(response)}. Перевірте значення полів: числа в межах форми '
                             '(max_output_tokens менше за context_tokens, temperature 0–2), provider — local, openrouter чи venice')
         if response.status_code >= 400:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}')
         after = settings_view(read_settings(story_id), section)
         return {'section': section, **after, 'changed': changed_fields(before, after['settings'])}
@@ -733,6 +773,7 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
                 listed = {key: details[key] for key in ('memory_violations', 'editor_failure', 'planner_failure', 'warnings') if details.get(key)}
                 raise ToolError(f"Obscura відповіла 422: {details['detail']}\n{json.dumps(listed, ensure_ascii=False)}")
         if response.status_code >= 400:
+            edition_check(response)
             raise ToolError(f'Obscura відповіла {response.status_code}: {_detail(response)}')
         return response.json()
 
