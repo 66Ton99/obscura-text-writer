@@ -54,7 +54,11 @@ def create_app(settings: AppSettings, *, gateway_factory=None,evaluator_factory=
         # SERIES-S07: the series screen and its link exist only in an edition with long prose.
         from .. import build_edition
         return build_edition.current().long_prose
-    app.state.templates.env.globals.update(t=ui_translate,ui_locale=request_locale,app_links=app_links,long_prose=long_prose)
+    def edition():
+        # STORE-MCP-001 S07: the Store form preselects «the chat writes».
+        from .. import build_edition
+        return build_edition.current().edition
+    app.state.templates.env.globals.update(t=ui_translate,ui_locale=request_locale,app_links=app_links,long_prose=long_prose,edition=edition)
     app.mount("/static",StaticFiles(directory=str(root.joinpath("static"))),name="static")
 
     def error_response(request,detail,status_code):
@@ -73,6 +77,10 @@ def create_app(settings: AppSettings, *, gateway_factory=None,evaluator_factory=
                 return error_response(request,"Запит з іншого сайту відхилено",403)
         if from_bridge(request) and author_only_path(request.method,request.url.path):
             return error_response(request,RUN_OWNER_ONLY,403)
+        if from_bridge(request) and request.url.path.startswith('/api/connect/'):
+            # STORE-MCP-001 S11: the chat may not connect, reconnect or restart Claude itself.
+            from .routes_connect import CONNECT_OWNER_ONLY
+            return error_response(request,CONNECT_OWNER_ONLY,403)
         from .long_prose_guard import blocked
         # BUILD-EDITION-001-S08: a structured book is read-only in an edition without long prose.
         refusal=await blocked(app,request)
@@ -118,6 +126,8 @@ def create_app(settings: AppSettings, *, gateway_factory=None,evaluator_factory=
 
     from .routes_stories import router
     app.include_router(router)
+    from .routes_connect import router as connect_router
+    app.include_router(connect_router)
     from .routes_structure import router as structure_router
     app.include_router(structure_router)
     from .routes_series import router as series_router

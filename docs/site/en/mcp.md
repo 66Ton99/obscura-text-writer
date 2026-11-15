@@ -48,6 +48,19 @@ The chat cannot delete stories or scenes, move them to the trash, reorder scenes
 
 ## Connecting
 
+### The button in the library
+
+The easiest way to connect is from the Obscura library: expand the “Connect to Claude” block.
+
+- **Connect Claude Desktop** adds only the `obscura` entry to the Claude Desktop settings. The other settings stay, and a copy of the file before the change appears next to it (`claude_desktop_config.json.obscura-backup`). Obscura shows which file it wrote to and offers to restart Claude: it reads its settings only when it starts.
+- **Restart Claude now** closes Claude Desktop together with the open conversation, including unsent text, and opens it again. **I will restart it myself** explains how to do it by hand: a closed window leaves Claude running, so quit from the Claude icon next to the clock (“Quit”) and open it again.
+- **Another way** is the fallback when there is no settings file yet (Claude Desktop has never been started) or it has an unknown format. Obscura prepares the extension file `obscura.mcpb` in the stories folder and opens the folder. In Claude Desktop, open Settings → Desktop app → Extensions, drag the file into the window and click Install. Claude shows its standard warning about extensions outside its directory.
+- **Connect Claude Code** runs `claude mcp add --scope user obscura` and checks the entry. If Claude Code is not found, Obscura shows the command with a “Copy” button.
+
+The chat cannot connect or restart Claude by itself: only you do this, in Obscura.
+
+### By hand
+
 Start Obscura as usual before you work. The chat client connects to `http://127.0.0.1:8765`. If Obscura runs on another port, add the arguments `--url http://127.0.0.1:<port>`.
 
 If you start Obscura without a console through `storygen-desktop` ([installation](install.md)), add the arguments `--data-dir <stories folder>` instead of `--url` (by default `%USERPROFILE%\Obscura`). Then you do not need to start Obscura beforehand: on the chat's first request the bridge finds it on any port and, if it is not running, quietly starts it in the tray without a browser. Obscura stays in the tray after you close the chat; you can quit it from the tray icon.
@@ -166,6 +179,16 @@ The chat can go through every stage of a scene itself: write the scene brief, wr
 - If the previous prose changed after its memory, the chat does not get the memory task: you confirm the use of the previous memory in Obscura.
 - In the version history such versions are marked "External client: <name>". Prose edited by the chat is an editing version with this mark.
 - These tools cost no money and are not counted in the budget. If a role is not configured, Obscura uses the chat's typical context limits; it does not know the chat's own window.
+
+## Start a story with one request
+
+The chat client sees the “Start a story” prompt (`start_story`). It leads the chat from an idea to a story: create the story in the “chat writes” mode, fill in the plan and the characters, write the scenes and finally give a link to read and edit the story in the Obscura window.
+
+## The Microsoft Store version
+
+The Microsoft Store version includes the MCP bridge: there is nothing to install separately, and the “Connect to Claude” button in the library is expanded right away. A new story in it uses the “chat writes” mode by default. If Obscura is not running, Claude quietly starts it in the tray when it is needed; you can quit it from the tray icon.
+
+The free version does not write long prose (books, parts, arcs), series or scenes above the rating limit. When the chat meets such a limit, it explains that this is a feature of the paid version and gives the waitlist link.
 
 ## Limitations
 

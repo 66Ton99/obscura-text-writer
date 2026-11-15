@@ -5701,6 +5701,112 @@
       }
     },
     {
+      "id": "STORE-MCP-S05",
+      "requirement": "STORE-MCP-001",
+      "scope": "Відмови межі видання в чаті з посиланням на платну версію; інші відмови без змін. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_edition.py::test_edition_texts_become_a_paid_version_hint",
+        "tests/mcp/test_bridge_edition.py::test_empty_waitlist_has_no_link",
+        "tests/mcp/test_bridge_edition.py::test_other_refusals_stay_as_they_are",
+        "tests/mcp/test_bridge_edition.py::test_bridge_tool_error_carries_the_hint",
+        "tests/mcp/test_bridge_edition.py::test_real_server_refusal_reaches_the_chat_as_a_hint",
+        "tests/mcp/test_bridge_edition.py::test_stage_result_422_edition_refusal_is_a_hint",
+        "tests/mcp/test_bridge_edition.py::test_start_run_readiness_edition_limit_is_a_hint"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S06",
+      "requirement": "STORE-MCP-001",
+      "scope": "Prompt start_story і посилання next_steps в INSTRUCTIONS. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_prompt.py::test_start_story_prompt_walks_from_idea_to_the_obscura_window",
+        "tests/mcp/test_bridge_prompt.py::test_instructions_offer_the_obscura_link",
+        "tests/mcp/test_bridge_prompt.py::test_start_story_without_idea_asks_the_person"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S07",
+      "requirement": "STORE-MCP-001",
+      "scope": "Режим «пише чат» за замовчуванням у формі бібліотеки Store. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/web/test_library_writing_mode.py::test_store_library_preselects_chat",
+        "tests/web/test_library_writing_mode.py::test_full_library_keeps_obscura"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S08",
+      "requirement": "STORE-MCP-001",
+      "scope": "Команда моста, вибір файлу конфігурації Claude Desktop, запис лише obscura з копією, некоректний файл не змінюється. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_command_for_package_is_the_alias",
+        "tests/test_claude_connect.py::test_command_for_checkout_server_is_the_url",
+        "tests/test_claude_connect.py::test_command_for_desktop_launcher_passes_the_folder",
+        "tests/test_claude_connect.py::test_store_config_is_found_by_package",
+        "tests/test_claude_connect.py::test_store_and_installer_prefer_the_existing_newer_file",
+        "tests/test_claude_connect.py::test_several_store_profiles_pick_the_newest",
+        "tests/test_claude_connect.py::test_missing_config_is_none",
+        "tests/test_claude_connect.py::test_entry_is_added_beside_other_keys_in_order",
+        "tests/test_claude_connect.py::test_existing_entry_is_updated_or_left_unchanged",
+        "tests/test_claude_connect.py::test_unusable_config_is_left_untouched",
+        "tests/web/test_connect_routes.py::test_desktop_entry_is_written_and_reported_with_its_file",
+        "tests/web/test_connect_routes.py::test_missing_config_offers_the_fallback",
+        "tests/web/test_connect_routes.py::test_unusable_config_names_the_file"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-connect-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright tests/web/browser/claude-connect.spec.mjs виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "STORE-MCP-S09",
+      "requirement": "STORE-MCP-001",
+      "scope": "Запасний .mcpb: маніфест 0.3, файли, тека творів. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_mcpb_manifest_and_files",
+        "tests/web/test_connect_routes.py::test_bundle_is_built_in_the_data_folder",
+        "tests/web/test_connect_routes.py::test_missing_launcher_refuses_the_bundle"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-connect-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright tests/web/browser/claude-connect.spec.mjs виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "STORE-MCP-S10",
+      "requirement": "STORE-MCP-001",
+      "scope": "Claude Code: послідовність команд, підтвердження get, команда для копіювання. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_claude_code_gets_the_alias_by_name",
+        "tests/test_claude_connect.py::test_claude_code_sequence_and_check",
+        "tests/test_claude_connect.py::test_claude_code_is_found_or_none",
+        "tests/web/test_connect_routes.py::test_claude_code_connected_or_command_to_copy",
+        "tests/web/test_connect_routes.py::test_claude_code_unconfirmed_keeps_the_command"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-connect-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright tests/web/browser/claude-connect.spec.mjs виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "STORE-MCP-S11",
+      "requirement": "STORE-MCP-001",
+      "scope": "Перезапуск лише Claude Desktop, запасні способи запуску, заборона маршрутів мосту й іншого походження, тести без справжнього Claude. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_restart_never_touches_claude_code",
+        "tests/test_claude_connect.py::test_restart_store_falls_back_to_apps_folder",
+        "tests/test_claude_connect.py::test_restart_installer_runs_its_exe",
+        "tests/web/test_connect_routes.py::test_restart_runs_only_the_fixed_action",
+        "tests/web/test_connect_routes.py::test_restart_without_config_does_nothing",
+        "tests/web/test_connect_routes.py::test_bridge_cannot_use_connect_routes",
+        "tests/web/test_connect_routes.py::test_foreign_origin_is_refused",
+        "tests/web/test_connect_routes.py::test_web_tests_never_reach_the_real_claude"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-mcp-package",
+        "reason": "Справжній Claude Desktop і Claude Code автотести не чіпають (tests/conftest.py::isolated_claude); підключення й перезапуск наживо — ручна процедура на підписаному пакеті."
+      }
+    },
+    {
       "id": "MCP-BRIDGE-S52",
       "requirement": "MCP-BRIDGE",
       "scope": "generate_cover: обкладинка зі збереженої картки без її зміни, прив'язка через update_publication, невідома палітра без запиту, набір палітр збігається з малюванням. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
