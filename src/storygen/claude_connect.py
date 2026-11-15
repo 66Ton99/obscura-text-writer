@@ -84,7 +84,7 @@ def find_desktop_config(roots: Roots) -> DesktopConfig | None:
     installer = roots.appdata / 'Claude' / CONFIG_NAME
     candidates = []
     if family and store:
-        candidates.append(DesktopConfig(store[0], 'store', family))
+        candidates += [DesktopConfig(path, 'store', family) for path in store]
     if (roots.local_appdata / 'AnthropicClaude').is_dir() and installer.is_file():
         candidates.append(DesktopConfig(installer, 'installer'))
     if not candidates:

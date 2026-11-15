@@ -12,6 +12,7 @@ PAID_TEXT = ('Це можливість платної версії Obscura: д�
              'This is a feature of the paid version of Obscura: long prose (books, parts, arcs), series and scenes without '
              'the rating limit.')
 WAITLIST_TEXT = 'Записатися / Join the waitlist: {url}'
+INVALID_PREFIX = 'Некоректні дані: '
 _EXACT = frozenset({NO_LONG_PROSE, READ_ONLY, READ_ONLY_SERIES})
 
 
@@ -25,6 +26,8 @@ _LIMIT = _template(EDITION_LIMIT)
 
 def edition_refusal(detail: str, waitlist_url: str) -> str | None:
     """The chat text for an edition refusal, or `None` when `detail` is any other refusal (it is left as it is)."""
+    # Obscura's ValueError handler and the long-prose middleware send «Некоректні дані: <refusal>».
+    detail = detail.removeprefix(INVALID_PREFIX)
     if detail not in _EXACT and not _LIMIT.match(detail):
         return None
     lines = [detail, '', PAID_TEXT]

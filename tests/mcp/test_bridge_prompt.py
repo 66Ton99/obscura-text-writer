@@ -29,5 +29,15 @@ def test_start_story_prompt_walks_from_idea_to_the_obscura_window():
 
 
 @pytest.mark.req('STORE-MCP-001')
+@pytest.mark.parametrize('idea', [None, '   '])
+def test_start_story_without_idea_asks_the_person(idea):
+    async def run():
+        async with Client(server()) as client:
+            answer = await client.get_prompt('start_story', {} if idea is None else {'idea': idea})
+            return ' '.join(getattr(message.content, 'text', '') for message in answer.messages)
+    assert 'спитайте людину' in anyio.run(run)
+
+
+@pytest.mark.req('STORE-MCP-001')
 def test_instructions_offer_the_obscura_link():
     assert 'next_steps' in INSTRUCTIONS and 'вікні Obscura' in INSTRUCTIONS

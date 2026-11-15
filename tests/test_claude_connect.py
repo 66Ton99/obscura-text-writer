@@ -97,6 +97,16 @@ def test_store_and_installer_prefer_the_existing_newer_file(roots):
 
 
 @pytest.mark.req('STORE-MCP-001')
+def test_several_store_profiles_pick_the_newest(roots):
+    newest = store_claude(roots)
+    older = roots.local_appdata / 'Claude-Data' / 'claude_000old' / 'claude_desktop_config.json'
+    older.parent.mkdir(parents=True)
+    older.write_text('{}', encoding='utf-8')
+    os.utime(older, (1_000_000, 1_000_000))
+    assert cc.find_desktop_config(roots).path == newest
+
+
+@pytest.mark.req('STORE-MCP-001')
 def test_missing_config_is_none(roots):
     (roots.local_appdata / 'Packages' / 'Claude_abc123').mkdir(parents=True)
     assert cc.find_desktop_config(roots) is None

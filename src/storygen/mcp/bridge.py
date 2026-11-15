@@ -779,6 +779,7 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
                 'external_origin': {'client': origin_client(ctx), 'model': (model or '')[:128] or None}}
         response = send('POST', f'/api/scenes/{identifier(scene_id)}/chat-result/{stage}', json=body)
         if response.status_code == 422:
+            edition_check(response)
             try:
                 details = response.json()
             except ValueError:
@@ -821,7 +822,10 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
                             params={'scene_id': scene, 'operation': action})['operations'][action]
         budget = request('GET', f'/api/stories/{story}/budget')
         policy = budget.get('policy') or {}
-        preview = {'ready': ready.get('ready'), 'reason': ready.get('reason'), 'roles': ready.get('roles') or {},
+        # STORE-MCP-001 S05: readiness answers 200 with the edition limit as its reason.
+        reason = ready.get('reason')
+        hint = edition_refusal(reason, waitlist_url()) if isinstance(reason, str) and edition_refusal(reason, '') else None
+        preview = {'ready': ready.get('ready'), 'reason': hint or reason, 'roles': ready.get('roles') or {},
                    'calls': ready.get('calls'), 'warnings': ready.get('warnings') or [],
                    'budget': {'limit_usd': usd(budget.get('limit_nanos')), 'spent_usd': usd(budget.get('exposure_nanos')),
                               'available_usd': usd(budget.get('available_nanos')),
@@ -830,6 +834,8 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             return {'started': False, 'preview': preview,
                     'message': 'Покажіть перегляд авторові; запуск — лише після його згоди, викликом з confirm=true'}
         if not ready.get('ready'):
+            if hint:
+                raise ToolError(hint)
             raise ToolError(MEMORY_APPROVAL if ready.get('can_confirm') else f"Запуск не готовий: {ready.get('reason')}")
         if action == 'publication_suggest':
             body: dict[str, Any] = {'story_id': story, 'mode': 'publication_suggest'}

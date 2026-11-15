@@ -102,6 +102,30 @@ def test_restart_runs_only_the_fixed_action(client, roots, monkeypatch):
 
 
 @pytest.mark.req('STORE-MCP-001')
+def test_missing_launcher_refuses_the_bundle(client, roots, tmp_path, monkeypatch):
+    monkeypatch.setattr(routes_connect, '_launcher', lambda command: tmp_path / 'absent.exe')
+    answer = client.post('/api/connect/claude-desktop/bundle')
+    assert answer.status_code == 409 and answer.json()['detail_original'] == routes_connect.NO_LAUNCHER
+    assert not (tmp_path / 'data' / 'claude' / 'obscura.mcpb').exists()
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_restart_without_config_does_nothing(client, roots, monkeypatch):
+    monkeypatch.setattr(cc, 'restart_desktop', lambda *args: pytest.fail('restart without a config'))
+    answer = client.post('/api/connect/claude-desktop/restart')
+    assert answer.status_code == 404 and answer.json()['detail_original'] == routes_connect.NO_DESKTOP_CONFIG
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_claude_code_unconfirmed_keeps_the_command(client, roots, monkeypatch):
+    monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
+    monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: False)
+    answer = client.post('/api/connect/claude-code')
+    assert answer.status_code == 200 and answer.json()['connected'] is False
+    assert answer.json()['command'].startswith('claude mcp add --scope user obscura -- ')
+
+
+@pytest.mark.req('STORE-MCP-001')
 def test_bridge_cannot_use_connect_routes(client, roots, monkeypatch):
     store_config(roots)
     touched = []
