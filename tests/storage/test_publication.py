@@ -196,3 +196,24 @@ def test_generate_cover_rejects_unknown_palette_and_long_title(tmp_path):
     base=dict(story_id=story.id,title='',cycle_title='',cycle_number=None,author_ids=[],language='')
     with pytest.raises(ValueError,match='палітра'):repo.publication('generate_cover',**{**base,'palette':'neon'})
     with pytest.raises(ValueError,match='title'):repo.publication('generate_cover',**{**base,'palette':'ink','title':'x'*301})
+
+
+def test_generate_cover_blank_effective_title_is_a_clear_refusal(tmp_path):
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='   '))
+    with pytest.raises(ValueError,match='назв'):
+        repo.publication('generate_cover',story_id=story.id,palette='ink',title='',cycle_title='',cycle_number=None,author_ids=[],language='')
+    with repo.db.connection() as db:assert db.execute('SELECT COUNT(*) FROM publication_assets').fetchone()[0]==0
+
+
+def test_generate_cover_language_is_stripped_and_falls_back_to_story_language(tmp_path,monkeypatch):
+    from storygen.publication import text_cover
+    seen=[]
+    real=text_cover.render_text_cover
+    def spy(**kwargs):
+        seen.append(kwargs['series']); return real(**kwargs)
+    monkeypatch.setattr(text_cover,'render_text_cover',spy)
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Lighthouse',language='en'))
+    args=dict(story_id=story.id,palette='ink',title='',cycle_title='Light',cycle_number=3,author_ids=[])
+    repo.publication('generate_cover',**args,language='')
+    repo.publication('generate_cover',**args,language=' uk ')
+    assert seen==['LIGHT · BOOK 3','LIGHT · КНИГА 3']

@@ -2114,7 +2114,9 @@
         "tests/storage/test_publication.py::test_generate_cover_refusals_leave_no_asset",
         "tests/storage/test_publication.py::test_generate_cover_falls_back_to_story_title_and_language",
         "tests/storage/test_publication.py::test_generate_cover_rejects_unknown_palette_and_long_title",
-        "tests/web/test_publication_api.py::test_generate_cover_http"
+        "tests/web/test_publication_api.py::test_generate_cover_http",
+        "tests/storage/test_publication.py::test_generate_cover_blank_effective_title_is_a_clear_refusal",
+        "tests/storage/test_publication.py::test_generate_cover_language_is_stripped_and_falls_back_to_story_language"
       ]
     },
     {

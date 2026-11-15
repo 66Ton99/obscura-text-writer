@@ -56,8 +56,10 @@ def operation(repo,action,**data):
             db.execute('BEGIN')
             story=repo._active_story(db,data['story_id'])
             names=[signature(db,id).display_name for id in text.author_ids]
-        language=data['language'] or story.language
-        content=text_cover.render_text_cover(title=text.title or story.title,
+        language=text.language if data['language'].strip() else story.language
+        title=(text.title or story.title).strip()
+        if not title:raise ValueError('Для обкладинки потрібна назва: задайте її в картці або у творі')
+        content=text_cover.render_text_cover(title=title,
             series=text_cover.series_text(text.cycle_title,text.cycle_number,language),authors=names,palette=data['palette'])
         return operation(repo,'upload_cover',story_id=story.id,content=content)
     if action=='upload_cover':
