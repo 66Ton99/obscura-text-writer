@@ -10,7 +10,9 @@ import json
 import os
 import re
 import stat
+import sys
 import uuid
+from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
@@ -19,8 +21,8 @@ from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..publication_models import PublicationData
+from .launch import DEFAULT_URL, Connection, ObscuraUnavailable
 
-DEFAULT_URL = 'http://127.0.0.1:8765'
 LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
 FALLBACK_CLIENT = 'MCP client'
 TOOLS = ('list_stories', 'get_story', 'get_scene_context', 'get_scene_text', 'import_plan_and_characters', 'save_draft', 'next_steps',
@@ -203,15 +205,27 @@ def story_series(data: dict) -> dict | None:
             'resolved_count': len(status.get('resolved') or [])}
 
 
-def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServer:
-    base = str(http.base_url).rstrip('/')
+def build_server(http: httpx.Client | None, client_name: str | None = None, *, connection: Connection | None = None) -> MCPServer:
+    """Exactly one of `http` (a fixed client) and `connection` (STORE-MCP: found or started on demand)."""
+    if (http is None) == (connection is None):
+        raise ValueError('build_server needs exactly one of http and connection')
     server = MCPServer('Obscura', instructions=INSTRUCTIONS)
+
+    def base() -> str:
+        # The address of the Obscura serving now: links the chat hands out follow a restart on another port.
+        return connection.base if connection is not None else str(http.base_url).rstrip('/')
+
+    def raw(method: str, path: str, **kwargs) -> httpx.Response:
+        try:
+            return (connection or http).request(method, path, **kwargs)
+        except ObscuraUnavailable as error:
+            raise ToolError(str(error)) from error
 
     def send(method: str, path: str, **kwargs) -> httpx.Response:
         try:
-            return http.request(method, path, **kwargs)
+            return raw(method, path, **kwargs)
         except httpx.TransportError as error:
-            raise ToolError(f'Obscura не запущено за адресою {base}: запустіть її і повторіть ({type(error).__name__})') from error
+            raise ToolError(f'Obscura не запущено за адресою {base()}: запустіть її і повторіть ({type(error).__name__})') from error
 
     def request(method: str, path: str, **kwargs):
         response = send(method, path, **kwargs)
@@ -343,7 +357,7 @@ def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServe
         for index, (field, method, suffix) in enumerate(steps):
             rest = [name for name, *_ in steps[index + 1:]]
             try:
-                response = http.request(method, path + suffix, json={field: values[field], 'expected_revision': revision})
+                response = raw(method, path + suffix, json={field: values[field], 'expected_revision': revision})
             except httpx.TransportError as error:
                 raise ToolError('Невідомо, чи застосовано крок: перечитайте твір (get_story) перед повтором. ' + json.dumps(
                     {'applied': applied, 'unknown': field, 'not_attempted': rest, 'error': type(error).__name__}, ensure_ascii=False)) from error
@@ -426,7 +440,7 @@ def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServe
         if draft_version_id and draft_version_id != head:
             raise ToolError('Чернетку змінено після того, як її прочитали — прочитайте її знову (get_scene_text)')
         suffix = f'&draft={draft_version_id}' if draft_version_id else ''
-        return {'url': f'{base}/stories/{story_id}?scene={scene_id}&material=draft&ghost=1{suffix}', 'draft_version_id': head}
+        return {'url': f'{base()}/stories/{story_id}?scene={scene_id}&material=draft&ghost=1{suffix}', 'draft_version_id': head}
 
     def publication_view(card_response: dict, signatures: list[dict]) -> dict[str, Any]:
         card = {name: card_response['card'].get(name) for name in PUBLICATION_FIELDS}
@@ -523,7 +537,7 @@ def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServe
             raise ToolError(f'format: одне з {", ".join(EXPORT_FORMATS)}')
         links = request('POST', f'/api/stories/{story_id}/export', json={'format': format, 'allow_incomplete': allow_incomplete})
         manifest = request('GET', links['manifest_url'])
-        return {'download_url': f'{base}{links["download_url"]}', 'format': manifest['format'], 'complete': manifest['complete'],
+        return {'download_url': f'{base()}{links["download_url"]}', 'format': manifest['format'], 'complete': manifest['complete'],
                 'warnings': manifest['warnings'], 'word_count': manifest['word_count'], 'age_rating': manifest['age_rating']}
 
     def read_settings(story_id: str) -> dict:
@@ -798,7 +812,7 @@ def build_server(http: httpx.Client, client_name: str | None = None) -> MCPServe
         """Що робити далі в Obscura після збереження чернетки."""
         context = request('GET', f'/api/scenes/{identifier(scene_id)}/writing-context')
         story_id = identifier(context['story_id'])
-        url = f"{base}/stories/{story_id}?scene={scene_id}&material=draft"
+        url = f"{base()}/stories/{story_id}?scene={scene_id}&material=draft"
         obscura_writes = request('GET', f'/api/stories/{story_id}')['story'].get('writing_mode') == 'obscura'
         stages = ("4. Твір у режимі «пише Obscura»: етапи запускає start_run(action='brief'|'draft'|'edit'|'memory') — спершу "
                   "перегляд без confirm, запуск лише після згоди автора (коштує грошей); стан і результат — get_run.") if obscura_writes else (
@@ -817,14 +831,48 @@ def build_client(url: str) -> httpx.Client:
     return httpx.Client(base_url=url, timeout=30, headers=BRIDGE_HEADERS)
 
 
+def connection_for(url: str | None, data_dir: Path | None) -> Connection:
+    """STORE-MCP: `--url` is used as given; the installed bridge or an explicit `--data-dir` searches the record and
+    starts Obscura. A checkout without arguments keeps the old address, because its `storygen` serves ./data on 8765
+    and writes no record: searching the default library there would start a second Obscura over another folder."""
+    if url is not None:
+        return Connection(None, check_url(url), client_factory=build_client)
+    if data_dir is None and not getattr(sys, 'frozen', False):
+        return Connection(None, DEFAULT_URL, client_factory=build_client)
+    if data_dir is None:
+        from ..desktop import default_data_dir
+        data_dir = default_data_dir()
+    return Connection(Path(data_dir).resolve(), None, client_factory=build_client)
+
+
+def _utf8_streams() -> None:
+    """Clients read the bridge through pipes, which Windows opens in the ANSI code page: Ukrainian help and errors
+    would crash it. The MCP transport wraps the byte stream itself, so this only changes text written by the bridge."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
+
+
 def main(argv: list[str] | None = None) -> None:
+    _utf8_streams()
     parser = argparse.ArgumentParser(prog='storygen-mcp', description='MCP-сервер (stdio) для локальної Obscura')
-    parser.add_argument('--url', default=DEFAULT_URL, help=f'адреса запущеної Obscura (типово {DEFAULT_URL})')
+    parser.add_argument('--url', default=None,
+                        help='адреса запущеної Obscura; без неї установлений міст (або міст із --data-dir) сам знаходить Obscura теки творів і за потреби запускає її')
+    parser.add_argument('--data-dir', type=Path, default=None, help='тека творів (типово %%USERPROFILE%%\\Obscura в установленій збірці)')
     parser.add_argument('--client-name', default=None, help='назва клієнта для позначки версій (типово з clientInfo)')
+    parser.add_argument('--self-check', action='store_true',
+                        help='перевірка збирання: створити HTTP-клієнт, як перший виклик інструмента, і вийти')
     args = parser.parse_args(argv)
-    url = check_url(args.url)
-    with build_client(url) as http:
-        build_server(http, args.client_name).run('stdio')
+    if args.self_check:
+        # STORE-MCP: the build runs this next to Obscura.exe; `--help` alone never creates the TLS context httpx needs.
+        build_client(DEFAULT_URL).close()
+        print('storygen-mcp: ok')
+        raise SystemExit(0)
+    connection = connection_for(args.url, args.data_dir)
+    try:
+        build_server(None, args.client_name, connection=connection).run('stdio')
+    finally:
+        connection.close()
 
 
 if __name__ == '__main__':

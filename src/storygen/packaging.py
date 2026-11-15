@@ -13,15 +13,20 @@ from xml.sax.saxutils import escape, quoteattr
 from .build_edition import parse_build_edition
 from .self_check import CHECK_NAMES
 
-EXTRAS = ('web', 'publication', 'local-tokens', 'desktop')
+EXTRAS = ('web', 'publication', 'local-tokens', 'desktop', 'mcp')
 # Distributions whose wheel carries no licence file: SPDX id and where the text lives. A new one stops the build.
 LICENSE_FALLBACKS = {'tokenizers': ('Apache-2.0', 'https://github.com/huggingface/tokenizers/blob/main/LICENSE')}
 # Always named in the notices: the freezer's bootloader is part of the executable.
 ALWAYS_NOTICED = ('pyinstaller',)
 # Files the standard library of some interpreters reads at run time and the freezer does not collect.
 VENDOR_RUNTIME_FILES = ('codex-rejected-cas.pem',)
-# Not part of the Store build: the MCP bridge and anything that only tests or benchmarks use.
+# Not part of the main executable: the MCP bridge (frozen separately, STORE-MCP) and anything only tests use.
 EXCLUDED_MODULES = ('storygen.mcp', 'mcp', 'pytest', '_pytest')
+TEST_MODULES = ('pytest', '_pytest')
+# STORE-MCP: the console bridge next to Obscura.exe, with its own contents folder so the two never share `_internal`.
+BRIDGE_NAME = 'obscura-mcp'
+BRIDGE_CONTENTS = '_mcp'
+BRIDGE_ENTRY = 'from storygen.mcp.bridge import main\n\nmain()\n'
 _LICENSE_NAME = re.compile(r'^(licen[cs]e|copying|notice|copyright|unlicense|authors)([-_.][^\\/]*)?$', re.IGNORECASE)
 HOOKS_DIR = 'store_build/pyinstaller-hooks'
 ASSETS = {'StoreLogo.png': 50, 'Square44x44Logo.png': 44, 'Square150x150Logo.png': 150}
@@ -176,6 +181,16 @@ def pyinstaller_args(entry: Path, name: str, dist: Path, work: Path, hooks: Path
     return arguments + [str(entry)]
 
 
+def bridge_pyinstaller_args(entry: Path, dist: Path, work: Path, hooks: Path, source: Path) -> list[str]:
+    """STORE-MCP: a console onedir build of the stdio bridge (a windowed executable has no stdin/stdout)."""
+    arguments = ['--noconfirm', '--onedir', '--noupx', '--name', BRIDGE_NAME, '--contents-directory', BRIDGE_CONTENTS,
+                 '--distpath', str(dist), '--workpath', str(work), '--specpath', str(work), '--paths', str(source),
+                 '--hidden-import', 'storygen.mcp.bridge', '--additional-hooks-dir', str(hooks)]
+    for module in TEST_MODULES:
+        arguments += ['--exclude-module', module]
+    return arguments + [str(entry)]
+
+
 def check_report(report, edition: str, version: str) -> list[str]:
     """Reasons why the built application is not fit to package; empty when it is."""
     if not isinstance(report, dict) or not isinstance(report.get('checks'), list) or \
@@ -208,13 +223,25 @@ def package_version(project_version: str) -> str:
 
 
 def appx_manifest(*, identity_name: str, publisher: str, publisher_display_name: str, version: str,
-                  description: str, display_name: str = 'Obscura Text Writer', executable: str = 'Obscura.exe') -> str:
+                  description: str, display_name: str = 'Obscura Text Writer', executable: str = 'Obscura.exe',
+                  bridge_executable: str | None = BRIDGE_NAME + '.exe') -> str:
     q = quoteattr
+    # STORE-MCP: an execution alias gives chat clients a path that survives updates (the package folder does not).
+    extensions = '' if bridge_executable is None else f'''
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable={q(bridge_executable)} EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias={q(bridge_executable)} />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>'''
     return f'''<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-         IgnorableNamespaces="uap rescap">
+         IgnorableNamespaces="uap uap3 desktop rescap">
   <Identity Name={q(identity_name)} Publisher={q(publisher)} Version={q(version)} ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>{escape(display_name)}</DisplayName>
@@ -231,7 +258,7 @@ def appx_manifest(*, identity_name: str, publisher: str, publisher_display_name:
   <Applications>
     <Application Id="Obscura" Executable={q(executable)} EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName={q(display_name)} Description={q(description)} BackgroundColor="transparent"
-                          Square150x150Logo="Assets\\Square150x150Logo.png" Square44x44Logo="Assets\\Square44x44Logo.png" />
+                          Square150x150Logo="Assets\\Square150x150Logo.png" Square44x44Logo="Assets\\Square44x44Logo.png" />{extensions}
     </Application>
   </Applications>
   <Capabilities>

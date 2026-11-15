@@ -12,7 +12,7 @@ import pytest
 from storygen import packaging
 from storygen.build_edition import parse_build_edition
 from storygen.packaging import (appx_manifest, bundled_distributions, check_report, dependency_closure, edition_marker,
-    find_makeappx, missing_licenses, package_data_manifest, package_version, pyinstaller_args, root_requirements,
+    bridge_pyinstaller_args, find_makeappx, missing_licenses, package_data_manifest, package_version, pyinstaller_args, root_requirements,
     stray_data_files, third_party_notices, toc_sources, vendor_runtime_files)
 from storygen.self_check import CHECK_NAMES
 
@@ -48,7 +48,8 @@ def test_edition_marker_is_validated_without_touching_the_disk(monkeypatch):
 def test_root_requirements_come_from_the_checkout():
     from packaging.requirements import Requirement
     names = {packaging._normal(Requirement(text).name) for text in root_requirements(ROOT / 'pyproject.toml')}
-    assert {'pydantic', 'fastapi', 'keyring', 'pystray', 'pillow', 'tokenizers'} <= names and 'pytest' not in names and 'mcp' not in names
+    # STORE-MCP: the package carries the MCP bridge, so its extra is part of the notices.
+    assert {'pydantic', 'fastapi', 'keyring', 'pystray', 'pillow', 'tokenizers', 'mcp'} <= names and 'pytest' not in names
 
 
 def test_dependency_closure_follows_markers_and_extras():
@@ -184,6 +185,27 @@ def test_pyinstaller_arguments(tmp_path):
         assert pair in pairs, pair
 
 
+@pytest.mark.req('STORE-MCP-001')
+def test_bridge_is_frozen_as_a_console_exe_with_its_own_contents(tmp_path):
+    arguments = bridge_pyinstaller_args(tmp_path / 'bridge.py', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'hooks', tmp_path / 'src')
+    pairs = list(zip(arguments, arguments[1:]))
+    for pair in [('--name', packaging.BRIDGE_NAME), ('--contents-directory', packaging.BRIDGE_CONTENTS),
+                 ('--hidden-import', 'storygen.mcp.bridge'), ('--paths', str(tmp_path / 'src'))]:
+        assert pair in pairs, pair
+    assert packaging.BRIDGE_NAME == 'obscura-mcp' and packaging.BRIDGE_CONTENTS != '_internal'
+    assert '--onedir' in arguments and '--noconsole' not in arguments and '--windowed' not in arguments
+    excluded = {value for flag, value in pairs if flag == '--exclude-module'}
+    assert 'storygen.mcp' not in excluded and 'mcp' not in excluded and 'pytest' in excluded
+    assert arguments[-1] == str(tmp_path / 'bridge.py')
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_main_exe_still_excludes_the_bridge(tmp_path):
+    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'hooks', tmp_path / 'src')
+    pairs = list(zip(arguments, arguments[1:]))
+    assert ('--exclude-module', 'storygen.mcp') in pairs and ('--exclude-module', 'mcp') in pairs
+
+
 def test_pystray_hook_ships_the_lgpl_library_as_source_files():
     hook = (ROOT / packaging.HOOKS_DIR / 'hook-pystray.py').read_text(encoding='utf-8')
     assert "module_collection_mode = 'py'" in hook
@@ -246,6 +268,26 @@ def test_manifest_structure():
     assert root.find('m:Properties/m:DisplayName', NS).text == visual['DisplayName'] == 'Reserved Name'
     logos = {root.find('m:Properties/m:Logo', NS).text, visual['Square150x150Logo'], visual['Square44x44Logo']}
     assert logos == {'Assets\\' + name for name in packaging.ASSETS}
+
+
+UAP3 = 'http://schemas.microsoft.com/appx/manifest/uap/windows10/3'
+DESKTOP = 'http://schemas.microsoft.com/appx/manifest/desktop/windows10'
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_manifest_declares_the_bridge_alias():
+    root = manifest()
+    extension = root.find('m:Applications/m:Application/m:Extensions/uap3:Extension', {**NS, 'uap3': UAP3})
+    assert extension.attrib == {'Category': 'windows.appExecutionAlias', 'Executable': 'obscura-mcp.exe',
+                                'EntryPoint': 'Windows.FullTrustApplication'}
+    aliases = extension.findall('uap3:AppExecutionAlias/desktop:ExecutionAlias', {'uap3': UAP3, 'desktop': DESKTOP})
+    assert [alias.attrib['Alias'] for alias in aliases] == ['obscura-mcp.exe']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_manifest_without_bridge_has_no_alias():
+    root = manifest(bridge_executable=None)
+    assert root.find('m:Applications/m:Application/m:Extensions', NS) is None
 
 
 def test_manifest_escapes_every_value():

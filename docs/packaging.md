@@ -5,7 +5,7 @@
 ## Що потрібно
 
 - Windows 10 версії 2004 або новіша, x64.
-- Робоча копія репозиторію (git) з віртуальним середовищем і залежностями: `pip install -e ".[web,publication,local-tokens,desktop,build]"`.
+- Робоча копія репозиторію (git) з віртуальним середовищем і залежностями: `pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"`.
 - `makeappx.exe`. Він є в Windows SDK і в меншому пакеті `Microsoft.Windows.SDK.BuildTools` з nuget.org (тека `bin\<версія>\x64`). Шлях передається аргументом `--makeappx` або змінною середовища `MAKEAPPX`. Для збирання без пакета (`--skip-msix`) він не потрібен.
 
 Скрипт нічого не завантажує й не встановлює.
@@ -44,7 +44,7 @@
 - невідстежуваний файл у теці пакета або метадані встановленої копії зупиняють збирання;
 - версію застосунок бере з того самого маніфесту, і скрипт звіряє її з `pyproject.toml`.
 
-У пакет не входять MCP-міст, тести й інструменти розробки.
+Поруч з `Obscura.exe` пакет містить консольний міст MCP `obscura-mcp.exe` з власною текою `_mcp` і псевдонімом виконання `obscura-mcp.exe` (STORE-MCP-001): чат-клієнту досить вказати команду `obscura-mcp.exe`. Збирання зупиняється, якщо міст не відповідає на `--help` або `--self-check`. У пакет не входять тести й інструменти розробки.
 
 ## Що перевіряє збирання
 
@@ -71,7 +71,7 @@
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv C:\tmp\obscura-build-venv
 C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,build]"
+C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
 C:\tmp\obscura-build-venv\Scripts\python.exe scripts/build_store.py --out C:\tmp\obscura-build ...
 ```
 

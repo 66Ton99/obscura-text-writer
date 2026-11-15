@@ -5613,6 +5613,60 @@
       ]
     },
     {
+      "id": "STORE-MCP-S01",
+      "requirement": "STORE-MCP-001",
+      "scope": "Пошук Obscura за записом, лінивий старт, `--url` без пошуку й запуску, вибір режиму для пакета й робочої копії. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_launch.py::test_running_server_is_found_through_the_record",
+        "tests/mcp/test_bridge_launch.py::test_nothing_happens_before_the_first_tool_call",
+        "tests/mcp/test_bridge_launch.py::test_explicit_url_never_starts_obscura",
+        "tests/mcp/test_bridge_launch.py::test_checkout_without_arguments_keeps_the_old_address",
+        "tests/mcp/test_bridge_launch.py::test_installed_bridge_and_explicit_folder_search_the_record"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S02",
+      "requirement": "STORE-MCP-001",
+      "scope": "Тихий запуск один раз, аргументи й прапорці процесу, запасний шлях без виходу з завдання. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_launch.py::test_missing_server_is_started_once_and_awaited",
+        "tests/mcp/test_bridge_launch.py::test_concurrent_calls_start_obscura_once",
+        "tests/mcp/test_bridge_launch.py::test_start_obscura_runs_the_sibling_exe_without_browser",
+        "tests/mcp/test_bridge_launch.py::test_start_obscura_detaches_from_the_bridge",
+        "tests/mcp/test_bridge_launch.py::test_start_obscura_in_a_checkout_uses_the_desktop_module",
+        "tests/mcp/test_bridge_launch.py::test_start_falls_back_when_the_job_forbids_breakaway"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S03",
+      "requirement": "STORE-MCP-001",
+      "scope": "Людська помилка без трасування, повторний пошук після відмови з’єднання, без повтору обірваної відповіді. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_launch.py::test_server_that_never_answers_is_a_human_error",
+        "tests/mcp/test_bridge_launch.py::test_unavailable_obscura_reaches_the_chat_as_a_tool_error",
+        "tests/mcp/test_bridge_launch.py::test_stopped_server_is_found_again",
+        "tests/mcp/test_bridge_launch.py::test_broken_answer_is_not_repeated"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S04",
+      "requirement": "STORE-MCP-001",
+      "scope": "Аргументи заморожування моста, псевдонім у маніфесті, повідомлення з `mcp`, довідка в UTF-8, самоперевірка HTTP-клієнта. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_packaging.py::test_bridge_is_frozen_as_a_console_exe_with_its_own_contents",
+        "tests/test_packaging.py::test_main_exe_still_excludes_the_bridge",
+        "tests/test_packaging.py::test_manifest_declares_the_bridge_alias",
+        "tests/test_packaging.py::test_manifest_without_bridge_has_no_alias",
+        "tests/test_packaging.py::test_root_requirements_come_from_the_checkout",
+        "tests/mcp/test_bridge_launch.py::test_help_survives_a_legacy_code_page",
+        "tests/mcp/test_bridge_launch.py::test_self_check_builds_the_http_client_and_exits"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-mcp-package",
+        "reason": "Псевдонім виконання, вихід з завдання клієнта й відсутність вікна консолі діють лише в установленому підписаному MSIX-пакеті; автотест їх не відтворює."
+      }
+    },
+    {
       "id": "WRITING-MODE-S01",
       "requirement": "WRITING-MODE",
       "scope": "Режим під час створення з форми й моста, типове значення форми, чинний запис без поля, невідомий режим. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
