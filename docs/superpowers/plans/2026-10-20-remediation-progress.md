@@ -2107,3 +2107,12 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Периферія (план `docs/superpowers/plans/2026-11/2026-11-15-text-cover-harness.md`): вибір палітри й кнопка «Створити текстову обкладинку» в картці (`publication.html`, `publication.js`, `app.css`), переклади, Node-тест кнопки, R16-COVER-S04 у SPEC.MD і traceability. На сервері поля `title`, `cycle_title` і `language` тепер обрізаються від пробілів до перевірки довжини, а дві нові відмови перекладено англійською.
 - Сайт: `publication.md` і `mcp.md` обома мовами (26 інструментів), новий знімок `publication-cover-desktop.png`; скрипт знімків натискає кнопку на нейтральному творі. Вигляд кнопки перевірено вручну в застосунку.
 - Відкладено: дублікати `author_ids` у запиті генерації дають 400 замість 422 (кнопка й чат дублікатів не створюють). Таблицю компонентів дизайн-спеки виправлено поправкою.
+
+### 15.11.2026 — Store, специфікація 2: власний значок у треї замість `pystray`
+
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-15-own-tray-design.md` (PR #185) і план `docs/superpowers/plans/2026-11/2026-11-15-own-tray.md` (PR #186) погоджені власником; план виконано inline.
+- Task 1: `storygen/win_tray.py` (`Win32Api` на `ctypes`, `NotifyIcon`), 12 тестів із підміненим API. Task 2: `run_tray` і самоперевірка `tray` без `pystray`. Task 3: `pystray` прибрано з extra `desktop`, аргументів PyInstaller і hooks; `copyleft_distributions` зупиняє збирання на бібліотеці родини GPL. Task 4: SPEC DESKTOP-001-S04, PACKAGING-001-S03, відомі обмеження, traceability, ручні процедури, сайт `install` uk/en, `docs/packaging.md`.
+- Рішення виконавця:
+  - друге «Вийти» нічого не робить: `stop()` рівно один раз;
+  - разом з останнім hook прибрано теку hooks і прапорець `--additional-hooks-dir`.
+- Інцидент: під час RED-прогону задачі 2 старий `run_tray` у тесті «поза Windows» показав справжній значок `pystray` і чекав виходу. Процес зупинено; після заміни тести справжнього значка не показують.
