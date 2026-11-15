@@ -2054,3 +2054,12 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - `book/library.py::library_entries`, `library.html` (секція `.library-series`, рядок `.card-series`), ключі `library.series|book|bible` uk/en, стиль групи на всю ширину сітки.
 - SPEC.MD: технічний опис «Бібліотека» і SERIES-S12; traceability; `manual.md#series-library-browser`; сайт `series` uk/en.
 - Тести: `tests/series/test_series_library.py` (3), Playwright `library-series.spec.mjs` (desktop і mobile).
+
+## 2026-11-15 — R-36: домен obscurawriter.com, приватність, скарги, SEO і вибір мови
+
+- Власник придбав `obscurawriter.com` (Cloudflare Registrar), задав DNS на GitHub Pages і власний домен у налаштуваннях Pages; сайт за доменом відкривається (перевірено власником). Рішення: лишитися на GitHub Pages; пошта privacy@ і report@ через Cloudflare Email Routing.
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-15-site-domain-design.md`. Реалізовано: заміна адрес сайту в README, SPEC.MD, старих інструкціях і `start.ps1`; `base_url`/`description` у маніфесті; canonical, hreflang, Open Graph, `robots.txt`, `sitemap.xml`, `404.html`; `site.js` з вибором мови; сторінки `privacy` і `report` uk/en; контакти в Умовах використання uk/en; `--report-url` у `docs/packaging.md`.
+- SPEC.MD: DOCS-SITE (технічний опис, відомі обмеження, S08–S10), traceability, `manual.md#docs-site-publish`.
+- Створено GitHub [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176) і R-37 (пікселі й банер cookies) у беклозі.
+- Історичні плани й специфікації в `docs/superpowers/` зберігають стару адресу `ysilvestrov.github.io` як факт свого часу.
+- `scripts/verify.py` у хмарному контейнері Linux (не на робочій машині власника): passed 3345 · failed 4 · skipped 3 (`docs/STATUS.md`). Усі 4 падіння відтворюються на незміненому `origin/main` (18a1097) у тому самому середовищі й не стосуються R-36: `test_desktop.py::test_default_data_dir_is_under_the_user_profile` (`WindowsPath` на Linux), `test_desktop.py::test_main_starts_serves_and_cleans_up` (порт зайнятий), `test_packaging.py::test_bundled_distributions_come_from_the_freezer_records` (записи PyInstaller середовища), `generation/test_editor_output.py::test_excessive_json_depth_is_failed_not_left_running` (категорія `schema` замість `json` на Python 3.13 контейнера). Прогін на Windows не виконувався. Тести сайту (`tests/test_docs_site.py`, 34) і `check_docs.py` пройшли; вибір мови додатково перевірено в Chromium (Playwright): en-US/de-DE → `/en/` з `utm`, uk-UA лишається, ручний вибір запам’ятовується.

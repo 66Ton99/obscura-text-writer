@@ -207,7 +207,7 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 <a id="docs-site-publish"></a>
 ## Сайт інструкцій: публікація після злиття
 
-Після злиття PR, що змінює `docs/site/**`, відкрити вкладку Actions репозиторію й переконатися, що запуск workflow `site` для push у `main` завершився успішно, включно з кроком «Check the published address». Відкрити `https://ysilvestrov.github.io/obscura-text-writer/` і `…/en/install.html`: обидві сторінки відповідають, перемикач мови веде на ту саму сторінку іншою мовою, зміст відповідає новому коміту. Перевірка щойно відкритого PR: у запуску workflow для `pull_request` немає задачі `deploy`.
+Після злиття PR, що змінює `docs/site/**`, відкрити вкладку Actions репозиторію й переконатися, що запуск workflow `site` для push у `main` завершився успішно, включно з кроком «Check the published address». Відкрити `https://obscurawriter.com/` і `…/en/install.html`: обидві сторінки відповідають, перемикач мови веде на ту саму сторінку іншою мовою, зміст відповідає новому коміту. Перевірити також `https://obscurawriter.com/robots.txt`, `/sitemap.xml` і будь-яку неіснуючу адресу (двомовна сторінка 404); стара адреса `https://ysilvestrov.github.io/obscura-text-writer/` переадресовує на домен. Вибір мови в справжньому браузері: у вікні InPrivate з мовою браузера English головна відкриває `/en/index.html`, з українською в списку мов лишається українська; після кліку на «Українська» в англійському браузері українська лишається й після перезавантаження. Перевірка щойно відкритого PR: у запуску workflow для `pull_request` немає задачі `deploy`.
 
 
 <a id="core-review"></a>

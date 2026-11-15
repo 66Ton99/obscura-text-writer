@@ -1,1 +1,1 @@
-This guide has moved to the site: [Age rating](https://ysilvestrov.github.io/obscura-text-writer/en/content-rating.html).
+This guide has moved to the site: [Age rating](https://obscurawriter.com/en/content-rating.html).

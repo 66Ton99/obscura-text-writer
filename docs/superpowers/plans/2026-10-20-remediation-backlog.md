@@ -30,7 +30,7 @@
 
 Наслідок порядку, погоджений власником 10.11.2026: інсталятор іде перед довгою формою, тож перший реліз готових збірок розрахований на оповідання, а не на романи.
 
-Без місця в черзі: [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) — R-35 скіли Obscura для Claude і кнопка «Підключити до Claude» (запит власника 14.11.2026, місце в черзі визначає власник); [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
+Без місця в черзі: [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176) — R-37 рекламні пікселі й банер згоди на cookies для сайту (запит власника 15.11.2026). [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) — R-35 скіли Obscura для Claude і кнопка «Підключити до Claude» (запит власника 14.11.2026, місце в черзі визначає власник); [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
 
 Відкладено: [#61](https://github.com/ysilvestrov/obscura-text-writer/issues/61) — автоматичні сигнали втрати запису пам'яті (з #41); береться, коли буде видно частоту пропусків пам'яті v4.
 
@@ -660,3 +660,22 @@ Read-only розбір останнього запуску06.11.2026 вияви�
 - Межі: без хмарного розгортання й віддаленого MCP (Desktop Chat локальний MCP із плагіна не запускає — для Chat лишається `.mcpb`). Реальний модельний виклик для перевірки — лише за окремою згодою власника.
 - Залежності: R-32 (#84) і пакети MCP як пульт Obscura; #30 і #119 (збірка Store); R-33 (#88) для ліцензії публічного плагіна.
 - Приймання: SPEC.MD (компоненти, пакування, контракт MCP prompts, безпека запису поза пакетом) + traceability; користувацька документація UA/EN (`mcp`, `install`).
+
+## R-36 — Власний домен сайту, сторінки приватності й скарг, SEO і вибір мови
+
+**Статус:** реалізовано 15.11.2026 за прямим рішенням власника, один PR (специфікація `docs/superpowers/specs/2026-11/2026-11-15-site-domain-design.md`).
+
+- Мета: сайт інструкцій як цільова сторінка реклами й джерело адрес для Microsoft Store.
+- Обсяг: домен `obscurawriter.com` (Cloudflare Registrar, DNS на GitHub Pages; налаштовано власником), заміна адрес у README, SPEC.MD і старих інструкціях, `base_url` маніфесту з canonical/hreflang/Open Graph, `robots.txt`, `sitemap.xml`, `404.html`, вибір мови за мовами браузера (`site.js`), сторінки `privacy` і `report` uk/en з адресами privacy@ і report@ (Cloudflare Email Routing), контакти в Умовах використання, `--report-url` у документації збирання Store.
+- Рішення власника 15.11.2026: залишитися на GitHub Pages, а не переходити на Cloudflare Pages; українську сторінку показувати лише тим, у кого в браузері є українська; пікселі й банер cookies — окремо (R-37).
+- Приймання: SPEC.MD DOCS-SITE (S08–S10) + traceability; `check_site.py --rehash` для `privacy`, `report`, `legal`.
+
+## R-37 — Рекламні пікселі й банер згоди на cookies
+
+**Статус:** запит власника 15.11.2026, GitHub [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176). Місце в черзі не визначено.
+
+- Мета: вимірювати конверсії реклами на obscurawriter.com.
+- Відкриті рішення: рекламна мережа й події конверсії; власний банер чи готовий CMP; Consent Mode v2 для ЄЕЗ і Великої Британії; окрема аналітика відвідувань.
+- Межі: пікселі лише на сайті й лише після згоди; у застосунку телеметрії немає.
+- Залежності: R-36 (домен, сторінка `privacy`, збереження `utm_*` під час вибору мови).
+- Приймання: SPEC.MD DOCS-SITE + traceability; оновлена сторінка `privacy` uk/en; перевірка, що без згоди немає запитів до доменів пікселя.

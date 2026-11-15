@@ -1,5 +1,10 @@
 {
   "languages": ["uk", "en"],
+  "base_url": "https://obscurawriter.com/",
+  "description": {
+    "uk": "Obscura Text Writer — локальний застосунок для написання художніх творів із мовними моделями: план, чернетка, редактура й пам’ять сюжету.",
+    "en": "Obscura Text Writer is a local application for writing fiction with language models: plan, draft, editing and story memory."
+  },
   "pages": [
     {"slug": "index", "title": {"uk": "Про Obscura", "en": "About Obscura"}},
     {"slug": "install", "title": {"uk": "Встановлення й запуск", "en": "Installation and launch"}},
@@ -20,6 +25,8 @@
     {"slug": "mcp", "title": {"uk": "Чат-клієнти (MCP)", "en": "Chat clients (MCP)"}},
     {"slug": "story-language", "title": {"uk": "Мова й обсяг твору", "en": "Story language and length"}},
     {"slug": "troubleshooting", "title": {"uk": "Поширені проблеми", "en": "Troubleshooting"}},
-    {"slug": "legal", "title": {"uk": "Умови, ліцензія й назва", "en": "Terms, license and name"}}
+    {"slug": "legal", "title": {"uk": "Умови, ліцензія й назва", "en": "Terms, license and name"}},
+    {"slug": "privacy", "title": {"uk": "Приватність", "en": "Privacy"}},
+    {"slug": "report", "title": {"uk": "Поскаржитися на результат", "en": "Report a result"}}
   ]
 }

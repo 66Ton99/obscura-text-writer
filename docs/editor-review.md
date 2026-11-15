@@ -1,1 +1,1 @@
-Інструкцію перенесено на сайт: [Коментарі, промпти й горизонт](https://ysilvestrov.github.io/obscura-text-writer/writing-tools.html#режими-редактора-й-промпти).
+Інструкцію перенесено на сайт: [Коментарі, промпти й горизонт](https://obscurawriter.com/writing-tools.html#режими-редактора-й-промпти).

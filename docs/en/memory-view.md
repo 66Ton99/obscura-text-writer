@@ -1,1 +1,1 @@
-This guide has moved to the site: [Memory](https://ysilvestrov.github.io/obscura-text-writer/en/memory.html).
+This guide has moved to the site: [Memory](https://obscurawriter.com/en/memory.html).

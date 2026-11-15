@@ -1,1 +1,1 @@
-This guide has moved to the site: [Importing materials](https://ysilvestrov.github.io/obscura-text-writer/en/imports.html).
+This guide has moved to the site: [Importing materials](https://obscurawriter.com/en/imports.html).
