@@ -2,20 +2,20 @@
 
 **ПЕРЕВІРКА НЕ ПРОЙШЛА** — свідчення конкретного запуску, не поточного довільного стану.
 
-- Початок (UTC): 2026-11-15T15:20:02.547088+00:00
-- Завершення (UTC): 2026-11-15T15:20:11.204113+00:00
-- Базовий commit: `18a1097d15f34946db185c4ad4c307d2605cefaa`
+- Початок (UTC): 2026-11-15T15:21:10.291253+00:00
+- Завершення (UTC): 2026-11-15T15:30:01.754525+00:00
+- Базовий commit: `d9ff0b43af08e294dcfeb6d634def7ace2ac0b42`
 - Незакомічені зміни під час перевірки: `true`
 - SHA-256 вихідного знімка: `42be8480ff5410f6c1a32504881a6f6b32ea1ab93f09ff9b9cea02886d7e4b4d`
 - Зміна знімка під час прогону: `false`
-- Exit code: `2`
-- Фактичні testcase результати JUnit: passed: 0 · failed: 0 · errors: 10 · skipped: 0
-- Тривалість: 8.66 с
+- Exit code: `1`
+- Фактичні testcase результати JUnit: passed: 3345 · failed: 4 · errors: 0 · skipped: 3
+- Тривалість: 531.46 с
 
 Точний argv (JSON, не shell-команда):
 
 ```json
-["/tmp/claude-0/-home-user-obscura-text-writer/19ae2e98-73e4-5122-8d9b-851ca810b91d/scratchpad/venv/bin/python", "-m", "pytest", "-q", "--junitxml=/home/user/obscura-text-writer/artifacts/verification-29r04lsw/junit.xml", "--basetemp=/home/user/obscura-text-writer/artifacts/verification-29r04lsw/test-tmp"]
+["/tmp/claude-0/-home-user-obscura-text-writer/19ae2e98-73e4-5122-8d9b-851ca810b91d/scratchpad/venv/bin/python", "-m", "pytest", "-q", "--junitxml=/home/user/obscura-text-writer/artifacts/verification-sv0tl4cy/junit.xml", "--basetemp=/home/user/obscura-text-writer/artifacts/verification-sv0tl4cy/test-tmp"]
 ```
 
 Результат стосується лише наведеної команди й вихідного знімка. Якщо в argv зазначено окремі файли або фільтри, це часткова перевірка. Збір (collection) не є виконанням; skipped не зараховано до passed. Відсутній або непридатний XML позначається непідтвердженим. Після зміни вихідних файлів звіт історичний. Власний STATUS і artifacts виключено зі знімка; початкова ревізія може мати dirty=true, оскільки звіт створюється до коміту.
