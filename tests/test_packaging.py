@@ -11,7 +11,7 @@ import pytest
 
 from storygen import packaging
 from storygen.build_edition import parse_build_edition
-from storygen.packaging import (appx_manifest, bundled_distributions, check_report, dependency_closure, edition_marker,
+from storygen.packaging import (appx_manifest, bundled_distributions, check_report, copyleft_distributions, dependency_closure, edition_marker,
     bridge_pyinstaller_args, find_makeappx, missing_licenses, package_data_manifest, package_version, pyinstaller_args, root_requirements,
     stray_data_files, third_party_notices, toc_sources, vendor_runtime_files)
 from storygen.self_check import CHECK_NAMES
@@ -49,7 +49,7 @@ def test_root_requirements_come_from_the_checkout():
     from packaging.requirements import Requirement
     names = {packaging._normal(Requirement(text).name) for text in root_requirements(ROOT / 'pyproject.toml')}
     # STORE-MCP: the package carries the MCP bridge, so its extra is part of the notices.
-    assert {'pydantic', 'fastapi', 'keyring', 'pystray', 'pillow', 'tokenizers', 'mcp'} <= names and 'pytest' not in names
+    assert {'pydantic', 'fastapi', 'keyring', 'pillow', 'tokenizers', 'mcp'} <= names and 'pytest' not in names and 'pystray' not in names
 
 
 def test_dependency_closure_follows_markers_and_extras():
@@ -87,12 +87,12 @@ def test_notices_carry_name_version_licence_and_text(tmp_path):
         'alpha': FakeDistribution('Alpha', tmp_path, [write(tmp_path, 'alpha-1.0.dist-info/licenses/LICENSE', 'Permission is hereby granted'),
                                                       write(tmp_path, 'alpha-1.0.dist-info/licenses/vendored/THIRD_PARTY', 'vendored notice'),
                                                       'alpha/__init__.py']),
-        'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/COPYING.LGPL', 'GNU LESSER GENERAL PUBLIC LICENSE')], 'LGPL-3.0-only'),
+        'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/LICENSE.BSD', 'BSD 3-CLAUSE LICENSE')], 'BSD-3-Clause'),
         'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], ''),
     }
     text = third_party_notices(['alpha', 'tray', 'tokenizers'], lookup=table.__getitem__, runtime_license='PYTHON SOFTWARE FOUNDATION LICENSE')
     assert 'Alpha 1.0\nLicence: MIT' in text and 'Permission is hereby granted' in text and 'vendored notice' in text
-    assert 'Tray 1.0\nLicence: LGPL-3.0-only' in text and 'GNU LESSER GENERAL PUBLIC LICENSE' in text
+    assert 'Tray 1.0\nLicence: BSD-3-Clause' in text and 'BSD 3-CLAUSE LICENSE' in text
     assert 'tokenizers 1.0\nLicence: Apache-2.0' in text and 'github.com/huggingface/tokenizers' in text
     assert 'Python runtime and the libraries distributed with it' in text and 'PYTHON SOFTWARE FOUNDATION LICENSE' in text
 
@@ -114,7 +114,7 @@ def test_distribution_without_a_licence_text_stops_the_build(tmp_path):
 
 
 def test_declared_dependencies_all_have_licence_texts():
-    for module in ('pystray', 'keyring', 'reportlab', 'tokenizers'):
+    for module in ('keyring', 'reportlab', 'tokenizers'):
         pytest.importorskip(module)
     names = dependency_closure(root_requirements(ROOT / 'pyproject.toml'))
     assert missing_licenses(names) == []
@@ -173,21 +173,21 @@ def test_package_data_manifest_lists_tracked_data_with_digests(tmp_path):
 
 
 def test_pyinstaller_arguments(tmp_path):
-    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'hooks', tmp_path / 'src')
+    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'src')
     for flag in ('--noconsole', '--onedir', '--noconfirm', '--noupx'):
         assert flag in arguments
     assert '--onefile' not in arguments and '--copy-metadata' not in arguments and arguments[-1] == str(tmp_path / 'entry.py')
     pairs = list(zip(arguments, arguments[1:]))
     for pair in [('--collect-data', 'storygen'), ('--collect-submodules', 'storygen'), ('--paths', str(tmp_path / 'src')),
-                 ('--hidden-import', 'keyring.backends.Windows'), ('--hidden-import', 'pystray._win32'),
-                 ('--additional-hooks-dir', str(tmp_path / 'hooks')), ('--name', 'Obscura'),
+                 ('--hidden-import', 'keyring.backends.Windows'),
+                 ('--name', 'Obscura'),
                  ('--exclude-module', 'storygen.mcp'), ('--exclude-module', 'mcp'), ('--exclude-module', 'pytest'), ('--exclude-module', '_pytest')]:
         assert pair in pairs, pair
 
 
 @pytest.mark.req('STORE-MCP-001')
 def test_bridge_is_frozen_as_a_console_exe_with_its_own_contents(tmp_path):
-    arguments = bridge_pyinstaller_args(tmp_path / 'bridge.py', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'hooks', tmp_path / 'src')
+    arguments = bridge_pyinstaller_args(tmp_path / 'bridge.py', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'src')
     pairs = list(zip(arguments, arguments[1:]))
     for pair in [('--name', packaging.BRIDGE_NAME), ('--contents-directory', packaging.BRIDGE_CONTENTS),
                  ('--hidden-import', 'storygen.mcp.bridge'), ('--paths', str(tmp_path / 'src'))]:
@@ -201,14 +201,50 @@ def test_bridge_is_frozen_as_a_console_exe_with_its_own_contents(tmp_path):
 
 @pytest.mark.req('STORE-MCP-001')
 def test_main_exe_still_excludes_the_bridge(tmp_path):
-    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'hooks', tmp_path / 'src')
+    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'src')
     pairs = list(zip(arguments, arguments[1:]))
     assert ('--exclude-module', 'storygen.mcp') in pairs and ('--exclude-module', 'mcp') in pairs
 
 
-def test_pystray_hook_ships_the_lgpl_library_as_source_files():
-    hook = (ROOT / packaging.HOOKS_DIR / 'hook-pystray.py').read_text(encoding='utf-8')
-    assert "module_collection_mode = 'py'" in hook
+def test_no_tray_library_in_the_build(tmp_path):
+    arguments = pyinstaller_args(tmp_path / 'entry.py', 'Obscura', tmp_path / 'dist', tmp_path / 'work', tmp_path / 'src')
+    assert not [value for value in arguments if 'pystray' in value or 'hooks' in value]
+    assert not (ROOT / 'store_build' / 'pyinstaller-hooks').exists()
+
+
+class MetadataDistribution:
+    """Real metadata shape: an email.Message with repeated Classifier headers."""
+    def __init__(self, name, **headers):
+        from email.message import Message
+        self.metadata = Message()
+        self.metadata['Name'] = name
+        for key, values in headers.items():
+            for value in values if isinstance(values, list) else [values]:
+                self.metadata[key.replace('_', '-')] = value
+
+
+def test_copyleft_is_found_by_expression_licence_or_classifier():
+    table = {
+        'gpl': MetadataDistribution('gpl', License_Expression='GPL-3.0-or-later'),
+        'lgpl-text': MetadataDistribution('lgpl-text', License='GNU LGPL v3'),
+        'lgpl-classifier': MetadataDistribution('lgpl-classifier', Classifier=['Programming Language :: Python',
+                                                'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)']),
+        'mit': MetadataDistribution('mit', License_Expression='MIT', Classifier=['License :: OSI Approved :: MIT License']),
+        'bare': MetadataDistribution('bare'),
+    }
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['gpl', 'lgpl-text', 'lgpl-classifier']
+
+
+def test_copyleft_distribution_stops_the_notices(tmp_path):
+    table = {'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/COPYING', 'text')], 'LGPL-3.0-only')}
+    with pytest.raises(ValueError, match='родини GPL.*tray'):
+        third_party_notices(['tray'], lookup=table.__getitem__)
+
+
+def test_build_dependencies_have_no_copyleft():
+    for module in ('keyring', 'reportlab', 'tokenizers'):
+        pytest.importorskip(module)
+    assert copyleft_distributions(dependency_closure(root_requirements(ROOT / 'pyproject.toml'))) == []
 
 
 def test_check_report_accepts_only_a_complete_matching_report():

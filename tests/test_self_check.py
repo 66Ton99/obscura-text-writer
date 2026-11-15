@@ -15,7 +15,6 @@ def by_name(report):
 
 
 def test_checks_pass_in_the_development_environment():
-    pytest.importorskip('pystray')
     pytest.importorskip('keyring')
     report = run_checks()
     assert [check['name'] for check in report['checks']] == NAMES
@@ -91,7 +90,6 @@ def test_details_never_carry_the_user_profile_path(monkeypatch, tmp_path):
 
 
 def test_self_check_mode_writes_the_report_and_starts_nothing(tmp_path):
-    pytest.importorskip('pystray')
     pytest.importorskip('keyring')
 
     def never(*args, **kwargs):
@@ -148,3 +146,26 @@ def test_app_info_reports_the_version_of_the_build_manifest(tmp_path, monkeypatc
     monkeypatch.setattr(build_manifest, 'load', lambda: {'version': '3.2.1', 'files': {}})
     app = create_app(AppSettings(data_dir=tmp_path / 'data', env_file=tmp_path / 'absent.env'))
     assert TestClient(app, base_url='http://127.0.0.1').get('/api/app-info').json()['version'] == '3.2.1'
+
+
+def test_tray_check_never_shows_an_icon(monkeypatch):
+    from storygen import win_tray
+    seen = []
+
+    class Api:
+        def small_icon_size(self):
+            return 16
+
+        def icon_from_png(self, data, size):
+            seen.append(size)
+            return 5
+
+        def destroy_icon(self, hicon):
+            seen.append(('destroyed', hicon))
+
+        def add_icon(self, *args):
+            pytest.fail('the self-check must not show an icon')
+    monkeypatch.setattr(self_check.os, 'name', 'nt')
+    monkeypatch.setattr(win_tray, 'Win32Api', Api)
+    assert by_name(run_checks())['tray']['ok'] is True
+    assert seen == [16, ('destroyed', 5)]

@@ -4626,8 +4626,20 @@
         "tests/test_desktop_tray.py::test_menu_labels_order_and_actions",
         "tests/test_desktop_tray.py::test_backups_item_appears_once_there_are_backups",
         "tests/test_desktop_tray.py::test_menu_language_follows_the_system",
-        "tests/test_desktop_tray.py::test_run_tray_builds_the_icon_and_quit_stops_everything",
-        "tests/test_desktop_tray.py::test_missing_tray_library_is_reported",
+        "tests/test_desktop_tray.py::test_run_tray_shows_the_menu_and_quit_stops_then_closes",
+        "tests/test_desktop_tray.py::test_no_tray_outside_windows",
+        "tests/test_desktop_tray.py::test_icon_png_is_a_png_of_the_requested_size",
+        "tests/test_win_tray.py::test_start_adds_the_icon_with_version_4",
+        "tests/test_win_tray.py::test_select_and_enter_run_the_default_action",
+        "tests/test_win_tray.py::test_context_menu_opens_at_the_icon_and_runs_the_choice",
+        "tests/test_win_tray.py::test_menu_is_not_reopened_while_shown",
+        "tests/test_win_tray.py::test_taskbar_restart_adds_the_same_icon_again",
+        "tests/test_win_tray.py::test_close_from_another_thread_ends_the_loop_and_frees_everything",
+        "tests/test_win_tray.py::test_close_before_start_after_end_and_twice_is_harmless",
+        "tests/test_win_tray.py::test_failed_add_or_version_is_unavailable_and_cleans_up",
+        "tests/test_win_tray.py::test_action_error_is_logged_and_the_icon_keeps_running",
+        "tests/test_win_tray.py::test_icon_xy_is_signed",
+        "tests/test_win_tray.py::test_real_api_builds_and_frees_an_icon",
         "tests/test_desktop_tray.py::test_launcher_without_a_tray_keeps_running_and_logs_it",
         "tests/test_desktop.py::test_no_tray_mode_runs_until_the_server_stops",
         "tests/test_desktop.py::test_quit_with_an_open_stream_still_shuts_the_server_down"
@@ -4643,6 +4655,7 @@
       "scope": "Звіт самоперевірки з сімома перевірками, версією й виданням, коди 0 і 5; нічого не стартує й не чіпає даних і сховища; чужі тексти винятків не потрапляють у звіт.",
       "tests": [
         "tests/test_self_check.py::test_checks_pass_in_the_development_environment",
+        "tests/test_self_check.py::test_tray_check_never_shows_an_icon",
         "tests/test_self_check.py::test_broken_tls_is_reported_not_raised",
         "tests/test_self_check.py::test_missing_package_data_names_the_missing_file",
         "tests/test_self_check.py::test_store_edition_is_reported",
@@ -4691,7 +4704,10 @@
         "tests/test_packaging.py::test_root_requirements_come_from_the_checkout",
         "tests/test_packaging.py::test_dependency_closure_follows_markers_and_extras",
         "tests/test_packaging.py::test_declared_dependencies_all_have_licence_texts",
-        "tests/test_packaging.py::test_pystray_hook_ships_the_lgpl_library_as_source_files"
+        "tests/test_packaging.py::test_no_tray_library_in_the_build",
+        "tests/test_packaging.py::test_copyleft_is_found_by_expression_licence_or_classifier",
+        "tests/test_packaging.py::test_copyleft_distribution_stops_the_notices",
+        "tests/test_packaging.py::test_build_dependencies_have_no_copyleft"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#store-package-build",

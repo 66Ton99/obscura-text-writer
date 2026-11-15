@@ -28,7 +28,6 @@ BRIDGE_NAME = 'obscura-mcp'
 BRIDGE_CONTENTS = '_mcp'
 BRIDGE_ENTRY = 'from storygen.mcp.bridge import main\n\nmain()\n'
 _LICENSE_NAME = re.compile(r'^(licen[cs]e|copying|notice|copyright|unlicense|authors)([-_.][^\\/]*)?$', re.IGNORECASE)
-HOOKS_DIR = 'store_build/pyinstaller-hooks'
 ASSETS = {'StoreLogo.png': 50, 'Square44x44Logo.png': 44, 'Square150x150Logo.png': 150}
 PACKAGE_DIR = 'src/storygen'
 MAX_VERSION_PART = 65535
@@ -120,7 +119,23 @@ def missing_licenses(names, *, lookup=distribution) -> list[str]:
     return [name for name in names if not _license_files(lookup(name)) and _normal(name) not in LICENSE_FALLBACKS]
 
 
+def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
+    """Distributions under a GPL-family licence (GPL, LGPL, AGPL): the build must not contain them (PACKAGING-001-S03)."""
+    found = []
+    for name in names:
+        metadata = lookup(name).metadata
+        classifiers = metadata.get_all('Classifier') if hasattr(metadata, 'get_all') else metadata.get('Classifier', [])
+        declared = [metadata.get('License-Expression') or '', metadata.get('License') or '']
+        declared += [item for item in classifiers or [] if item.startswith('License ::')]
+        if any('GPL' in text.upper() for text in declared):
+            found.append(name)
+    return found
+
+
 def third_party_notices(names, *, lookup=distribution, runtime_license: str = '') -> str:
+    copyleft = copyleft_distributions(names, lookup=lookup)
+    if copyleft:
+        raise ValueError('Бібліотека з ліцензією родини GPL у збірці: ' + ', '.join(copyleft))
     missing = missing_licenses(names, lookup=lookup)
     if missing:
         raise ValueError('Немає тексту ліцензії для: ' + ', '.join(missing))
@@ -170,22 +185,21 @@ def stray_data_files(frozen_package: Path, manifest: dict, allowed=()) -> list[s
                   if path.is_file() and path.relative_to(frozen_package).as_posix() not in known)
 
 
-def pyinstaller_args(entry: Path, name: str, dist: Path, work: Path, hooks: Path, source: Path) -> list[str]:
+def pyinstaller_args(entry: Path, name: str, dist: Path, work: Path, source: Path) -> list[str]:
     arguments = ['--noconfirm', '--onedir', '--noconsole', '--noupx', '--name', name, '--distpath', str(dist),
                  '--workpath', str(work), '--specpath', str(work), '--paths', str(source),
                  '--collect-data', 'storygen', '--collect-submodules', 'storygen',
-                 '--hidden-import', 'keyring.backends.Windows', '--hidden-import', 'pystray._win32',
-                 '--additional-hooks-dir', str(hooks)]
+                 '--hidden-import', 'keyring.backends.Windows']
     for module in EXCLUDED_MODULES:
         arguments += ['--exclude-module', module]
     return arguments + [str(entry)]
 
 
-def bridge_pyinstaller_args(entry: Path, dist: Path, work: Path, hooks: Path, source: Path) -> list[str]:
+def bridge_pyinstaller_args(entry: Path, dist: Path, work: Path, source: Path) -> list[str]:
     """STORE-MCP: a console onedir build of the stdio bridge (a windowed executable has no stdin/stdout)."""
     arguments = ['--noconfirm', '--onedir', '--noupx', '--name', BRIDGE_NAME, '--contents-directory', BRIDGE_CONTENTS,
                  '--distpath', str(dist), '--workpath', str(work), '--specpath', str(work), '--paths', str(source),
-                 '--hidden-import', 'storygen.mcp.bridge', '--additional-hooks-dir', str(hooks)]
+                 '--hidden-import', 'storygen.mcp.bridge']
     for module in TEST_MODULES:
         arguments += ['--exclude-module', module]
     return arguments + [str(entry)]

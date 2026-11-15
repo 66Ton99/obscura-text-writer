@@ -1,15 +1,14 @@
 """DESKTOP-001-S04: the tray icon of the installed build — the only visible handle of a process without a window."""
+import io
 import locale
 import os
 import webbrowser
 from pathlib import Path
 from typing import Callable
 
+from . import win_tray
 from .web.localization import translate
-
-
-class TrayUnavailable(RuntimeError):
-    """The optional tray library (extra `desktop`) is missing or cannot start on this system."""
+from .win_tray import TrayUnavailable  # noqa: F401 - re-exported for desktop.py
 
 
 def system_locale() -> str:
@@ -38,31 +37,37 @@ def menu_items(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], N
     return items
 
 
-def _image():
+def _image(size: int = 64):
     from PIL import Image, ImageDraw
-    image = Image.new('RGB', (64, 64), (92, 26, 43))
+    image = Image.new('RGBA', (size, size), (92, 26, 43, 255))
     draw = ImageDraw.Draw(image)
-    draw.ellipse((14, 14, 50, 50), outline=(245, 238, 228), width=6)
+    margin = round(size * 14 / 64)
+    draw.ellipse((margin, margin, size - margin, size - margin), outline=(245, 238, 228, 255), width=max(1, round(size * 6 / 64)))
     return image
+
+
+def icon_png(size: int) -> bytes:
+    """The tray picture as PNG in the system's small-icon size."""
+    buffer = io.BytesIO()
+    _image(size).save(buffer, format='PNG')
+    return buffer.getvalue()
+
+
+_api_factory = win_tray.Win32Api
 
 
 def run_tray(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], None]) -> None:
     """Show the icon and block until "Quit"; raises TrayUnavailable when there is no tray to show."""
-    try:
-        import pystray
-        image = _image()
-    except Exception:
-        raise TrayUnavailable() from None
-    holder = {}
+    if os.name != 'nt':
+        raise TrayUnavailable()
+    holder, stopped = {}, []
 
     def quit_application():
+        if stopped:  # a second "Quit" while the server is still stopping does nothing
+            return
+        stopped.append(True)
         stop()
-        holder['icon'].stop()
+        holder['icon'].close()
     items = menu_items(url, data_dir, backups_dir, quit_application, locale=system_locale())
-    menu = pystray.Menu(*[pystray.MenuItem(label, (lambda action: lambda icon, item: action())(action), default=index == 0)
-                          for index, (label, action) in enumerate(items)])
-    holder['icon'] = pystray.Icon('Obscura', image, 'Obscura', menu=menu)
-    try:
-        holder['icon'].run()
-    except Exception:
-        raise TrayUnavailable() from None
+    holder['icon'] = win_tray.NotifyIcon(_api_factory(), 'Obscura', icon_png, items)
+    holder['icon'].run()

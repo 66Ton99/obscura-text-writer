@@ -63,7 +63,7 @@ def freeze_bridge(work: Path, bridge_work: Path, bridge_dist: Path, environment:
     """STORE-MCP: the console MCP bridge, frozen on its own so the main executable keeps excluding it."""
     entry = work / 'obscura_mcp_entry.py'
     entry.write_text(packaging.BRIDGE_ENTRY, encoding='utf-8')
-    arguments = packaging.bridge_pyinstaller_args(entry, bridge_dist, bridge_work, ROOT / packaging.HOOKS_DIR, SOURCE)
+    arguments = packaging.bridge_pyinstaller_args(entry, bridge_dist, bridge_work, SOURCE)
     log = bridge_dist.parent / 'pyinstaller-bridge.log'
     try:
         with log.open('w', encoding='utf-8') as stream:
@@ -130,7 +130,7 @@ def build(args, out: Path) -> dict:
     entry = work / 'obscura_entry.py'
     entry.write_text(ENTRY, encoding='utf-8')
     pyinstaller_work = work / 'pyinstaller'
-    arguments = packaging.pyinstaller_args(entry, NAME, out, pyinstaller_work, ROOT / packaging.HOOKS_DIR, SOURCE)
+    arguments = packaging.pyinstaller_args(entry, NAME, out, pyinstaller_work, SOURCE)
     log = out / 'pyinstaller.log'
     try:
         with log.open('w', encoding='utf-8') as stream:

@@ -82,13 +82,7 @@ The `storygen-desktop` command starts the application without a PowerShell windo
 - Before the database format is upgraded, the application makes a backup into the neighbouring `Obscura-backups` folder and does not start if the backup cannot be made. It never deletes old backups.
 - Launching it again while it is running only opens its page.
 
-To control the application from a tray icon ("Open Obscura", "Stories folder", "Quit"), install the `pystray` package:
-
-```powershell
-./.venv/Scripts/python.exe -m pip install "pystray>=0.19,<0.20"
-```
-
-Without it the application works, but can only be stopped from Task Manager.
+On Windows the tray icon appears right away. A left click opens the application, and a right click shows the menu "Open Obscura", "Stories folder", "Quit". On other systems there is no icon: stop the application with Ctrl+C in the terminal.
 
 ## Models
 
