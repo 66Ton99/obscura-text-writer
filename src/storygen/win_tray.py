@@ -45,7 +45,7 @@ class NotifyIcon:
         self._hwnd = None
         self._hicon = None
         self._taskbar = None
-        self._closing = self._ended = self._destroyed = self._menu_open = False
+        self._closing = self._ended = self._destroyed = self._menu_open = self._added = False
 
     def run(self) -> None:
         """Show the icon and block until the window is closed; TrayUnavailable when the icon cannot be shown."""
@@ -69,7 +69,7 @@ class NotifyIcon:
                 finally:
                     with self._lock:
                         self._ended, self._hwnd = True, None
-                    api.delete_icon(hwnd)
+                    self._hide(hwnd)
                     if not self._destroyed:
                         api.destroy_window(hwnd)
                     if self._hicon:
@@ -104,7 +104,7 @@ class NotifyIcon:
             self._show(hwnd)
             return 0
         if message == WM_CLOSE:
-            self._api.delete_icon(hwnd)
+            self._hide(hwnd)
             self._api.destroy_window(hwnd)
             return 0
         if message == WM_DESTROY:
@@ -116,10 +116,17 @@ class NotifyIcon:
     def _show(self, hwnd) -> bool:
         if not self._api.add_icon(hwnd, self._hicon, self._title):
             return False
+        self._added = True
         if not self._api.set_version(hwnd):
-            self._api.delete_icon(hwnd)
+            self._hide(hwnd)
             return False
         return True
+
+    def _hide(self, hwnd) -> None:
+        # NIM_DELETE only for an icon that is in the tray: once on close, never for an icon that was not added.
+        if self._added:
+            self._added = False
+            self._api.delete_icon(hwnd)
 
     def _menu(self, hwnd, wparam) -> None:
         if self._menu_open:  # TrackPopupMenuEx runs a modal loop: a second right click must not nest menus

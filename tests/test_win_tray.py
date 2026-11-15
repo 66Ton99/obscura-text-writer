@@ -163,7 +163,7 @@ def test_close_from_another_thread_ends_the_loop_and_frees_everything():
     names = api.names()
     for name in ('delete_icon', 'destroy_window', 'destroy_icon', 'unregister_class'):
         assert name in names
-    assert names.count('destroy_window') == 1 and ('destroy_icon', HICON) in api.calls
+    assert names.count('destroy_window') == 1 and names.count('delete_icon') == 1 and ('destroy_icon', HICON) in api.calls
 
 
 @pytest.mark.req('DESKTOP-001')
@@ -173,6 +173,11 @@ def test_close_before_start_after_end_and_twice_is_harmless():
     icon.close()
     icon.close()
     assert 'post' not in api.names()
+    thread = threading.Thread(target=icon.run, daemon=True)
+    thread.start()
+    thread.join(5)
+    assert not thread.is_alive(), 'run() after close() must end on its own'
+    assert api.names().count('post') == 1 and api.names().count('delete_icon') == 1
     other = FakeApi()
     icon, _ = make(other)
     thread = started(icon, other)
@@ -184,16 +189,15 @@ def test_close_before_start_after_end_and_twice_is_harmless():
 
 
 @pytest.mark.req('DESKTOP-001')
-@pytest.mark.parametrize('failing', ['add', 'version'])
-def test_failed_add_or_version_is_unavailable_and_cleans_up(failing):
+@pytest.mark.parametrize('failing,deletes', [('add', 0), ('version', 1)])
+def test_failed_add_or_version_is_unavailable_and_cleans_up(failing, deletes):
     api = FakeApi(add=failing != 'add', version=failing != 'version')
     icon, _ = make(api)
     with pytest.raises(TrayUnavailable):
         icon.run()
     names = api.names()
     assert ('destroy_icon', HICON) in api.calls and 'destroy_window' in names and 'unregister_class' in names
-    if failing == 'version':
-        assert 'delete_icon' in names
+    assert names.count('delete_icon') == deletes  # an icon that was never added is not deleted
 
 
 @pytest.mark.req('DESKTOP-001')
