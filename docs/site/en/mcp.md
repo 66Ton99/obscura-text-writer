@@ -6,7 +6,7 @@ The link is `storygen-mcp`, a small program the chat client starts by itself. It
 
 ## What the chat can do
 
-The chat gets twenty-five tools:
+The chat gets twenty-six tools:
 
 - **story list** and **story overview**: scenes, their order and their state, in the same words as the scene list, plus the story's rating, target length and characters;
 - **new story**: a title, a language, a target length, the story mode and, optionally, an age rating;
@@ -23,6 +23,7 @@ The chat gets twenty-five tools:
 - **publication card**: reading the [card](publication.md) and changing chosen fields over the card the chat has read, with the FB2 genre catalogue;
 - **new signature** in the shared author and pen-name directory;
 - **cover** from a file on your computer;
+- **text cover** from the publication card in one of four palettes — when the chat has no access to files, such as Claude Desktop from the Microsoft Store build;
 - **book export** to FB2, EPUB, PDF, MD or TXT: the chat gives a link to the finished file;
 - **story settings**: reading the writing profile, [role models](models.md), key state and presets, and on request the prompts and the provider's model list;
 - **settings changes**: chosen fields of the writing profile or of one role, over what the chat has read;
@@ -133,6 +134,7 @@ The chat can fill in the publication card, add an author signature, set a cover 
 - The chat changes only the card fields you named; the rest stays. If the card was changed after the chat read it, the write is refused with code 409, and the chat has to read the card again.
 - The chat takes FB2 genres from the same catalogue as the card page.
 - The chat reads the cover from a file on a local disk: give the full path, for example `C:\Users\…\cover.png`. PNG and JPEG up to 10 MiB work. Copy a file from a network drive or a shared folder to your own disk first. An uploaded cover becomes part of the card only when the chat writes it there.
+- The chat can ask Obscura to draw a [text cover](publication.md#publication-card) from the saved card. It likewise becomes part of the card only when the chat writes it to the card.
 - Export returns a link to the file in Obscura. The chat exports an unfinished story only with your explicit permission, and FB2 needs an author and a genre in the card.
 - If the card page is open, you will see the chat's changes when you return to it. Unsaved edits in the form stay, and the page says the card was changed elsewhere.
 

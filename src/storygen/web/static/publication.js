@@ -25,6 +25,7 @@ function state(message){
   document.querySelector('#publication-reload').disabled=busy;
   document.querySelector('#publication-cover-upload').disabled=busy||!view;
   document.querySelector('#publication-cover-remove').disabled=busy||!view||!coverId;
+  document.querySelector('#publication-cover-generate').disabled=busy||!view;
   for(const control of document.querySelectorAll('.publication-suggestion-apply'))control.disabled=busy||control.dataset.available!=='true';
   for(const role of ['author','translator']){
     const choice=document.querySelector(`#publication-${role}-choice`);
@@ -169,6 +170,17 @@ document.querySelector('#publication-cover-form').onsubmit=async event=>{
   if(file.size>10*1024*1024){notice(msg("m_2cade430c401"),'error');return;}
   const body=new FormData();body.append('file',file);busy=true;state(t("m_95349d307384"));
   try{const asset=await api(base+'/cover',{method:'POST',body});coverId=asset.id;changed();renderCover();notice(msg("m_f39b262d5cb5"));}
+  catch(error){notice(error.message,'error');}
+  finally{busy=false;renderPeople();state();}
+};
+document.querySelector('#publication-cover-generate').onclick=async()=>{
+  if(busy||!view)return;
+  // R16-COVER-S04: draw from what is in the form now; the card itself changes only on Save.
+  const data=collect();
+  const body={palette:document.querySelector('#publication-cover-palette').value,title:data.title,cycle_title:data.cycle_title,
+    cycle_number:data.cycle_number,author_ids:data.author_ids,language:data.language};
+  busy=true;state(t("m_fb10394abff8"));
+  try{const asset=await api(base+'/cover/generate',json('POST',body));coverId=asset.id;changed();renderCover();notice(msg("m_db41e63b5634"));}
   catch(error){notice(error.message,'error');}
   finally{busy=false;renderPeople();state();}
 };

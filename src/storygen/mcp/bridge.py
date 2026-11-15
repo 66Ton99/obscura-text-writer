@@ -28,7 +28,7 @@ LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
 FALLBACK_CLIENT = 'MCP client'
 TOOLS = ('list_stories', 'get_story', 'get_scene_context', 'get_scene_text', 'import_plan_and_characters', 'save_draft', 'next_steps',
          'create_story', 'get_templates', 'update_story', 'add_scene', 'update_scene', 'open_ghost_mode',
-         'get_publication', 'update_publication', 'add_signature', 'upload_cover', 'export_book',
+         'get_publication', 'update_publication', 'add_signature', 'upload_cover', 'generate_cover', 'export_book',
          'get_settings', 'update_settings', 'apply_role_preset', 'get_stage_task', 'save_stage_result', 'start_run', 'get_run')
 MATERIALS = ('plan', 'brief', 'draft', 'prose', 'memory')
 STAGES = ('brief', 'edit', 'memory')
@@ -40,6 +40,7 @@ PUBLICATION_FIELDS = tuple(PublicationData.model_fields)
 EXPORT_FORMATS = ('fb2', 'epub', 'pdf', 'md', 'txt')
 COVER_EXTENSIONS = ('.png', '.jpg', '.jpeg')
 COVER_MAX_BYTES = 10 * 1024 * 1024
+COVER_PALETTES = ('ink', 'paper', 'wine', 'forest')
 DRIVE_REMOTE = 4
 ROLES = ('planner', 'writer', 'editor', 'memory')
 SETTINGS_SECTIONS = ('writing',) + ROLES
@@ -577,6 +578,18 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             raise ToolError('Обкладинка має бути до 10 MiB')
         mime = 'image/png' if path.lower().endswith('.png') else 'image/jpeg'
         data = request('POST', f'/api/stories/{story_id}/publication/cover', files={'file': (os.path.basename(path), content, mime)})
+        return {'cover_id': data['id'], 'width': data['width'], 'height': data['height'], 'mime_type': data['mime_type']}
+
+    @server.tool()
+    def generate_cover(story_id: str, palette: str = 'ink') -> dict[str, Any]:
+        """Малює текстову обкладинку (назва, серія з номером, автори) зі збереженої картки публікації в одній із палітр
+        ink, paper, wine, forest. Картку не змінює: щоб поставити обкладинку, передайте cover_id в update_publication."""
+        identifier(story_id)
+        if palette not in COVER_PALETTES:
+            raise ToolError(f'palette: одне з {", ".join(COVER_PALETTES)}')
+        card = request('GET', f'/api/stories/{story_id}/publication')['card']
+        body = {'palette': palette, **{name: card[name] for name in ('title', 'cycle_title', 'cycle_number', 'author_ids', 'language')}}
+        data = request('POST', f'/api/stories/{story_id}/publication/cover/generate', json=body)
         return {'cover_id': data['id'], 'width': data['width'], 'height': data['height'], 'mime_type': data['mime_type']}
 
     @server.tool()

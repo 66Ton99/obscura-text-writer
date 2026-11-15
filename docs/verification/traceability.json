@@ -2096,6 +2096,40 @@
       ]
     },
     {
+      "id": "R16-COVER-S03",
+      "requirement": "R16-COVER",
+      "scope": "Ядро генерації текстової обкладинки: розкладка, палітри, межі тексту, реєстрація без зміни картки, відмови. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/publication/test_text_cover.py::test_palettes_are_the_four_approved",
+        "tests/publication/test_text_cover.py::test_book_word_ignores_case",
+        "tests/publication/test_text_cover.py::test_series_text",
+        "tests/publication/test_text_cover.py::test_render_is_a_valid_cover",
+        "tests/publication/test_text_cover.py::test_short_title_is_one_line_at_220",
+        "tests/publication/test_text_cover.py::test_empty_series_and_authors_draw_only_the_title",
+        "tests/publication/test_text_cover.py::test_huge_title_fits_and_is_cut",
+        "tests/publication/test_text_cover.py::test_huge_title_ends_with_ellipsis",
+        "tests/publication/test_text_cover.py::test_many_authors_and_long_series_are_cut_within_margins",
+        "tests/publication/test_text_cover.py::test_unknown_palette",
+        "tests/storage/test_publication.py::test_generate_cover_registers_asset_without_touching_card",
+        "tests/storage/test_publication.py::test_generate_cover_refusals_leave_no_asset",
+        "tests/storage/test_publication.py::test_generate_cover_falls_back_to_story_title_and_language",
+        "tests/storage/test_publication.py::test_generate_cover_rejects_unknown_palette_and_long_title",
+        "tests/web/test_publication_api.py::test_generate_cover_http",
+        "tests/storage/test_publication.py::test_generate_cover_blank_effective_title_is_a_clear_refusal",
+        "tests/storage/test_publication.py::test_generate_cover_language_is_stripped_and_falls_back_to_story_language",
+        "tests/web/test_localization.py::test_text_cover_refusals_are_translated"
+      ]
+    },
+    {
+      "id": "R16-COVER-S04",
+      "requirement": "R16-COVER",
+      "scope": "Кнопка й вибір палітри в картці: поточні значення форми, без Save, блокування повторного запиту, відмова без зміни показу; обрізання пробілів до перевірки довжини. Вигляд перевірено вручну в застосунку. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/web/test_publication_ui.py::test_publication_dirty_async_save_conflict_and_upload",
+        "tests/web/test_publication_api.py::test_generate_cover_strips_text_before_limits"
+      ]
+    },
+    {
       "id": "R16-SUGGEST-S01",
       "requirement": "R16-SUGGEST",
       "scope": "R-16b: протокол, повний контекст, явне прийняття; якість анотації не підтверджується.",
@@ -5144,9 +5178,9 @@
     {
       "id": "MCP-BRIDGE-S06",
       "requirement": "MCP-BRIDGE",
-      "scope": "Рівно двадцять п’ять інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Рівно двадцять шість інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
-        "tests/mcp/test_bridge.py::test_tool_list_is_exactly_the_twenty_five_tools",
+        "tests/mcp/test_bridge.py::test_tool_list_is_exactly_the_twenty_six_tools",
         "tests/mcp/test_bridge.py::test_get_story_reports_scene_states_with_the_ui_vocabulary",
         "tests/mcp/test_bridge.py::test_next_steps_points_to_the_scene_in_obscura",
         "tests/mcp/test_bridge.py::test_identifiers_cannot_reach_other_endpoints",
@@ -5771,6 +5805,16 @@
         "procedure": "docs/verification/manual.md#store-mcp-package",
         "reason": "Справжній Claude Desktop і Claude Code автотести не чіпають (tests/conftest.py::isolated_claude); підключення й перезапуск наживо — ручна процедура на підписаному пакеті."
       }
+    },
+    {
+      "id": "MCP-BRIDGE-S52",
+      "requirement": "MCP-BRIDGE",
+      "scope": "generate_cover: обкладинка зі збереженої картки без її зміни, прив'язка через update_publication, невідома палітра без запиту, набір палітр збігається з малюванням. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_publication.py::test_generate_cover_from_the_saved_card_and_bound_through_it",
+        "tests/mcp/test_bridge_publication.py::test_generate_cover_refuses_unknown_palette_without_request",
+        "tests/mcp/test_bridge_publication.py::test_bridge_palettes_match_the_renderer"
+      ]
     },
     {
       "id": "WRITING-MODE-S01",

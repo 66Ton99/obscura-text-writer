@@ -84,3 +84,10 @@ def test_model_policy_block_texts_are_translated_with_role_and_parameters():
     assert diagnostic(CONSENT_REQUIRED.format(model='x/y', rating='1/0/0', role=ROLE_LABELS['memory']), 'en') == (
         'Model “x/y” has no Uncensored mark, and this request is rated 1/0/0. Confirm in the “Memory” role settings '
         'that you agree to calls of this model for adult content, or choose another model.')
+
+
+def test_text_cover_refusals_are_translated():
+    from storygen.web.localization import diagnostic
+    assert diagnostic('Невідома палітра обкладинки','en')=='Unknown cover palette'
+    assert diagnostic('Для обкладинки потрібна назва: задайте її в картці або у творі','en')==\
+        'A cover needs a title: set it in the card or in the story'

@@ -194,3 +194,39 @@ def test_identifiers_are_checked_before_the_request(tool, arguments):
     seen = []
     result = call(_recording_server(seen), tool, arguments)
     assert result.is_error and seen == []
+
+
+@pytest.mark.req('MCP-BRIDGE')
+def test_generate_cover_from_the_saved_card_and_bound_through_it(tmp_path, monkeypatch):
+    from storygen.publication import text_cover
+    seen = {}
+    real = text_cover.render_text_cover
+    monkeypatch.setattr(text_cover, 'render_text_cover', lambda **kwargs: seen.update(kwargs) or real(**kwargs))
+    app, http = obscura(tmp_path)
+    story = written_story(app, http)
+    server = build_server(http)
+    author = ok(call(server, 'add_signature', {'display_name': 'А. Маяківна'}))
+    ok(call(server, 'update_publication', {'story_id': story.id, 'expected_revision': 0,
+        'fields': {'author_ids': [author['id']], 'cycle_title': 'Світло', 'cycle_number': 1,
+                   'title': 'Збережена назва', 'language': 'en'}}))
+    data = ok(call(server, 'generate_cover', {'story_id': story.id, 'palette': 'forest'}))
+    # Every saved field reaches the drawing, not the story defaults.
+    assert seen == {'title': 'Збережена назва', 'series': 'СВІТЛО · BOOK 1', 'authors': ['А. Маяківна'], 'palette': 'forest'}
+    assert set(data) == {'cover_id', 'width', 'height', 'mime_type'} and (data['width'], data['height']) == (1600, 2560)
+    assert ok(call(server, 'get_publication', {'story_id': story.id}))['card']['cover_id'] is None
+    card = ok(call(server, 'update_publication', {'story_id': story.id, 'expected_revision': 1, 'fields': {'cover_id': data['cover_id']}}))
+    assert card['cover']['id'] == data['cover_id']
+
+
+@pytest.mark.req('MCP-BRIDGE')
+def test_generate_cover_refuses_unknown_palette_without_request():
+    seen = []
+    result = call(_recording_server(seen), 'generate_cover', {'story_id': 'a' * 32, 'palette': 'neon'})
+    assert result.is_error and 'palette' in text(result) and seen == []
+
+
+@pytest.mark.req('MCP-BRIDGE')
+def test_bridge_palettes_match_the_renderer():
+    from storygen.mcp.bridge import COVER_PALETTES
+    from storygen.publication.text_cover import PALETTES
+    assert COVER_PALETTES == tuple(PALETTES)

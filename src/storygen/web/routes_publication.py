@@ -3,12 +3,12 @@ from typing import Literal
 
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response
-from pydantic import Field
+from pydantic import Field, field_validator
 from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartParser, MultiPartException
 
 from ..domain import DomainModel
-from ..publication_models import PublicationData
+from ..publication_models import Identifier, PublicationData
 from ..publication_suggestions import SuggestionAcceptance
 from ..publication.covers import MAX_BYTES
 from ..publication.genres import genre_catalog
@@ -25,6 +25,21 @@ class SignatureUpdate(DomainModel):
     expected_revision: int = Field(ge=0)
     display_name: str | None = Field(default=None,min_length=1,max_length=300)
     archived: bool | None = None
+
+
+class CoverGenerate(DomainModel):
+    palette: Literal['ink','paper','wine','forest']
+    title: str = Field(default='',max_length=300)
+    cycle_title: str = Field(default='',max_length=300)
+    cycle_number: int | None = Field(default=None,ge=1,le=1000000)
+    author_ids: list[Identifier] = Field(default_factory=list,max_length=20)
+    language: str = Field(default='',max_length=63)
+
+    @field_validator('title','cycle_title','language',mode='before')
+    @classmethod
+    def strip_text(cls,value):
+        # Same order as PublicationData: trailing spaces never trip the length limit.
+        return value.strip() if isinstance(value,str) else value
 
 
 class CardUpdate(DomainModel):
@@ -114,6 +129,12 @@ async def upload_cover(story_id: str,request: Request):
         return repo.publication('upload_cover',story_id=story_id,content=content)
     finally:
         await form.close()
+
+
+@router.post('/api/stories/{story_id}/publication/cover/generate')
+def generate_cover(story_id: str,body: CoverGenerate,request: Request):
+    """R16-COVER-S03: a text cover from the passed (possibly unsaved) card fields; the card itself is unchanged."""
+    return request.app.state.repo.publication('generate_cover',story_id=story_id,**body.model_dump())
 
 
 @router.get('/api/stories/{story_id}/publication/covers/{id}')

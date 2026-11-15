@@ -2098,3 +2098,12 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
   - причина неготовності `start_run`;
   - найновіший із кількох профілів Claude зі Store;
   - тести пропущених гілок.
+
+## 2026-11-15 — Текстова обкладинка з картки публікації (поза беклогом, рішення власника)
+
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-15-text-cover-design.md` (затверджено 15.11.2026; крос-рев'ю codex: 2 зауваження, обидва виправлено), план ядра `docs/superpowers/plans/2026-11/2026-11-15-text-cover-core.md`.
+- Ядро: `publication/text_cover.py` (Pillow + Noto Serif, 4 палітри, перенос і обрізання «…»), дія сховища `generate_cover` через чинний `upload_cover`, `POST /api/stories/{id}/publication/cover/generate`, MCP-інструмент `generate_cover` (інструментів 26).
+- SPEC.MD: R16-COVER (вимога, S03, технічний опис), MCP-BRIDGE (перелік, S06, S52); traceability.
+- Периферія (план `docs/superpowers/plans/2026-11/2026-11-15-text-cover-harness.md`): вибір палітри й кнопка «Створити текстову обкладинку» в картці (`publication.html`, `publication.js`, `app.css`), переклади, Node-тест кнопки, R16-COVER-S04 у SPEC.MD і traceability. На сервері поля `title`, `cycle_title` і `language` тепер обрізаються від пробілів до перевірки довжини, а дві нові відмови перекладено англійською.
+- Сайт: `publication.md` і `mcp.md` обома мовами (26 інструментів), новий знімок `publication-cover-desktop.png`; скрипт знімків натискає кнопку на нейтральному творі. Вигляд кнопки перевірено вручну в застосунку.
+- Відкладено: дублікати `author_ids` у запиті генерації дають 400 замість 422 (кнопка й чат дублікатів не створюють). Таблицю компонентів дизайн-спеки виправлено поправкою.

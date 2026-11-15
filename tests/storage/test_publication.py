@@ -152,3 +152,68 @@ def test_without_pillow_metadata_still_works(tmp_path,monkeypatch):
     assert repo.publication('get_card',story_id=story.id).effective_title=='Книга'
     with pytest.raises(ValueError,match='Pillow'):
         repo.publication('upload_cover',story_id=story.id,content=b'not empty')
+
+
+def test_generate_cover_registers_asset_without_touching_card(tmp_path):
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Маяк'))
+    author=repo.publication('create_signature',display_name='А. Маяківна')
+    before=repo.publication('get_card',story_id=story.id).card.revision
+    asset=repo.publication('generate_cover',story_id=story.id,palette='wine',title='',cycle_title='Світло',
+        cycle_number=2,author_ids=[author.id],language='')
+    assert (asset.mime_type,asset.width,asset.height)==('image/png',1600,2560)
+    assert repo.publication('read_cover',story_id=story.id,id=asset.id)[0]
+    view=repo.publication('get_card',story_id=story.id)
+    assert view.card.revision==before and view.card.cover_id is None
+    assert check_integrity(tmp_path).ok
+
+
+@pytest.mark.parametrize('overrides,trash',[({'author_ids':['f'*32]},False),({'story_id':'e'*32},False),({},True)],
+                         ids=['unknown_signature','foreign_story','trashed_story'])
+def test_generate_cover_refusals_leave_no_asset(tmp_path,overrides,trash):
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Маяк'))
+    repo.set_story_trashed(story.id,0,False) if trash else None
+    args={**dict(story_id=story.id,palette='ink',title='',cycle_title='',cycle_number=None,author_ids=[],language=''),**overrides}
+    with pytest.raises(KeyError):repo.publication('generate_cover',**args)
+    with repo.db.connection() as db:assert db.execute('SELECT COUNT(*) FROM publication_assets').fetchone()[0]==0
+    assert not [p for p in tmp_path.rglob('*') if p.suffix in {'.png','.jpg'}], 'no cover file is written'
+
+
+def test_generate_cover_falls_back_to_story_title_and_language(tmp_path,monkeypatch):
+    from storygen.publication import text_cover
+    seen={}
+    real=text_cover.render_text_cover
+    def spy(**kwargs):
+        seen.update(kwargs); return real(**kwargs)
+    monkeypatch.setattr(text_cover,'render_text_cover',spy)
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Маяк'))
+    repo.publication('generate_cover',story_id=story.id,palette='ink',title='',cycle_title='Світло',
+        cycle_number=3,author_ids=[],language='')
+    assert seen['title']=='Маяк' and seen['series']=='СВІТЛО · КНИГА 3' and seen['authors']==[]
+
+
+def test_generate_cover_rejects_unknown_palette_and_long_title(tmp_path):
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Маяк'))
+    base=dict(story_id=story.id,title='',cycle_title='',cycle_number=None,author_ids=[],language='')
+    with pytest.raises(ValueError,match='палітра'):repo.publication('generate_cover',**{**base,'palette':'neon'})
+    with pytest.raises(ValueError,match='title'):repo.publication('generate_cover',**{**base,'palette':'ink','title':'x'*301})
+
+
+def test_generate_cover_blank_effective_title_is_a_clear_refusal(tmp_path):
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='   '))
+    with pytest.raises(ValueError,match='назв'):
+        repo.publication('generate_cover',story_id=story.id,palette='ink',title='',cycle_title='',cycle_number=None,author_ids=[],language='')
+    with repo.db.connection() as db:assert db.execute('SELECT COUNT(*) FROM publication_assets').fetchone()[0]==0
+
+
+def test_generate_cover_language_is_stripped_and_falls_back_to_story_language(tmp_path,monkeypatch):
+    from storygen.publication import text_cover
+    seen=[]
+    real=text_cover.render_text_cover
+    def spy(**kwargs):
+        seen.append(kwargs['series']); return real(**kwargs)
+    monkeypatch.setattr(text_cover,'render_text_cover',spy)
+    repo=Repository(tmp_path); story=repo.create_story(StoryCreate(title='Lighthouse',language='en'))
+    args=dict(story_id=story.id,palette='ink',title='',cycle_title='Light',cycle_number=3,author_ids=[])
+    repo.publication('generate_cover',**args,language='')
+    repo.publication('generate_cover',**args,language=' uk ')
+    assert seen==['LIGHT · BOOK 3','LIGHT · КНИГА 3']
