@@ -49,6 +49,8 @@ The chat cannot delete stories or scenes, move them to the trash, reorder scenes
 
 Start Obscura as usual before you work. The chat client connects to `http://127.0.0.1:8765`. If Obscura runs on another port, add the arguments `--url http://127.0.0.1:<port>`.
 
+If you start Obscura without a console through `storygen-desktop` ([installation](install.md)), add the arguments `--data-dir <stories folder>` instead of `--url` (by default `%USERPROFILE%\Obscura`). Then you do not need to start Obscura beforehand: on the chat's first request the bridge finds it on any port and, if it is not running, quietly starts it in the tray without a browser. Obscura stays in the tray after you close the chat; you can quit it from the tray icon.
+
 **Claude Code.** In a terminal:
 
 ```powershell
