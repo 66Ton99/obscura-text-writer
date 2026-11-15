@@ -60,9 +60,12 @@ def templated_plan(repo,db,story,active,position,data):
     ids=data.character_ids or ([] if 'cast' in fields or not previous else previous.character_ids)  # 'cast' holds only a non-empty line value
     if ids:fields['cast']=cast_names(ids,story_cards(repo,db,story.id))
     number=data.author_scene_number
-    if number is None:
+    if number is None and position<len(active):
+        # SCENE-RENUMBER: an insertion takes its place in the list; the other scenes are renumbered before this check.
+        number=position+1
+    elif number is None:
         taken={scene.author_scene_number for scene in active}
-        # An unnumbered previous scene counts by its place in reading order; a taken number is never reused.
+        # Appended: an unnumbered previous scene counts by its place in reading order; a taken number is never reused.
         number=(position if previous is None or previous.author_scene_number is None else previous.author_scene_number)+1
         while number in taken:number+=1
     return next_scene_plan(story.language,number,data.title,fields)

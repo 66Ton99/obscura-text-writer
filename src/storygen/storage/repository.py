@@ -418,6 +418,10 @@ class Repository:
             position=len(active) if data.position is None else min(data.position,len(active))
             scene=Scene(id=new_id(),story_id=story_id,**{**data.model_dump(),"position":len(scenes)})
             from .scene_metadata import apply_description,templated_plan
+            if position<len(active):
+                from .scene_numbering import renumber_active
+                # SCENE-RENUMBER: an insertion renumbers the scenes first, as a reorder does, so the new scene's number is free.
+                renumber_active(self,db,active[:position]+[None]+active[position:])
             if plan_template and not data.beats.strip():
                 # SCENE-PLAN-TEMPLATE: an author-added scene starts from the previous scene's plan; a given plan is kept.
                 scene.beats=templated_plan(self,db,story,active,position,data)
@@ -457,9 +461,13 @@ class Repository:
             db.execute("BEGIN IMMEDIATE")
             self._active_story(db,story_id)
             if scene_id:self._active_scene(db,scene_id)
-            db.execute("INSERT INTO versions VALUES(?,?,?,?,?)",(id,story_id,scene_id,kind,version.model_dump_json()))
-            db.executemany("INSERT INTO dependency_edges VALUES(?,?)",[(source,id) for source in set(input_refs)])
+            self._insert_version_row(db,version)
         return version
+
+    def _insert_version_row(self,db,version):
+        """The catalogue row and dependency edges of a version whose file is already written, on an open transaction."""
+        db.execute("INSERT INTO versions VALUES(?,?,?,?,?)",(version.id,version.story_id,version.scene_id,version.kind,version.model_dump_json()))
+        db.executemany("INSERT INTO dependency_edges VALUES(?,?)",[(source,version.id) for source in set(version.input_refs)])
 
     def read_text(self,version_id: str) -> str:
         version=self.get_version(version_id)

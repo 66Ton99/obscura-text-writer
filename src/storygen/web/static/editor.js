@@ -178,7 +178,7 @@ document.querySelector('#import-sources').onsubmit=async event=>{
     previous.forEach(([e,disabled])=>e.disabled=disabled);importBusy=false;formElement.setAttribute('aria-busy','false');importAvailability();
   }
 };
-document.querySelector('#add-scene').onclick=async()=>{const title=await promptDialog(t("m_dd7bf0189af8"));if(!title)return;try{await api('/api/stories/'+state.storyId+'/scenes',json('POST',{title}));await refresh()}catch(error){notice(error.message,'error')}};
+document.querySelector('#add-scene').onclick=async()=>{const title=await promptDialog(t("m_dd7bf0189af8"));if(!title)return;try{const index=state.view?.scenes.findIndex(scene=>scene.id===state.scene?.id)??-1;/* SCENE-RENUMBER: a new scene goes right after the open one; without one, to the end. */await api('/api/stories/'+state.storyId+'/scenes',json('POST',index<0?{title}:{title,position:index+1}));await refresh()}catch(error){notice(error.message,'error')}};
 export function clearSceneBuffer(){state.scene=null;state.dirty=false;state.externalChange=false;state.bufferEpoch++;textEditor.write('');renderOrigin(null);textEditor.placeholder(live(()=>placeholders.plan));document.querySelector('#mode-tabs').replaceChildren();document.querySelector('#version-panel').replaceChildren();document.querySelector('#scene-settings')?.remove?.();uiText(document.querySelector('#scene-title'),"textContent",()=>(t("m_f0f1417db6de")));uiText(document.querySelector('#save-state'),"textContent",()=>(''));saveButton.disabled=true;document.dispatchEvent(new CustomEvent('scene-selected'));changed()}
 installSceneTrash(state,refresh,clearSceneBuffer);
 refresh().catch(error=>notice(error.message,'error'));

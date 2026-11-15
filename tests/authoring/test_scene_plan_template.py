@@ -112,14 +112,15 @@ def test_previous_scene_is_the_closest_active_one_before_the_new_position(tmp_pa
     repo, story, scenes = story_with(tmp_path, first, PREVIOUS.replace('Сцена 4', 'Сцена 2'), PREVIOUS.replace('Сцена 4', 'Сцена 3').replace('Перон другої колії', 'Вагон'))
     middle = repo.create_scene(story.id, SceneCreate(title='Вставка', position=1), plan_template=True)
     assert 'Локація: Каса\n' in middle.beats
-    # Number 2 belongs to the next scene: the first free number after the previous one is taken instead.
-    assert middle.author_scene_number == 4 and middle.beats.startswith('## Сцена 4: Вставка\n')
+    # SCENE-RENUMBER: an insertion takes its place in the list and the later scenes move on by one.
+    assert middle.author_scene_number == 2 and middle.beats.startswith('## Сцена 2: Вставка\n')
+    assert [s.author_scene_number for s in repo.list_scenes(story.id)] == [1, 2, 3, 4]
     assert [s.id for s in repo.list_scenes(story.id)][1] == middle.id
     repo.set_scene_trashed(story.id, scenes[2].id, repo.get_scene(scenes[2].id).revision, False)
     last = repo.create_scene(story.id, SceneCreate(title='Після кошика'), plan_template=True)
     assert 'Локація: Перон другої колії\n' in last.beats and 'Вагон' not in last.beats
     top = repo.create_scene(story.id, SceneCreate(title='Нова перша', position=0), plan_template=True)
-    assert 'Локація:\n' in top.beats and top.author_scene_number == 5
+    assert 'Локація:\n' in top.beats and top.author_scene_number == 1
 
 
 def test_unnumbered_previous_scene_counts_by_reading_order(tmp_path):
@@ -197,7 +198,9 @@ def test_api_creates_scene_with_template_and_keeps_given_plan(tmp_path):
         assert app.state.repo.get_scene(created['id']).beats == EXPECTED
 
 
-def test_add_scene_button_sends_only_the_title():
+def test_add_scene_button_sends_the_place_after_the_open_scene():
     from importlib.resources import files
     script = files('storygen.web').joinpath('static', 'editor.js').read_text(encoding='utf-8')
-    assert "api('/api/stories/'+state.storyId+'/scenes',json('POST',{title}))" in script
+    # SCENE-RENUMBER: the plan still comes from the server template; the request adds only the place.
+    assert "const index=state.view?.scenes.findIndex(scene=>scene.id===state.scene?.id)??-1;" in script
+    assert "json('POST',index<0?{title}:{title,position:index+1})" in script
