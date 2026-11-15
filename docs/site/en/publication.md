@@ -12,6 +12,9 @@ Open the **☰ Story actions → Card and publication** menu item. The card is a
 - **Authors.** Expand **Shared author and pen-name directory**, add a public signature, select it and press **Add author**. The directory is shared by all stories; a real name and a pen name are separate entries.
 - **Additional information**: series and number, date, publisher, ISBN (the checksum is verified), rights, translators, original language.
 - **Cover** — PNG or JPEG up to 10 MiB and 20 million pixels. Extra EXIF and GPS data are removed.
+- **Text cover.** If you have no image, choose a palette (Ink, Paper, Wine or Forest) and press **Create text cover**. Obscura draws a cover from the title, series with number and authors that are in the form right now, even unsaved ones. Text that is too long is cut with «…». The cover does not redraw itself: after changing the title, press the button again.
+
+![Text cover in the publication card](../../images/site/en/publication-cover-desktop.png)
 
 All changes, the cover included, apply only with **Save card**. The card does not make prose, memory or evaluations outdated. If the card was changed in another tab, your edits stay in the form, and **Refresh data** first asks whether to discard unsaved changes.
 

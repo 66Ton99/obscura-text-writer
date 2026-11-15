@@ -111,6 +111,11 @@ def capture(base,ids,languages):
                         for path,name in [(f'/stories/{story}/revision','revision'),(f'/stories/{story}/characters','characters'),
                                           (f'/stories/{story}/settings?section=models','settings-models'),(f'/stories/{story}/publication','publication')]:
                             page.goto(base+path);page.wait_for_load_state('networkidle');shot(page,folder/f'{name}-desktop.png',shots)
+                        # R16-COVER-S04: the cover panel after "Create text cover"; the card itself stays unsaved.
+                        page.locator('#publication-cover-palette').select_option('wine');page.locator('#publication-cover-generate').click()
+                        page.locator('#publication-cover').wait_for(state='visible');page.locator('#notice-close').click()
+                        section=page.locator('section[aria-labelledby=publication-cover-title]');section.scroll_into_view_if_needed()
+                        page.wait_for_timeout(300);section.screenshot(path=str(folder/'publication-cover-desktop.png'));shots.append(folder/'publication-cover-desktop.png')
                     page.close()
         finally:browser.close()
     return shots
