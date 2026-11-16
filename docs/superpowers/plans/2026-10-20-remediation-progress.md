@@ -2127,3 +2127,17 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Cross-review гілки (agy/gemini-3.8-flash; codex і agy Argon — ліміти): 6 знахідок, усі виправлено (`2d139be`): кошик і відновлення перенумеровують увесь список (інакше дублікати при власній нумерації); незмінена голова плану більше не інвалідовується; перевірку тексту `editor.js` замінено Playwright `scene-insert.spec.mjs` (desktop+mobile passed, ручна процедура `manual.md#scene-insert-browser`); посилено тести кошика й інвалідації старої голови.
 - `verify.py` на `2d139be` (з `C:/tmp/epl`): passed 3474, failed 0, skipped 1.
 - Після злиття `main` (власний трей, конфлікти лише в журналі й STATUS): `verify.py` на `2b7cb4d`: passed 3491, failed 0, skipped 1.
+
+### 16.11.2026 — Store, специфікація 3: список очікування платної версії, ядро
+
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-16-paid-page-waitlist-design.md` (PR #189) і план ядра `docs/superpowers/plans/2026-11/2026-11-16-paid-page-waitlist-core.md` (PR #190) погоджені власником 16.11.2026.
+  - Підхід: Worker + D1 + Turnstile, тариф Free.
+  - Строк зберігання: до листа про вихід платної версії, не довше 24 місяців.
+  - Оцінка: власник M, автор L (кроки людини в Cloudflare).
+- Task 1: `workers/waitlist/` (`handle`, перевірки форми, `Origin` і Turnstile, запис у D1 без дублів, `303` на `paid.html#waitlist-<стан>`, відмови з двомовним текстом). Тести `node --test` проходять через обгортку pytest з репортером junit, по тесту pytest на сценарій. SPEC: `WAITLIST-001`, S01–S06, traceability.
+- Task 2: щоденне видалення записів, старших за `RETENTION_MONTHS` (Cron Trigger); хибне значення нічого не видаляє. Сценарій S09.
+- Рішення виконавця:
+  - `handle(request, env, deps)` з `{verify, now, log}` замість `handle(request, env, verify)` зі специфікації;
+  - межа строку через `setUTCMonth` за неіснуючого дня зсувається вперед: запис може зникнути на день-два раніше, але не пізніше.
+- Повний pytest: 3500 passed, 1 skipped. `verify.py` на `beaefa9` (з `C:/tmp/sp-verify`): passed 3500, failed 0, skipped 1.
+- Worker не розгорнуто й не опубліковано. План периферії лишається: форма на сайті, сторінка `paid`, «Приватність», `docs/waitlist.md` з кроками власника в Cloudflare, `docs/packaging.md`, сценарії S07–S08.
