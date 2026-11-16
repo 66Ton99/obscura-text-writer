@@ -6353,6 +6353,14 @@
       "tests": [
         "tests/test_waitlist_worker.py::test_s06_failure_logs_no_address"
       ]
+    },
+    {
+      "id": "WAITLIST-001-S09",
+      "requirement": "WAITLIST-001",
+      "scope": "Щоденне видалення рядків, старших за RETENTION_MONTHS; хибне значення нічого не видаляє; розклад у wrangler.toml.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s09_old_rows_are_purged_daily"
+      ]
     }
   ]
 }

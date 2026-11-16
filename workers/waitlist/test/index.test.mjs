@@ -2,7 +2,7 @@
 // Every test name starts with its scenario id; tests/test_waitlist_worker.py checks them by that prefix.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handle, REFUSAL } from '../src/index.js';
+import worker, { handle, purge, retentionCutoff, REFUSAL } from '../src/index.js';
 
 const SITE = 'https://obscurawriter.com';
 
@@ -188,4 +188,40 @@ test('S06: every outcome is logged without the address', async () => {
   await handle(form({ ...GOOD, email: 'bad' }), env(), deps({ logs }));
   await handle(form(GOOD, { origin: 'null' }), env(), deps({ logs }));
   assert.deepEqual(logs, [{ state: 'ok' }, { state: 'invalid' }, { refused: 403 }]);
+});
+
+test('S09: purge deletes rows older than the retention period', async () => {
+  const calls = [];
+  const db = { prepare: (sql) => ({ bind: (...values) => ({ run: async () => { calls.push([sql, values]); return { meta: { changes: 3 } }; } }) }) };
+  const logs = [];
+  assert.equal(retentionCutoff(new Date('2028-11-16T03:17:00.900Z'), '24'), '2026-11-16T03:17:00Z');
+  assert.equal(await purge({ DB: db, RETENTION_MONTHS: '24' }, new Date('2028-11-16T03:17:00Z'), (e) => logs.push(e)), 3);
+  assert.deepEqual(calls, [['DELETE FROM waitlist WHERE created_at < ?', ['2026-11-16T03:17:00Z']]]);
+  assert.deepEqual(logs, [{ purged: 3 }]);
+});
+
+test('S09: invalid RETENTION_MONTHS deletes nothing', async () => {
+  for (const months of ['', 'abc', '0', '-1', '1.5', ' 24', undefined]) {
+    const db = fakeDb();
+    const logs = [];
+    assert.equal(retentionCutoff(new Date('2028-11-16T03:17:00Z'), months), null, String(months));
+    assert.equal(await purge({ DB: db, RETENTION_MONTHS: months }, new Date('2028-11-16T03:17:00Z'), (e) => logs.push(e)), null);
+    assert.equal(db.calls.length, 0);
+    assert.deepEqual(logs, [{ purge: 'invalid RETENTION_MONTHS' }]);
+  }
+});
+
+test('S09: scheduled hands purge to waitUntil', async () => {
+  const db = fakeDb();
+  const pending = [];
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    worker.scheduled({ scheduledTime: Date.parse('2028-11-16T03:17:00Z') }, { DB: db, RETENTION_MONTHS: '24' }, { waitUntil: (p) => pending.push(p) });
+    assert.equal(pending.length, 1);
+    await pending[0];
+  } finally {
+    console.log = quiet;
+  }
+  assert.deepEqual(db.calls, [['DELETE FROM waitlist WHERE created_at < ?', ['2026-11-16T03:17:00Z']]]);
 });

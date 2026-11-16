@@ -70,6 +70,14 @@ def test_s06_failure_logs_no_address(node_results):
 
 
 @pytest.mark.req('WAITLIST-001')
+def test_s09_old_rows_are_purged_daily(node_results):
+    assert_scenario(node_results, 'S09')
+    config = wrangler()
+    assert config['triggers']['crons'] == ['17 3 * * *']
+    assert config['vars']['RETENTION_MONTHS'] == '24'
+
+
+@pytest.mark.req('WAITLIST-001')
 def test_privacy_edition_matches_site():
     privacy = (ROOT / 'docs' / 'site' / 'uk' / 'privacy.md').read_text(encoding='utf-8')
     day, month, year = re.search(r'Редакція від (\d{2})\.(\d{2})\.(\d{4})', privacy).groups()

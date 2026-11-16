@@ -91,8 +91,32 @@ export async function handle(request, env, deps = {}) {
   return result('ok');
 }
 
+// Rows older than RETENTION_MONTHS are deleted daily. A month that does not exist in the target month
+// (31 March − 1) rolls forward, so a row may go a day or two early, never late.
+export function retentionCutoff(now, months) {
+  if (!/^\d+$/.test(String(months ?? '')) || Number(months) <= 0) return null;
+  const cutoff = new Date(now.getTime());
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - Number(months));
+  return stamp(cutoff);
+}
+
+export async function purge(env, now, log = defaultLog) {
+  const cutoff = retentionCutoff(now, env.RETENTION_MONTHS);
+  if (cutoff === null) {
+    log({ purge: 'invalid RETENTION_MONTHS' });
+    return null;
+  }
+  const outcome = await env.DB.prepare('DELETE FROM waitlist WHERE created_at < ?').bind(cutoff).run();
+  const purged = outcome?.meta?.changes ?? 0;
+  log({ purged });
+  return purged;
+}
+
 export default {
   fetch(request, env) {
     return handle(request, env);
+  },
+  scheduled(event, env, ctx) {
+    ctx.waitUntil(purge(env, new Date(event.scheduledTime)));
   },
 };

@@ -4033,7 +4033,9 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 
 Після розбору форми відповідь SHALL бути `303` на `<Origin запиту>/<'' | 'en/'>paid.html#waitlist-<стан>`: переадресація веде лише на перевірений сайт. Таблиця `waitlist` (`schema.sql`) має `email` (первинний ключ), `lang` (`uk`/`en`), `privacy_edition` (значення змінної `PRIVACY_EDITION` — дата редакції сторінки «Приватність», з якою людина погодилася) і `created_at` (`YYYY-MM-DDTHH:MM:SSZ`, UTC). IP-адреса клієнта (`CF-Connecting-IP`) передається лише в `siteverify` як `remoteip` і не зберігається. Журнал Worker MUST NOT містити адреси й токена: один запис `{state}` (для `error` — ще назва класу винятку) або `{refused: <код>}`. Секрет `TURNSTILE_SECRET` задається лише `wrangler secret put` і MUST NOT бути у файлах репозиторію.
 
-- **Модуль.** `workers/waitlist/src/index.js` (ES-модуль без залежностей npm): `REFUSAL`, `normalizeEmail`, `allowedOrigins`, `verifyTurnstile(token, ip, env)` (`POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, `FormData`), `handle(request, env, deps)` з підмінними `deps.verify`, `deps.now`, `deps.log` і `export default { fetch }`. `wrangler.toml`: `ALLOWED_ORIGINS = "https://obscurawriter.com"`, `RETENTION_MONTHS`, `PRIVACY_EDITION`, прив'язка D1 `DB` (`database_id` вписує власник після створення бази), маршрут `waitlist.obscurawriter.com` з `custom_domain = true`.
+Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти записи, старші за `RETENTION_MONTHS` місяців (`24`: власник визначив строк до листа про вихід платної версії, але не довше 24 місяців від запису): `DELETE FROM waitlist WHERE created_at < ?` з межею «зараз мінус `RETENTION_MONTHS` місяців» у форматі `created_at`. Значення, що не є цілим числом більше нуля, MUST NOT нічого видаляти: Worker пише в журнал `{purge: 'invalid RETENTION_MONTHS'}`. Видалення всіх адрес після листа про вихід платної версії й видалення на запит власник робить вручну.
+
+- **Модуль.** `workers/waitlist/src/index.js` (ES-модуль без залежностей npm): `REFUSAL`, `normalizeEmail`, `allowedOrigins`, `verifyTurnstile(token, ip, env)` (`POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, `FormData`), `handle(request, env, deps)` з підмінними `deps.verify`, `deps.now`, `deps.log`, `retentionCutoff(now, months)`, `purge(env, now)` і `export default { fetch, scheduled }`. `wrangler.toml`: `ALLOWED_ORIGINS = "https://obscurawriter.com"`, `RETENTION_MONTHS`, `PRIVACY_EDITION`, прив'язка D1 `DB` (`database_id` вписує власник після створення бази), маршрут `waitlist.obscurawriter.com` з `custom_domain = true`, `[triggers] crons`.
 - **Тести.** `workers/waitlist/test/index.test.mjs` (`node --test`, фейкова D1 і фейкова перевірка Turnstile; назва кожного тесту починається з ID сценарію). `tests/test_waitlist_worker.py` один раз запускає Node з репортером junit і для кожного сценарію перевіряє, що його тести Node пройшли. Без Node тести падають, а не пропускаються. Там само перевіряється, що `PRIVACY_EDITION` дорівнює даті редакції `docs/site/uk/privacy.md` і що в `wrangler.toml` немає секрету.
 - **Відомі обмеження.** Підтвердження адреси листом немає: на тарифі Free Cloudflare не надсилає листів довільним адресатам. Тому в списку можуть бути чужі чи помилкові адреси, а від ботів захищає лише Turnstile. Worker розгортає власник вручну (`wrangler deploy`), автодеплою з GitHub немає. Форма на сайті, сторінка `paid`, нова редакція «Приватності» й інструкція розгортання — окремий план периферії; до нього Worker не розгорнуто й не опубліковано.
 
@@ -4077,6 +4079,13 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 - WHEN `siteverify` кидає помилку мережі або D1 відмовляє
 - THEN відповідь — `303` на `#waitlist-error`
 - AND журнал містить стан і назву класу помилки, але не адресу й не токен; для інших результатів — лише `{state}` чи `{refused: <код>}`.
+
+<a id="waitlist-001-s09"></a>
+#### Scenario: WAITLIST-001-S09 — Щоденне видалення
+- GIVEN `RETENTION_MONTHS = "24"` і запуск за розкладом `2028-11-16T03:17:00Z`
+- WHEN спрацьовує Cron Trigger
+- THEN Worker видаляє рядки з `created_at < 2026-11-16T03:17:00Z` і пише в журнал кількість видалених
+- AND з `RETENTION_MONTHS` порожнім, нечисловим, дробовим, нулем чи від'ємним нічого не видаляється, а журнал містить `{purge: 'invalid RETENTION_MONTHS'}`.
 
 ## MCP-BRIDGE. Локальний MCP-клієнт (R-32)
 
