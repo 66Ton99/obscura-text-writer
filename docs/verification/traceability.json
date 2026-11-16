@@ -6303,6 +6303,56 @@
         "procedure": "docs/verification/manual.md#series-bible-browser",
         "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/series-bible.spec.mjs виконуються окремим runner, цей зв’язок не є доказом виконання."
       }
+    },
+    {
+      "id": "WAITLIST-001-S01",
+      "requirement": "WAITLIST-001",
+      "scope": "Нова адреса: запис, 303 мовою сторінки, IP лише в Turnstile; редакція «Приватності» збігається з PRIVACY_EDITION.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s01_new_address_is_recorded",
+        "tests/test_waitlist_worker.py::test_privacy_edition_matches_site"
+      ]
+    },
+    {
+      "id": "WAITLIST-001-S02",
+      "requirement": "WAITLIST-001",
+      "scope": "Повторна адреса в іншому регістрі не змінює рядка й дає той самий ok.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s02_repeat_address_changes_nothing"
+      ]
+    },
+    {
+      "id": "WAITLIST-001-S03",
+      "requirement": "WAITLIST-001",
+      "scope": "Хибна адреса чи немає згоди: invalid без Turnstile і D1.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s03_invalid_form_skips_turnstile"
+      ]
+    },
+    {
+      "id": "WAITLIST-001-S04",
+      "requirement": "WAITLIST-001",
+      "scope": "Відмова Turnstile, чужий чи відсутній hostname, порожній токен: captcha без запису.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s04_turnstile_refusal_writes_nothing"
+      ]
+    },
+    {
+      "id": "WAITLIST-001-S05",
+      "requirement": "WAITLIST-001",
+      "scope": "Сторонній запит: 405/403/415/413 з текстом REFUSAL без переадресації; секрету немає в wrangler.toml.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s05_foreign_requests_are_refused",
+        "tests/test_waitlist_worker.py::test_wrangler_config_keeps_no_secret"
+      ]
+    },
+    {
+      "id": "WAITLIST-001-S06",
+      "requirement": "WAITLIST-001",
+      "scope": "Збій мережі чи D1: error; журнал без адреси й токена.",
+      "tests": [
+        "tests/test_waitlist_worker.py::test_s06_failure_logs_no_address"
+      ]
     }
   ]
 }

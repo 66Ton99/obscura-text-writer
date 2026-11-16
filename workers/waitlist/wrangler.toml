@@ -1,0 +1,21 @@
+# WAITLIST-001: the paid-version waitlist Worker (Cloudflare Workers Free).
+# TURNSTILE_SECRET is set only with `npx wrangler secret put TURNSTILE_SECRET`, never in this file.
+# database_id is written here by the owner after `npx wrangler d1 create obscura-waitlist --jurisdiction=eu`.
+name = "obscura-waitlist"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://obscurawriter.com"
+RETENTION_MONTHS = "24"
+# Date of the Privacy edition the consent checkbox refers to (docs/site/uk/privacy.md).
+PRIVACY_EDITION = "2026-11-15"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "obscura-waitlist"
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+[[routes]]
+pattern = "waitlist.obscurawriter.com"
+custom_domain = true
