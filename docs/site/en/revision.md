@@ -10,11 +10,11 @@ The **Editing** stage follows the draft. The editor suggests changes, and you de
 
 In the version history you can choose a draft or prose version and press **Check the selected version’s language**. The rules find letters from another alphabet, mixed alphabets within a word, repeated neighbouring words and a hyphen instead of a dash in dialogue. The saved version is checked, with no model call.
 
-## Book revision
+## Book check
 
-When you change early scenes, the outline or the characters, later materials may contradict them. Open the **☰ Story actions → Book revision** menu item: the tool opens as a separate page, and **← Back to the story** returns to the editor. The number next to the menu item counts materials waiting for review.
+When you change early scenes, the outline or the characters, later materials may contradict them. Open the **☰ Story actions → Book check** menu item: the tool opens as a separate page, and **← Back to the story** returns to the editor. The number next to the menu item counts materials waiting for review.
 
-![Book revision page](../../images/site/en/revision-desktop.png)
+![Book check page](../../images/site/en/revision-desktop.png)
 
 1. Save your edits. If there is unsaved text, the application offers to save it first.
 2. Press **Check impact**. The preview shows the materials, the planner model, the possible number of calls and the budget. It does not call the model yet.
@@ -23,6 +23,16 @@ When you change early scenes, the outline or the characters, later materials may
 5. **No impact found** clears the review need for that text. **Changes required** shows exact passages, the new premises and what needs fixing.
 6. **Open material** takes you to the scene and tab. Fix the text by hand or with the existing tools; the review itself rewrites nothing.
 7. If an assessment is wrong, press **Reject assessment**: it stays in the history but no longer affects the status.
+
+## Accept all prose as the author's
+
+If you know that all the current prose of the book is your final text, a model check is not required. The **Accept all prose as the author's** button appears when the prose of at least one scene is waiting for a check.
+
+- The confirmation names the number and the titles of the scenes. The texts stay the same, and the check conclusions for these scenes become outdated.
+- Only prose is accepted. Outdated briefs and memory remain and need updating separately.
+- Every scene gets an entry in the history of author decisions, as after accepting a single version.
+- All scenes are accepted together or none: if a scene changes after the confirmation is shown, nothing is accepted and you press the button again.
+- While an impact check or a sequential review is running, the button is unavailable.
 
 ## Sequential review
 

@@ -1,1 +1,1 @@
-"""Book revision analysis; immutable sources and model reports."""
+"""Book check (impact) analysis; immutable sources and model reports."""

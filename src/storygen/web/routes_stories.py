@@ -74,7 +74,7 @@ def story_page(id: str,request: Request):
 
 @router.get("/stories/{id}/revision")
 def revision_page(id: str,request: Request):
-    """#89: book revision (impact review) lives on its own page; no new API."""
+    """#89: book check (impact review) lives on its own page; no new API."""
     return request.app.state.templates.TemplateResponse(request=request,name="revision.html",context={"story":request.app.state.repo.get_story(id)})
 
 

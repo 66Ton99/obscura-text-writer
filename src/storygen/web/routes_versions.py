@@ -320,6 +320,20 @@ def accept_version(scene_id: str,body: AcceptanceSelection,request: Request):
     return {'scene':result.scene,'version':result.version,'acceptance':result.acceptance}
 
 
+class ProseAcceptance(DomainModel):
+    fingerprint: str = Field(pattern=r'^[a-f0-9]{64}$')
+
+
+@router.get('/api/stories/{story_id}/prose-acceptance')
+def prose_acceptance_preview(story_id: str,request: Request):
+    return request.app.state.repo.preview_prose_acceptance(story_id)
+
+
+@router.post('/api/stories/{story_id}/prose-acceptance')
+def accept_all_prose(story_id: str,body: ProseAcceptance,request: Request):
+    return request.app.state.repo.accept_all_prose(story_id,body.fingerprint)
+
+
 @router.get('/api/scenes/{scene_id}/core-review')
 def core_review_view(scene_id: str,request: Request):
     from ..memory.core_review import core_review
