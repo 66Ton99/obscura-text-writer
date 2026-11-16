@@ -2174,3 +2174,4 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Повний pytest на `ce1e537`: без падінь (код 0).
 - Cross-review гілки (agy/gemini-3.8-flash; перша спроба впала за таймаутом 15 хв під навантаженням паралельного pytest, повтор пройшов): 5 зауважень, усі виправлено. Справжній дефект один: `check_site.py --publish` падав трасуванням `ValueError` на хибному значенні `form` замість рядка проблеми (тест `test_s10_bad_form_value_is_a_problem_not_a_crash` RED→GREEN). Решта: опис DOCS-SITE-S10 у traceability, маркер `WAITLIST-001` на тесті workflow, тести гілок (домен Worker, сайт без форми, немає сторінки `privacy`, український якір) і точні тексти проблем.
 - Фінальне рев'ю: самоперевірка, без субагентів.
+- `verify.py` на `21efb49` (з `C:/tmp/sp-verify`): passed 3521, failed 0, skipped 1.
