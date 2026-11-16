@@ -105,6 +105,7 @@ Storygen автоматизує створення українського оп
 - [MAINT-003 — Відновлення в новий каталог](#maint-003)
 - [PUB-001 — Відокремлення публічного коду від приватної історії](#pub-001)
 - [DOCS-SITE — Двомовний сайт інструкцій](#docs-site)
+- [WAITLIST-001 — Список очікування платної версії](#waitlist-001)
 - [MCP-BRIDGE — Локальний MCP-клієнт до сервера Obscura](#mcp-bridge)
 - [WRITING-MODE — Режим твору: пише чат чи Obscura](#writing-mode)
 - [EDIT-SENTENCE-CONTEXT — Речення в контексті редакторської правки](#edit-sentence-context)
@@ -4025,6 +4026,76 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 - WHEN перевіряються сторінки
 - THEN `privacy` і `report` є обома мовами, `privacy` містить privacy@obscurawriter.com, `report` — report@obscurawriter.com і посилання на `privacy`
 - AND `docs/packaging.md` передає `--report-url https://obscurawriter.com/report.html`.
+
+## WAITLIST-001. Список очікування платної версії (#119)
+
+<a id="waitlist-001"></a>
+### Requirement: WAITLIST-001 — Список очікування платної версії
+
+Список очікування платної версії SHALL бути окремим компонентом поза застосунком: Cloudflare Worker `workers/waitlist/` (тариф Workers Free) з базою D1 і перевіркою Cloudflare Turnstile. Застосунок і міст MCP з ним не говорять: вони лише відкривають `waitlist_url` маркера збірки (BUILD-EDITION-001). Worker MUST приймати лише `POST /` з `Content-Type: application/x-www-form-urlencoded` і тілом до 4096 байтів (перевіряються і `Content-Length`, і прочитані байти), із заголовком `Origin`, що точно збігається з одним зі списку `ALLOWED_ORIGINS` (через кому). Інакше відповідь — `405`, `403`, `415` чи `413` без переадресації, з тілом `text/plain; charset=utf-8` `REFUSAL` (українською й англійською, з адресою privacy@obscurawriter.com); Turnstile і D1 при цьому не викликаються.
+
+Поля форми: `email` (обрізання пробілів, нижній регістр, ≤ 254 символи; один `@`, видимі символи ASCII без пробілів, домен із непорожніх частин через крапку, щонайменше одна крапка), `consent` (MUST дорівнювати `yes`), `lang` (`en` → `en`, будь-що інше → `uk`) і токен `cf-turnstile-response`. Перевірки йдуть по черзі, і перша невдала визначає стан:
+1. хибна адреса чи немає згоди → `invalid`, без виклику Turnstile й D1;
+2. порожній токен, `siteverify` з `success` не `true` чи `hostname`, що не дорівнює хосту `Origin` запиту → `captcha`, без запису;
+3. `INSERT INTO waitlist (email, lang, privacy_edition, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(email) DO NOTHING` → `ok` і для нової, і для наявної адреси, тож відповідь не розкриває, чи адреса вже в списку;
+4. виняток під час `siteverify` (мережа, не-200) чи D1 → `error`.
+
+Після розбору форми відповідь SHALL бути `303` на `<Origin запиту>/<'' | 'en/'>paid.html#waitlist-<стан>`: переадресація веде лише на перевірений сайт. Таблиця `waitlist` (`schema.sql`) має `email` (первинний ключ), `lang` (`uk`/`en`), `privacy_edition` (значення змінної `PRIVACY_EDITION` — дата редакції сторінки «Приватність», з якою людина погодилася) і `created_at` (`YYYY-MM-DDTHH:MM:SSZ`, UTC). IP-адреса клієнта (`CF-Connecting-IP`) передається лише в `siteverify` як `remoteip` і не зберігається. Журнал Worker MUST NOT містити адреси й токена: один запис `{state}` (для `error` — ще назва класу винятку) або `{refused: <код>}`. Секрет `TURNSTILE_SECRET` задається лише `wrangler secret put` і MUST NOT бути у файлах репозиторію.
+
+Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти записи, старші за `RETENTION_MONTHS` місяців (`24`: власник визначив строк до листа про вихід платної версії, але не довше 24 місяців від запису): `DELETE FROM waitlist WHERE created_at < ?` з межею «зараз мінус `RETENTION_MONTHS` місяців» у форматі `created_at`; день, якого немає в цільовому місяці (29 лютого два роки тому, 31 березня мінус місяць), зводиться до останнього дня того місяця, тож жоден запис не видаляється раніше строку. Значення, що не є цілим числом більше нуля, MUST NOT нічого видаляти: Worker пише в журнал `{purge: 'invalid RETENTION_MONTHS'}`. Видалення всіх адрес після листа про вихід платної версії й видалення на запит власник робить вручну.
+
+- **Модуль.** `workers/waitlist/src/index.js` (ES-модуль без залежностей npm): `REFUSAL`, `normalizeEmail`, `allowedOrigins`, `verifyTurnstile(token, ip, env)` (`POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, `FormData`), `handle(request, env, deps)` з підмінними `deps.verify`, `deps.now`, `deps.log`, `retentionCutoff(now, months)`, `purge(env, now)` і `export default { fetch, scheduled }`. `wrangler.toml`: `ALLOWED_ORIGINS = "https://obscurawriter.com"`, `RETENTION_MONTHS`, `PRIVACY_EDITION`, прив'язка D1 `DB` (`database_id` вписує власник після створення бази), маршрут `waitlist.obscurawriter.com` з `custom_domain = true`, `[triggers] crons`.
+- **Тести.** `workers/waitlist/test/index.test.mjs` (`node --test`, фейкова D1 і фейкова перевірка Turnstile; назва кожного тесту починається з ID сценарію). `tests/test_waitlist_worker.py` один раз запускає Node з репортером junit і для кожного сценарію перевіряє, що його тести Node пройшли. Без Node тести падають, а не пропускаються. Там само перевіряється, що `PRIVACY_EDITION` дорівнює даті редакції `docs/site/uk/privacy.md` і що в `wrangler.toml` немає секрету.
+- **Відомі обмеження.** Підтвердження адреси листом немає: на тарифі Free Cloudflare не надсилає листів довільним адресатам. Тому в списку можуть бути чужі чи помилкові адреси, а від ботів захищає лише Turnstile. Worker розгортає власник вручну (`wrangler deploy`), автодеплою з GitHub немає. Форма на сайті, сторінка `paid`, нова редакція «Приватності» й інструкція розгортання — окремий план периферії; до нього Worker не розгорнуто й не опубліковано.
+
+<a id="waitlist-001-s01"></a>
+#### Scenario: WAITLIST-001-S01 — Нова адреса
+- GIVEN форма з коректною адресою, `consent=yes`, `lang=en` і токеном, який Turnstile підтверджує для `obscurawriter.com`
+- WHEN її надіслано з `Origin: https://obscurawriter.com`
+- THEN у D1 записано адресу в нижньому регістрі, `en`, `PRIVACY_EDITION` і час UTC до секунди
+- AND відповідь — `303` на `https://obscurawriter.com/en/paid.html#waitlist-ok` (без `lang=en` — на `…/paid.html#waitlist-ok`, з дозволеного `http://localhost:8000` — туди ж)
+- AND IP клієнта передано в Turnstile, але не в D1.
+
+<a id="waitlist-001-s02"></a>
+#### Scenario: WAITLIST-001-S02 — Повторна адреса
+- GIVEN адреса вже є в списку
+- WHEN її надіслано ще раз, зокрема з іншим регістром чи пробілами по краях
+- THEN рядок не змінюється (`ON CONFLICT(email) DO NOTHING`), а відповідь та сама `#waitlist-ok`.
+
+<a id="waitlist-001-s03"></a>
+#### Scenario: WAITLIST-001-S03 — Хибна адреса чи немає згоди
+- GIVEN форма з порожньою адресою, адресою без `@`, з двома `@`, без крапки в домені, з порожньою частиною домену, з пробілом, табуляцією чи кирилицею, довшою за 254 символи, або без `consent=yes`
+- WHEN її надіслано з дозволеного сайту
+- THEN відповідь — `303` на `#waitlist-invalid`
+- AND Turnstile і D1 не викликаються.
+
+<a id="waitlist-001-s04"></a>
+#### Scenario: WAITLIST-001-S04 — Turnstile не підтвердив
+- GIVEN коректна форма
+- WHEN токен порожній, `siteverify` повертає `success: false` або `hostname`, що не дорівнює хосту `Origin` (зокрема без `hostname`)
+- THEN відповідь — `303` на `#waitlist-captcha`, а в D1 нічого не записано.
+
+<a id="waitlist-001-s05"></a>
+#### Scenario: WAITLIST-001-S05 — Сторонній запит
+- GIVEN запит не `POST /`, без `Origin`, з `Origin: null`, `https://www.obscurawriter.com` чи іншим сайтом, з іншим `Content-Type` або з тілом понад 4096 байтів (із заголовком `Content-Length` чи без нього)
+- WHEN він надходить до Worker
+- THEN відповідь — відповідно `405`, `403`, `415` чи `413` без `Location`, з тілом `REFUSAL` (`text/plain; charset=utf-8`, обома мовами з privacy@obscurawriter.com)
+- AND Turnstile і D1 не викликаються, а в `wrangler.toml` немає `TURNSTILE_SECRET`.
+
+<a id="waitlist-001-s06"></a>
+#### Scenario: WAITLIST-001-S06 — Збій і журнал
+- GIVEN коректна форма
+- WHEN `siteverify` кидає помилку мережі або D1 відмовляє
+- THEN відповідь — `303` на `#waitlist-error`
+- AND журнал містить стан і назву класу помилки, але не адресу й не токен; для інших результатів — лише `{state}` чи `{refused: <код>}`.
+
+<a id="waitlist-001-s09"></a>
+#### Scenario: WAITLIST-001-S09 — Щоденне видалення
+- GIVEN `RETENTION_MONTHS = "24"` і запуск за розкладом `2028-11-16T03:17:00Z`
+- WHEN спрацьовує Cron Trigger
+- THEN Worker видаляє рядки з `created_at < 2026-11-16T03:17:00Z` і пише в журнал кількість видалених
+- AND запуск `2028-02-29T03:17:00Z` має межу `2026-02-28T03:17:00Z`, а не `2026-03-01`
+- AND з `RETENTION_MONTHS` порожнім, нечисловим, дробовим, нулем чи від'ємним нічого не видаляється, а журнал містить `{purge: 'invalid RETENTION_MONTHS'}`.
 
 ## MCP-BRIDGE. Локальний MCP-клієнт (R-32)
 

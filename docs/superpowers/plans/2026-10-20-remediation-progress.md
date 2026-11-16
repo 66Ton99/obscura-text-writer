@@ -2135,3 +2135,18 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - `storage/acceptance.py`: спільне ядро `_accept_in_transaction`, `preview_prose_acceptance`, `accept_all_prose` (одна транзакція, загальний відбиток, блокування за відкритим запуском impact); `GET`/`POST /api/stories/{id}/prose-acceptance`; `static/prose-acceptance.js` і кнопка в `revision.html`.
 - Перейменування лише підписів (uk «Перевірка книги», en «Book check»); маршрут `/stories/{id}/revision` і ключі i18n без змін.
 - SPEC.MD: DATA-010 (масове прийняття, Scenario DATA-010-S02), IMPACT-UI і меню твору — назва та кнопка; traceability. Сайт: `revision`, `workspace`, `first-story`, `index` (uk/en), `docs/local-models.md`; знімки `revision-desktop`, `story-menu-desktop`, `story-menu-mobile` (uk/en).
+
+### 16.11.2026 — Store, специфікація 3: список очікування платної версії, ядро
+
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-16-paid-page-waitlist-design.md` (PR #189) і план ядра `docs/superpowers/plans/2026-11/2026-11-16-paid-page-waitlist-core.md` (PR #190) погоджені власником 16.11.2026.
+  - Підхід: Worker + D1 + Turnstile, тариф Free.
+  - Строк зберігання: до листа про вихід платної версії, не довше 24 місяців.
+  - Оцінка: власник M, автор L (кроки людини в Cloudflare).
+- Task 1: `workers/waitlist/` (`handle`, перевірки форми, `Origin` і Turnstile, запис у D1 без дублів, `303` на `paid.html#waitlist-<стан>`, відмови з двомовним текстом). Тести `node --test` проходять через обгортку pytest з репортером junit, по тесту pytest на сценарій. SPEC: `WAITLIST-001`, S01–S06, traceability.
+- Task 2: щоденне видалення записів, старших за `RETENTION_MONTHS` (Cron Trigger); хибне значення нічого не видаляє. Сценарій S09.
+- Рішення виконавця:
+  - `handle(request, env, deps)` з `{verify, now, log}` замість `handle(request, env, verify)` зі специфікації;
+  - межа строку: день, якого немає в цільовому місяці, зводиться до останнього дня місяця (спершу було зсування вперед через `setUTCMonth`; cross-review показав, що так запис зникав раніше 24 місяців, виправлено).
+- Повний pytest: 3500 passed, 1 skipped. `verify.py` на `beaefa9` (з `C:/tmp/sp-verify`): passed 3500, failed 0, skipped 1.
+- Cross-review гілки (agy/gemini-3.8-flash; перша спроба впала на перевірці-канарці, повтор пройшов): 5 зауважень, усі виправлено в `b98c2e7`: межа строку у високосний рік, S02 на наявному рядку, тести `verifyTurnstile` і `worker.fetch`, потік без `Content-Length`, точний журнал. `verify.py` на `b98c2e7`: passed 3500, failed 0, skipped 1 (нові тести Node рахуються всередині обгортки pytest). Після злиття `main` (#191, конфлікти лише в журналі й STATUS): `verify.py` на `9a53629`: passed 3506, failed 0, skipped 1.
+- Worker не розгорнуто й не опубліковано. План периферії лишається: форма на сайті, сторінка `paid`, «Приватність», `docs/waitlist.md` з кроками власника в Cloudflare, `docs/packaging.md`, сценарії S07–S08.
