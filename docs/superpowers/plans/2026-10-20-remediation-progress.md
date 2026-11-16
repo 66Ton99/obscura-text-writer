@@ -2128,6 +2128,14 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - `verify.py` на `2d139be` (з `C:/tmp/epl`): passed 3474, failed 0, skipped 1.
 - Після злиття `main` (власний трей, конфлікти лише в журналі й STATUS): `verify.py` на `2b7cb4d`: passed 3491, failed 0, skipped 1.
 
+## 16.11.2026 — «Перевірка книги» і прийняття всієї прози як авторської (DATA-010-S02)
+
+- Запит власника: сторінку «Редагування книги» перейменувати на «Перевірка книги», бо редагування на ній немає; додати кнопку «Прийняти всю прозу як авторську». Власник вибрав приймати лише прозу (16.11.2026).
+- Специфікація `docs/superpowers/specs/2026-11/2026-11-16-book-check-accept-prose-design.md`, затверджено 16.11.2026, M (збіг). Spec-review (agy/gemini-3.8-flash): 3 знахідки, усі виправлено; найважливіша — авторська база сцени містить рішення прийняття попередніх сцен, тому сцени приймаються в порядку читання з новим переглядом кожної.
+- `storage/acceptance.py`: спільне ядро `_accept_in_transaction`, `preview_prose_acceptance`, `accept_all_prose` (одна транзакція, загальний відбиток, блокування за відкритим запуском impact); `GET`/`POST /api/stories/{id}/prose-acceptance`; `static/prose-acceptance.js` і кнопка в `revision.html`.
+- Перейменування лише підписів (uk «Перевірка книги», en «Book check»); маршрут `/stories/{id}/revision` і ключі i18n без змін.
+- SPEC.MD: DATA-010 (масове прийняття, Scenario DATA-010-S02), IMPACT-UI і меню твору — назва та кнопка; traceability. Сайт: `revision`, `workspace`, `first-story`, `index` (uk/en), `docs/local-models.md`; знімки `revision-desktop`, `story-menu-desktop`, `story-menu-mobile` (uk/en).
+
 ### 16.11.2026 — Store, специфікація 3: список очікування платної версії, ядро
 
 - Специфікація `docs/superpowers/specs/2026-11/2026-11-16-paid-page-waitlist-design.md` (PR #189) і план ядра `docs/superpowers/plans/2026-11/2026-11-16-paid-page-waitlist-core.md` (PR #190) погоджені власником 16.11.2026.

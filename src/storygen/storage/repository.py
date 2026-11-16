@@ -242,6 +242,14 @@ class Repository:
         from .acceptance import accept_version
         return accept_version(self, scene_id, version_id, expected_revision, preview_fingerprint, note)
 
+    def preview_prose_acceptance(self, story_id):
+        from .acceptance import preview_prose_acceptance
+        return preview_prose_acceptance(self, story_id)
+
+    def accept_all_prose(self, story_id, fingerprint):
+        from .acceptance import accept_all_prose
+        return accept_all_prose(self, story_id, fingerprint)
+
     def list_acceptances(self, story_id, version_id=None):
         from .acceptance import list_acceptances
         return list_acceptances(self, story_id, version_id)

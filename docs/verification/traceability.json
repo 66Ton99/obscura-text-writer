@@ -79,6 +79,23 @@
       ]
     },
     {
+      "id": "DATA-010-S02",
+      "requirement": "DATA-010",
+      "scope": "Масове прийняття прози на сторінці «Перевірка книги» (acceptance.py, prose-acceptance.js).",
+      "tests": [
+        "tests/storage/test_prose_acceptance_bulk.py::test_all_waiting_prose_is_accepted_and_consecutive_scenes_stay_current",
+        "tests/storage/test_prose_acceptance_bulk.py::test_only_prose_is_accepted_and_fresh_prose_gets_no_record",
+        "tests/storage/test_prose_acceptance_bulk.py::test_change_after_preview_rejects_everything",
+        "tests/storage/test_prose_acceptance_bulk.py::test_open_book_review_blocks_bulk_acceptance",
+        "tests/storage/test_prose_acceptance_bulk.py::test_nothing_waiting_gives_an_empty_preview",
+        "tests/storage/test_prose_acceptance_bulk.py::test_http_preview_accept_and_stale_fingerprint"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#prose-accept-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright case tests/web/browser/prose-acceptance.spec.mjs (кнопка, підтвердження, перелік прози порожній після прийняття) виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "RUN-ACCEPTED-S01",
       "requirement": "RUN-ACCEPTED",
       "scope": "Без повтору й підміни історії. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -3087,7 +3104,7 @@
     {
       "id": "IMPACT-UI-S04",
       "requirement": "IMPACT-UI",
-      "scope": "Сторінка «Редагування книги» без нового API.",
+      "scope": "Сторінка «Перевірка книги» без нового API.",
       "tests": [
         "tests/web/test_workspace_layout_ui.py::test_book_revision_page_hosts_impact_review"
       ]
