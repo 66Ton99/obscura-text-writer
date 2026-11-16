@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from ..dependency_models import AcceptancePreview, AcceptanceRecord
 from ..domain import RevisionConflict, Scene, VersionRef, new_id, now
+from ..run_models import Run
 from .context_view import ContextView
 from .snapshots import build_author_baseline, resolve_freshness
 from .invalidation import invalidate_in_transaction
@@ -55,6 +56,61 @@ def accept_version(repo, scene_id, version_id, expected_revision, preview_finger
         preview=_preview(view,scene_id,version_id)
         if preview.preview_fingerprint!=preview_fingerprint:
             raise RevisionConflict('Джерела змінено після перегляду. Потрібен новий перегляд')
+        return _accept_in_transaction(repo,db,view,scene,preview,note)
+
+
+# Book check (DATA-010-S02): the prose the book check counts as waiting, in reading order.
+ACTIVE_RUN_STATES={'queued','running','paused','needs_review','pause_requested','cancellation_requested'}
+
+
+def _waiting_prose(view):
+    rows=[]
+    for scene in view.list_scenes(view.story.id):
+        id=scene.heads.get('prose')
+        if id and (view.is_stale(id) or view.effective_scene(scene.id).needs_review):rows.append((scene,id))
+    return rows
+
+
+def _bulk_preview(view):
+    rows=[(scene,_preview(view,scene.id,id)) for scene,id in _waiting_prose(view)]
+    fingerprint=hashlib.sha256(json.dumps([p.preview_fingerprint for _,p in rows]).encode()).hexdigest()
+    return rows,fingerprint
+
+
+def _scene_rows(rows):
+    return [dict(scene_id=scene.id,title=scene.title,position=scene.position,version_id=preview.version_id) for scene,preview in rows]
+
+
+def preview_prose_acceptance(repo, story_id):
+    repo.get_story(story_id)
+    rows,fingerprint=_bulk_preview(repo.context_view(story_id))
+    return dict(scenes=_scene_rows(rows),fingerprint=fingerprint)
+
+
+def accept_all_prose(repo, story_id, fingerprint):
+    with repo.db.connection() as db:
+        db.execute('BEGIN IMMEDIATE')
+        repo._active_story(db,story_id)
+        for (raw,) in db.execute('SELECT payload FROM runs WHERE story_id=?',(story_id,)).fetchall():
+            run=Run.model_validate_json(raw)
+            if run.request.mode=='impact' and run.state in ACTIVE_RUN_STATES:
+                raise ValueError('Спершу завершіть перевірку книги, що вже триває')
+        rows,current=_bulk_preview(ContextView(repo,db,story_id))
+        if current!=fingerprint:
+            raise RevisionConflict('Прозу книги змінено після перегляду. Перегляньте прийняття заново')
+        accepted=[]
+        # A scene's author baseline holds the earlier scenes' prose with their acceptance IDs: each scene is
+        # previewed again after the earlier ones were accepted, in reading order, so none is stale afterwards.
+        for scene,_ in rows:
+            view=ContextView(repo,db,story_id)
+            fresh=_preview(view,scene.id,scene.heads['prose'])
+            result=_accept_in_transaction(repo,db,view,repo._active_scene(db,scene.id),fresh,None)
+            accepted.append(dict(scene_id=scene.id,title=scene.title,version_id=result.version.id,acceptance_id=result.acceptance.id))
+        return dict(accepted=accepted)
+
+
+def _accept_in_transaction(repo, db, view, scene, preview, note):
+        version_id=preview.version_id
         ref=view.get_version(version_id)
         record=AcceptanceRecord(id=new_id(),story_id=scene.story_id,scene_id=scene.id,version_id=ref.id,created_at=now(),
             action='accept_draft' if ref.kind=='draft' else 'accept_prose',note=note,baseline=preview.baseline,

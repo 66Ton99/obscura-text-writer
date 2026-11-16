@@ -1,6 +1,6 @@
 import {api} from './api.js';
 import {registerWorkspaceCommand} from './workspace-commands.js';
-// #89: on the book revision page this module stands in for editor.js (import map), so impact.js and
+// #89: on the book check page this module stands in for editor.js (import map), so impact.js and
 // review-session.js run unchanged. There is no editor here: nothing is dirty, and opening a scene goes to the workspace.
 const root=document.querySelector('[data-story-id]');
 export const state={storyId:root?.dataset.storyId,scene:null,view:null,mode:null,dirty:false,saving:false,bufferEpoch:0,workspaceRuns:[],workspaceRun:null};

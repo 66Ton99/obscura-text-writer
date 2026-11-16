@@ -193,7 +193,7 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 
 
 <a id="workspace-layout"></a>
-## Робочий простір: рядок стану, меню, розділи сцени й «Редагування книги»
+## Робочий простір: рядок стану, меню, розділи сцени й «Перевірка книги»
 
 З `PYTHONPATH=<робоча копія>/src` у `frontend` запустити `npx playwright test workspace-layout impact sequential-review review-evidence --project=desktop --project=mobile` на synthetic server без provider calls. `workspace-layout.spec.mjs`: `status row holds run controls and the next-run limit`; `waiting run shows a decision link and the pinned area stays small` (R20-WORKSPACE-S03); `full screen mode spreads the editor and exits on Escape` (R20-WORKSPACE-S05); `story menu opens from the keyboard and returns focus on Escape`; `book revision page opens from the menu with a pending count`; `scene sections reopen after reload and leave unsaved text alone` (зокрема оцінювання приховане без оцінювача); `sections work when storage throws`. `sequential-review.spec.mjs` і `impact.spec.mjs` перевіряють запуск на `/stories/{id}/revision` і картку сесії поруч з редактором. Переглянути знімки `docs/images/workspace-*-{desktop,mobile}.png` на нейтральність і відсутність горизонтального прокручування на 375 px. Наявність процедури не є фактичним PASS; результат запуску записується в журналі виконання.
 
@@ -384,3 +384,8 @@ STORE-MCP-S08–S10. Автоматична частина — Playwright `tests
 ## Нова сцена після відкритої в браузері
 
 IMPORT-NUMBER-S03. Автоматична частина — Playwright `tests/web/browser/scene-insert.spec.mjs` (один case: у творі з двома нумерованими сценами відкрито першу, «Додати сцену» вставляє нову другою з заголовком «## Сцена 2: …», план наступної сцени отримує «Сцена 3», список на desktop показує «2. Полудень»). Запуск: `cd frontend; ./node_modules/.bin/playwright test ../tests/web/browser/scene-insert.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
+
+<a id="prose-accept-browser"></a>
+## Прийняття всієї прози на сторінці «Перевірка книги»
+
+DATA-010-S02. Автоматична частина — Playwright `tests/web/browser/prose-acceptance.spec.mjs` (один case на desktop і mobile: дві сцени з прозою, перестановка робить прозу застарілою; сторінка має заголовок «Перевірка книги», кнопка «Прийняти всю прозу як авторську» видима, підтвердження називає «Вечір», «Ранок», після прийняття кнопка зникає, `GET /impact` не має pending, проза обох сцен `current`). Запуск: `cd frontend; ./node_modules/.bin/playwright test -c playwright.config.mjs ../tests/web/browser/prose-acceptance.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.

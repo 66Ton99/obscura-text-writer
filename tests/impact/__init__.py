@@ -1,1 +1,1 @@
-"""Book revision impact tests."""
+"""Book check (impact) tests."""
