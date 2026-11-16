@@ -17,7 +17,7 @@
 4. Панель Cloudflare → Turnstile → **Add widget**: режим **Managed**, хости `obscurawriter.com` і `localhost`. Панель покаже публічний ключ (Site Key, починається з `0x`) і секрет (Secret Key).
 5. `database_id` і публічний ключ — не секрети: напишіть їх у PR або закомітьте в `wrangler.toml` (`database_id`) і `docs/site/site.json` (`waitlist.sitekey`). Секрет нікуди не пишіть, крім наступного кроку.
 6. `npx wrangler secret put TURNSTILE_SECRET` і вставте секрет у запит wrangler.
-7. `npx wrangler deploy` з гілки PR, а не з `main`: `PRIVACY_EDITION` у `wrangler.toml` має збігатися з редакцією «Приватності», яку покаже сайт. Розгортання саме прив'язує піддомен `waitlist.obscurawriter.com` (із сертифікатом) і щоденне видалення старих записів.
+7. `npx wrangler deploy` з гілки PR, а не з `main`: `PRIVACY_EDITION` у `wrangler.toml` має збігатися з редакцією «Приватності», яку покаже сайт. Розгортання саме прив'язує піддомен `waitlist.obscurawriter.com` (із сертифікатом) і щоденне видалення старих записів. Розклад cron Cloudflare приймає лише в акаунті з піддоменом `workers.dev`: якщо `deploy` пише `You need a workers.dev subdomain` (code 10063), відкрийте в панелі Cloudflare розділ **Workers & Pages** — перший візит безкоштовно створить піддомен — і повторіть `npx wrangler deploy`.
 
 Поки ключ віджета чи `database_id` у репозиторії — заглушки, workflow сайту не публікує сайт після злиття (`check_site.py --publish`), тож мертвої форми на `obscurawriter.com` не буде.
 
