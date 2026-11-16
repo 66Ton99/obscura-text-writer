@@ -2150,3 +2150,14 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Повний pytest: 3500 passed, 1 skipped. `verify.py` на `beaefa9` (з `C:/tmp/sp-verify`): passed 3500, failed 0, skipped 1.
 - Cross-review гілки (agy/gemini-3.8-flash; перша спроба впала на перевірці-канарці, повтор пройшов): 5 зауважень, усі виправлено в `b98c2e7`: межа строку у високосний рік, S02 на наявному рядку, тести `verifyTurnstile` і `worker.fetch`, потік без `Content-Length`, точний журнал. `verify.py` на `b98c2e7`: passed 3500, failed 0, skipped 1 (нові тести Node рахуються всередині обгортки pytest). Після злиття `main` (#191, конфлікти лише в журналі й STATUS): `verify.py` на `9a53629`: passed 3506, failed 0, skipped 1.
 - Worker не розгорнуто й не опубліковано. План периферії лишається: форма на сайті, сторінка `paid`, «Приватність», `docs/waitlist.md` з кроками власника в Cloudflare, `docs/packaging.md`, сценарії S07–S08.
+- Ядро злито в `main` (PR #192, `09d8155`).
+
+### 16.11.2026 — Store, специфікація 3: список очікування, план периферії
+
+- План `docs/superpowers/plans/2026-11/2026-11-16-paid-page-waitlist-harness.md`, 5 задач: форма зі збирача за ознакою `form` маніфесту (S07); запобіжник публікації `check_site.py --publish` у задачі `deploy` (новий S10); сторінка `paid` uk/en, нова редакція «Приватності», `--waitlist-url`; `docs/waitlist.md`, ручна перевірка S08, `CONTRIBUTING.md` про тести Worker без Node; значення власника й перевірка наживо.
+- Рішення автора плану:
+  - запобіжник у задачі публікації, а не в збірці PR: CI гілки лишається зеленим до кроків власника, а злиття із заглушками не публікує мертвої форми;
+  - `localhost` на час перевірки — лише локальна правка `wrangler.toml` і повторний deploy (як у специфікації), а не `wrangler deploy --var`, бо розбір значення з двокрапками й комою не перевірено;
+  - тести-ключі Turnstile (`1x…`) для перевірки наживо не годяться: `siteverify` повертає `hostname` `example.com`, який Worker відхиляє;
+  - тексти форми зафіксовано в плані; PACKAGING-001 не змінюється, бо адреси сайту описує DOCS-SITE.
+- Проба: документація Turnstile дозволяє хост `localhost` на робочому віджеті (не рекомендує лишати його назавжди).
