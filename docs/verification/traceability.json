@@ -5177,9 +5177,11 @@
     {
       "id": "DOCS-SITE-S10",
       "requirement": "DOCS-SITE",
-      "scope": "Сторінки privacy і report обома мовами з адресами пошти, сторінка paid з формою перед legal, розділ списку очікування в privacy, report-url і waitlist-url у документації збирання Store. Перевірка зазначеного сценарію; не є доказом роботи пошти чи форми.",
+      "scope": "Сторінки privacy і report обома мовами з адресами пошти, сторінка paid з формою перед legal, розділ списку очікування в privacy, report-url і waitlist-url у документації збирання Store, єдина іконка навігації 💰 у paid (друга чи хибна зупиняє збірку). Перевірка зазначеного сценарію; не є доказом роботи пошти чи форми.",
       "tests": [
-        "tests/test_docs_site.py::test_privacy_and_report_pages_carry_their_addresses"
+        "tests/test_docs_site.py::test_privacy_and_report_pages_carry_their_addresses",
+        "tests/test_docs_site.py::test_nav_icon_marks_one_menu_item_on_every_page",
+        "tests/test_docs_site.py::test_bad_or_second_nav_icon_stops_the_build"
       ]
     },
     {

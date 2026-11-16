@@ -157,10 +157,21 @@ def head_meta(manifest,lang,slug,title):
     return ''.join(line+'\n' for line in lines)
 
 
+def nav_icons(manifest):
+    """{slug: icon} from `nav_icon`: one short symbol (an emoji), and on one menu item only, so it stands out."""
+    icons={page['slug']:page['nav_icon'] for page in manifest['pages'] if 'nav_icon' in page}
+    for slug,icon in icons.items():
+        if not isinstance(icon,str) or not 1<=len(icon)<=4 or any(ch.isspace() or ch in '<>&"\'' for ch in icon):
+            raise ValueError(f'site.json: сторінка {slug}: nav_icon має бути одним символом-емодзі')
+    if len(icons)>1:raise ValueError(f'site.json: nav_icon може мати лише одна сторінка, а має {len(icons)}: {", ".join(icons)}')
+    return icons
+
+
 def page_html(template,manifest,lang,slug,content,scripts=''):
     pages=manifest['pages'];base='' if lang=='uk' else '../'
-    titles={page['slug']:page['title'][lang] for page in pages}
-    nav='\n'.join(f'<li><a href="{page["slug"]}.html"'+(' aria-current="page"' if page['slug']==slug else '')+f'>{html.escape(titles[page["slug"]])}</a></li>' for page in pages)
+    titles={page['slug']:page['title'][lang] for page in pages};icons=nav_icons(manifest)
+    label=lambda name:(f'<span class="nav-icon" aria-hidden="true">{icons[name]}</span> ' if name in icons else '')+html.escape(titles[name])
+    nav='\n'.join(f'<li><a href="{page["slug"]}.html"'+(' aria-current="page"' if page['slug']==slug else '')+f'>{label(page["slug"])}</a></li>' for page in pages)
     other='en' if lang=='uk' else 'uk'
     switch_href=f'en/{slug}.html' if lang=='uk' else f'../{slug}.html'
     # data-lang: site.js remembers a language picked here, so it wins over the browser languages.

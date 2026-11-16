@@ -324,3 +324,33 @@ def test_privacy_and_report_pages_carry_their_addresses():
     assert '## Список очікування' in (ROOT/'docs/site/uk/privacy.md').read_text(encoding='utf-8')
     assert '## Waitlist' in (ROOT/'docs/site/en/privacy.md').read_text(encoding='utf-8')
     assert '--waitlist-url https://obscurawriter.com/paid.html' in (ROOT/'docs/packaging.md').read_text(encoding='utf-8')
+    # The paid page is the only menu item with an icon, so it stands out.
+    assert [page['slug'] for page in manifest['pages'] if page.get('nav_icon')]==['paid'] and paid['nav_icon']=='💰'
+
+
+NAV_ICON='<span class="nav-icon" aria-hidden="true">💰</span>'
+
+
+@pytest.mark.req('DOCS-SITE')
+def test_nav_icon_marks_one_menu_item_on_every_page(tmp_path):
+    site=make_site(tmp_path);out=tmp_path/'_site'
+    manifest=json.loads((site/'site.json').read_text(encoding='utf-8'))
+    manifest['pages'][1]['nav_icon']='💰'
+    (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
+    build(tmp_path,out)
+    for name in ['install.html','first-story.html','en/install.html','en/first-story.html']:
+        page=(out/name).read_text(encoding='utf-8')
+        assert page.count(NAV_ICON)==1,name
+        assert re.search(r'<a href="first-story\.html"[^>]*>'+re.escape(NAV_ICON)+r' first-story</a>',page),name
+        assert re.search(r'<a href="install\.html"[^>]*>install</a>',page),name
+
+
+@pytest.mark.req('DOCS-SITE')
+@pytest.mark.parametrize('icons',[['💰','💰'],['','💰'],['<b>','']])
+def test_bad_or_second_nav_icon_stops_the_build(tmp_path,icons):
+    site=make_site(tmp_path)
+    manifest=json.loads((site/'site.json').read_text(encoding='utf-8'))
+    for page,icon in zip(manifest['pages'],icons):
+        if icon or icons==['','💰']:page['nav_icon']=icon
+    (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
+    with pytest.raises(ValueError,match='site.json'):build(tmp_path,tmp_path/'_site')
