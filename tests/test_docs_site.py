@@ -165,7 +165,7 @@ def workflow_jobs(text):
     return {key:'\n'.join(value) for key,value in jobs.items()},text.split('\njobs:\n',1)[0]
 
 
-@pytest.mark.req('DOCS-SITE')
+@pytest.mark.req('DOCS-SITE','WAITLIST-001')
 def test_workflow_publishes_only_from_main():
     text=(ROOT/'.github/workflows/site.yml').read_text(encoding='utf-8')
     jobs,head=workflow_jobs(text)

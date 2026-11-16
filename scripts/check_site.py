@@ -124,10 +124,11 @@ def publication_problems(root=ROOT):
     domain must be the form's action host.
     """
     root=Path(root);manifest=load_manifest(root)
-    if not any(page_form(page) for page in manifest['pages']):return []
-    problems=[]
-    try:settings=waitlist_settings(manifest)
+    try:
+        if not any(page_form(page) for page in manifest['pages']):return []
+        settings=waitlist_settings(manifest)
     except ValueError as exc:return [str(exc)]
+    problems=[]
     if not SITEKEY.fullmatch(settings['sitekey']):problems.append('site.json: waitlist.sitekey — заглушка чи тестовий ключ; потрібен публічний ключ віджета Turnstile (0x…)')
     try:config=tomllib.loads((root/WRANGLER).read_text(encoding='utf-8'))
     except (OSError,tomllib.TOMLDecodeError) as exc:return problems+[f'{WRANGLER}: не вдалося прочитати: {exc}']

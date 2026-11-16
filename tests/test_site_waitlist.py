@@ -67,13 +67,28 @@ def test_s07_bad_waitlist_section_stops_the_build(tmp_path,form,section):
 
 
 @pytest.mark.req('WAITLIST-001')
-def test_s07_missing_privacy_anchor_fails_the_check(tmp_path):
+@pytest.mark.parametrize('lang,heading,error',[
+    ('en','# Privacy\n\n## Mailing list\n','paid: фрагмент форми посилається на privacy.html#waitlist (en), а такого якоря немає'),
+    ('uk','# Приватність\n\n## Розсилка\n','paid: фрагмент форми посилається на privacy.html#список-очікування (uk), а такого якоря немає'),
+])
+def test_s07_missing_privacy_anchor_fails_the_check(tmp_path,lang,heading,error):
     waitlist_site(tmp_path)
     assert check_site.check(tmp_path)==[]
-    (tmp_path/'docs/site/en/privacy.md').write_text('# Privacy\n\n## Mailing list\n\nAddress.\n',encoding='utf-8')
+    (tmp_path/f'docs/site/{lang}/privacy.md').write_text(heading,encoding='utf-8')
     check_site.rehash(tmp_path,'privacy')
+    assert check_site.check(tmp_path)==[error]
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s07_form_without_a_privacy_page_fails_the_check(tmp_path):
+    waitlist_site(tmp_path)
+    manifest=json.loads(read(tmp_path/'docs/site/site.json'))
+    manifest['pages']=[page for page in manifest['pages'] if page['slug']!='privacy']
+    (tmp_path/'docs/site/site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
+    sync=json.loads(read(tmp_path/'docs/site/sync.json'));sync.pop('privacy')
+    (tmp_path/'docs/site/sync.json').write_text(json.dumps(sync),encoding='utf-8')
     errors=check_site.check(tmp_path)
-    assert any('privacy.html#waitlist (en)' in error for error in errors),errors
+    assert any('сторінки privacy немає в маніфесті' in error for error in errors),errors
 
 
 REAL_KEY='0x4AAAAAAAexampleexample'
@@ -93,21 +108,48 @@ def publishable(root,sitekey=REAL_KEY,database=DATABASE,origins='https://obscura
     (root/'workers/waitlist/wrangler.toml').write_text(text,encoding='utf-8')
 
 
+SITEKEY_PROBLEM='site.json: waitlist.sitekey — заглушка чи тестовий ключ; потрібен публічний ключ віджета Turnstile (0x…)'
+DATABASE_PROBLEM='workers/waitlist/wrangler.toml: database_id — заглушка; впишіть id бази з wrangler d1 create'
+ORIGIN_PROBLEM='workers/waitlist/wrangler.toml: ALLOWED_ORIGINS має бути рівно "https://obscurawriter.com" (без localhost)'
+DOMAIN_PROBLEM='workers/waitlist/wrangler.toml: власний домен Worker не збігається з хостом waitlist.action'
+
+
 @pytest.mark.req('WAITLIST-001')
 def test_s10_placeholders_block_publication(tmp_path):
     publishable(tmp_path,sitekey='REPLACE_WITH_SITEKEY',database='REPLACE_WITH_DATABASE_ID')
-    problems=check_site.publication_problems(tmp_path)
-    assert len(problems)==2 and any('sitekey' in p for p in problems) and any('database_id' in p for p in problems),problems
+    assert check_site.publication_problems(tmp_path)==[SITEKEY_PROBLEM,DATABASE_PROBLEM]
     publishable(tmp_path/'test-key',sitekey=TEST_KEY)
-    problems=check_site.publication_problems(tmp_path/'test-key')
-    assert len(problems)==1 and 'sitekey' in problems[0],problems
+    assert check_site.publication_problems(tmp_path/'test-key')==[SITEKEY_PROBLEM]
 
 
 @pytest.mark.req('WAITLIST-001')
 def test_s10_localhost_origin_blocks_publication(tmp_path):
     publishable(tmp_path,origins='https://obscurawriter.com,http://localhost:8000')
+    assert check_site.publication_problems(tmp_path)==[ORIGIN_PROBLEM]
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_action_off_the_worker_domain_blocks_publication(tmp_path):
+    publishable(tmp_path)
+    toml=tmp_path/'workers/waitlist/wrangler.toml'
+    toml.write_text(read(toml).replace('custom_domain = true','custom_domain = false'),encoding='utf-8')
+    assert check_site.publication_problems(tmp_path)==[DOMAIN_PROBLEM]
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_bad_form_value_is_a_problem_not_a_crash(tmp_path):
+    publishable(tmp_path)
+    manifest=json.loads(read(tmp_path/'docs/site/site.json'))
+    next(page for page in manifest['pages'] if page['slug']=='paid')['form']='custom'
+    (tmp_path/'docs/site/site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
     problems=check_site.publication_problems(tmp_path)
-    assert len(problems)==1 and 'ALLOWED_ORIGINS' in problems[0],problems
+    assert len(problems)==1 and 'form може бути лише "waitlist"' in problems[0],problems
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_site_without_a_form_needs_nothing(tmp_path):
+    make_site(tmp_path)
+    assert check_site.publication_problems(tmp_path)==[]
 
 
 @pytest.mark.req('WAITLIST-001')
@@ -120,3 +162,4 @@ def test_s10_ready_site_publishes(tmp_path,monkeypatch,capsys):
     publishable(tmp_path/'bad',sitekey='REPLACE_WITH_SITEKEY')
     monkeypatch.setattr(check_site,'ROOT',tmp_path/'bad')
     assert check_site.main(['--publish'])==1
+    assert capsys.readouterr().out==SITEKEY_PROBLEM+'\n'

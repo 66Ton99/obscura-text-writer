@@ -5177,7 +5177,7 @@
     {
       "id": "DOCS-SITE-S10",
       "requirement": "DOCS-SITE",
-      "scope": "Сторінки privacy і report обома мовами з адресами пошти та report-url у документації збирання Store. Перевірка зазначеного сценарію; не є доказом роботи пошти.",
+      "scope": "Сторінки privacy і report обома мовами з адресами пошти, сторінка paid з формою перед legal, розділ списку очікування в privacy, report-url і waitlist-url у документації збирання Store. Перевірка зазначеного сценарію; не є доказом роботи пошти чи форми.",
       "tests": [
         "tests/test_docs_site.py::test_privacy_and_report_pages_carry_their_addresses"
       ]
@@ -6379,7 +6379,8 @@
         "tests/test_site_waitlist.py::test_s07_form_only_on_the_form_page",
         "tests/test_site_waitlist.py::test_s07_other_pages_unchanged_by_the_form",
         "tests/test_site_waitlist.py::test_s07_bad_waitlist_section_stops_the_build",
-        "tests/test_site_waitlist.py::test_s07_missing_privacy_anchor_fails_the_check"
+        "tests/test_site_waitlist.py::test_s07_missing_privacy_anchor_fails_the_check",
+        "tests/test_site_waitlist.py::test_s07_form_without_a_privacy_page_fails_the_check"
       ]
     },
     {
@@ -6400,6 +6401,9 @@
         "tests/test_site_waitlist.py::test_s10_placeholders_block_publication",
         "tests/test_site_waitlist.py::test_s10_localhost_origin_blocks_publication",
         "tests/test_site_waitlist.py::test_s10_ready_site_publishes",
+        "tests/test_site_waitlist.py::test_s10_action_off_the_worker_domain_blocks_publication",
+        "tests/test_site_waitlist.py::test_s10_bad_form_value_is_a_problem_not_a_crash",
+        "tests/test_site_waitlist.py::test_s10_site_without_a_form_needs_nothing",
         "tests/test_docs_site.py::test_workflow_publishes_only_from_main"
       ]
     },

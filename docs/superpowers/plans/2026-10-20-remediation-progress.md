@@ -2171,3 +2171,6 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Task 4: `docs/waitlist.md` (кроки власника, SQL, заміна на `workers.dev`), `manual.md#waitlist-live` (S08), `CONTRIBUTING.md` про тести Worker без Node, SPEC: відомі обмеження WAITLIST-001 і S08.
 - Рішення виконавця: текст згоди обгорнуто в `<span>`, бо `display: flex` мітки розкладав текст і посилання в колонки (видно в браузері).
 - `check_site.py --publish` на гілці зараз відмовляє через заглушки `sitekey` і `database_id`, як задумано: злиття до кроків власника не публікує сайт.
+- Повний pytest на `ce1e537`: без падінь (код 0).
+- Cross-review гілки (agy/gemini-3.8-flash; перша спроба впала за таймаутом 15 хв під навантаженням паралельного pytest, повтор пройшов): 5 зауважень, усі виправлено. Справжній дефект один: `check_site.py --publish` падав трасуванням `ValueError` на хибному значенні `form` замість рядка проблеми (тест `test_s10_bad_form_value_is_a_problem_not_a_crash` RED→GREEN). Решта: опис DOCS-SITE-S10 у traceability, маркер `WAITLIST-001` на тесті workflow, тести гілок (домен Worker, сайт без форми, немає сторінки `privacy`, український якір) і точні тексти проблем.
+- Фінальне рев'ю: самоперевірка, без субагентів.
