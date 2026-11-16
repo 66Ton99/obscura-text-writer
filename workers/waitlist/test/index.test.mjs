@@ -2,13 +2,15 @@
 // Every test name starts with its scenario id; tests/test_waitlist_worker.py checks them by that prefix.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { handle, purge, retentionCutoff, REFUSAL } from '../src/index.js';
+import worker, { handle, purge, retentionCutoff, verifyTurnstile, REFUSAL } from '../src/index.js';
 
 const SITE = 'https://obscurawriter.com';
 
-function fakeDb({ fail = false } = {}) {
+// A D1 stand-in that keeps rows and honours the waitlist INSERT's ON CONFLICT(email) DO NOTHING.
+function fakeDb({ fail = false, rows = [] } = {}) {
   const db = {
     calls: [],
+    rows: new Map(rows.map((row) => [row.email, { ...row }])),
     prepare(sql) {
       return {
         bind(...values) {
@@ -16,6 +18,10 @@ function fakeDb({ fail = false } = {}) {
             async run() {
               db.calls.push([sql, values]);
               if (fail) throw new Error('D1 down');
+              if (!sql.startsWith('INSERT INTO waitlist')) return { meta: { changes: 1 } };
+              const [email, lang, privacy_edition, created_at] = values;
+              if (db.rows.has(email)) return { meta: { changes: 0 } };
+              db.rows.set(email, { email, lang, privacy_edition, created_at });
               return { meta: { changes: 1 } };
             },
           };
@@ -54,6 +60,23 @@ function form(fields, { origin = SITE, type = 'application/x-www-form-urlencoded
   });
 }
 
+// A chunked body: a stream has no Content-Length, so only the byte count of what was read can refuse it.
+function streamed(text) {
+  const bytes = new TextEncoder().encode(text);
+  const body = new ReadableStream({
+    start(controller) {
+      for (let at = 0; at < bytes.length; at += 1000) controller.enqueue(bytes.slice(at, at + 1000));
+      controller.close();
+    },
+  });
+  const request = new Request('https://waitlist.obscurawriter.com/', {
+    method: 'POST', body, duplex: 'half',
+    headers: { Origin: SITE, 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  assert.equal(request.headers.get('Content-Length'), null);
+  return request;
+}
+
 const GOOD = { email: 'ann@example.com', consent: 'yes', lang: 'en', 'cf-turnstile-response': 't' };
 
 test('S01: new address is recorded and redirects to the page language', async () => {
@@ -89,12 +112,24 @@ test('S01: the client address goes to Turnstile but not to D1', async () => {
   assert.ok(!JSON.stringify(db.calls).includes('203.0.113.7'));
 });
 
-test('S02: same address in another case gives the same ok', async () => {
-  const db = fakeDb();
+test('S02: same address in another case gives the same ok and leaves the row unchanged', async () => {
+  const before = { email: 'ann@example.com', lang: 'uk', privacy_edition: '2026-11-01', created_at: '2026-11-02T08:00:00Z' };
+  const db = fakeDb({ rows: [before] });
   const res = await handle(form({ ...GOOD, email: '  Ann@Example.COM ' }), env(db), deps());
   assert.equal(res.headers.get('Location'), 'https://obscurawriter.com/en/paid.html#waitlist-ok');
   assert.equal(db.calls[0][1][0], 'ann@example.com');
-  assert.match(db.calls[0][0], /ON CONFLICT\(email\) DO NOTHING/);
+  assert.equal(db.rows.size, 1);
+  assert.deepEqual(db.rows.get('ann@example.com'), before);
+});
+
+test('S02: a new address after an existing one adds exactly one row', async () => {
+  const db = fakeDb();
+  const first = await handle(form(GOOD), env(db), deps());
+  const again = await handle(form({ ...GOOD, email: 'ANN@example.com', lang: 'uk' }), env(db), deps());
+  assert.equal(first.headers.get('Location'), 'https://obscurawriter.com/en/paid.html#waitlist-ok');
+  assert.equal(again.headers.get('Location'), 'https://obscurawriter.com/paid.html#waitlist-ok');
+  assert.equal(db.rows.size, 1);
+  assert.equal(db.rows.get('ann@example.com').lang, 'en');
 });
 
 test('S03: invalid email or missing consent gives invalid without verify or D1', async () => {
@@ -146,6 +181,7 @@ test('S05: refusals are plain text without redirect', async () => {
     [415, form(GOOD, { type: '' })],
     [413, form(GOOD, { headers: { 'Content-Length': '5000' } })],
     [413, form(GOOD, { body: big })],
+    [413, streamed(big)],
   ];
   for (const [status, request] of cases) {
     const db = fakeDb();
@@ -168,14 +204,14 @@ test('S05: the refusal text names privacy@ in both languages', () => {
 
 test('S06: D1 or network failure gives error and logs no address', async () => {
   const runs = [
-    [fakeDb({ fail: true }), undefined],
-    [fakeDb(), () => { throw new TypeError('fetch failed'); }],
+    [fakeDb({ fail: true }), undefined, 'Error'],
+    [fakeDb(), () => { throw new TypeError('fetch failed'); }, 'TypeError'],
   ];
-  for (const [db, verify] of runs) {
+  for (const [db, verify, name] of runs) {
     const logs = [];
     const res = await handle(form(GOOD), env(db), deps({ verify, logs }));
     assert.equal(res.headers.get('Location'), 'https://obscurawriter.com/en/paid.html#waitlist-error');
-    assert.ok(logs.some((entry) => entry.state === 'error' && entry.error));
+    assert.deepEqual(logs, [{ state: 'error', error: name }]);
     const text = JSON.stringify(logs);
     assert.ok(!text.includes('ann@example.com'));
     assert.ok(!text.includes('"t"'));
@@ -187,7 +223,8 @@ test('S06: every outcome is logged without the address', async () => {
   await handle(form(GOOD), env(), deps({ logs }));
   await handle(form({ ...GOOD, email: 'bad' }), env(), deps({ logs }));
   await handle(form(GOOD, { origin: 'null' }), env(), deps({ logs }));
-  assert.deepEqual(logs, [{ state: 'ok' }, { state: 'invalid' }, { refused: 403 }]);
+  await handle(form(GOOD), env(), deps({ logs, verify: () => ({ success: false }) }));
+  assert.deepEqual(logs, [{ state: 'ok' }, { state: 'invalid' }, { refused: 403 }, { state: 'captcha' }]);
 });
 
 test('S09: purge deletes rows older than the retention period', async () => {
@@ -198,6 +235,70 @@ test('S09: purge deletes rows older than the retention period', async () => {
   assert.equal(await purge({ DB: db, RETENTION_MONTHS: '24' }, new Date('2028-11-16T03:17:00Z'), (e) => logs.push(e)), 3);
   assert.deepEqual(calls, [['DELETE FROM waitlist WHERE created_at < ?', ['2026-11-16T03:17:00Z']]]);
   assert.deepEqual(logs, [{ purged: 3 }]);
+});
+
+test('S09: a missing day clamps to the end of the target month, never deleting early', () => {
+  assert.equal(retentionCutoff(new Date('2028-02-29T03:17:00Z'), '24'), '2026-02-28T03:17:00Z');
+  assert.equal(retentionCutoff(new Date('2027-03-31T03:17:00Z'), '1'), '2027-02-28T03:17:00Z');
+  assert.equal(retentionCutoff(new Date('2028-03-31T03:17:00Z'), '1'), '2028-02-29T03:17:00Z');
+  assert.equal(retentionCutoff(new Date('2027-01-31T00:00:00Z'), '3'), '2026-10-31T00:00:00Z');
+  assert.equal(retentionCutoff(new Date('2027-01-15T00:00:00Z'), '13'), '2025-12-15T00:00:00Z');
+});
+
+// The real Turnstile check, with fetch stubbed: what is sent to siteverify and how its answers are read.
+async function withFetch(answer, run) {
+  const original = globalThis.fetch;
+  const sent = [];
+  globalThis.fetch = async (url, init) => {
+    sent.push({ url, method: init.method, body: Object.fromEntries(init.body.entries()) });
+    if (answer instanceof Error) throw answer;
+    return answer;
+  };
+  try {
+    return await run(sent);
+  } finally {
+    globalThis.fetch = original;
+  }
+}
+
+test('S04: verifyTurnstile posts secret, token and client address to siteverify', async () => {
+  await withFetch(Response.json({ success: true, hostname: 'obscurawriter.com' }), async (sent) => {
+    assert.deepEqual(await verifyTurnstile('tok', '203.0.113.7', { TURNSTILE_SECRET: 's3' }), { success: true, hostname: 'obscurawriter.com' });
+    assert.deepEqual(sent, [{
+      url: 'https://challenges.cloudflare.com/turnstile/v0/siteverify', method: 'POST',
+      body: { secret: 's3', response: 'tok', remoteip: '203.0.113.7' },
+    }]);
+  });
+  await withFetch(Response.json({ success: false }), async (sent) => {
+    await verifyTurnstile('tok', null, { TURNSTILE_SECRET: 's3' });
+    assert.deepEqual(sent[0].body, { secret: 's3', response: 'tok' });
+  });
+});
+
+test('S06: verifyTurnstile throws on a non-200 answer or a network failure', async () => {
+  await withFetch(new Response('busy', { status: 503 }), async () => {
+    await assert.rejects(verifyTurnstile('tok', null, { TURNSTILE_SECRET: 's3' }), /siteverify 503/);
+  });
+  await withFetch(new TypeError('fetch failed'), async () => {
+    await assert.rejects(verifyTurnstile('tok', null, { TURNSTILE_SECRET: 's3' }), TypeError);
+  });
+});
+
+test('S01: worker.fetch uses the real Turnstile check and records the address', async () => {
+  const db = fakeDb();
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    await withFetch(Response.json({ success: true, hostname: 'obscurawriter.com' }), async (sent) => {
+      const res = await worker.fetch(form(GOOD), { ...env(db), TURNSTILE_SECRET: 's3' });
+      assert.equal(res.headers.get('Location'), 'https://obscurawriter.com/en/paid.html#waitlist-ok');
+      assert.equal(sent.length, 1);
+      assert.equal(sent[0].body.secret, 's3');
+    });
+  } finally {
+    console.log = quiet;
+  }
+  assert.equal(db.rows.size, 1);
 });
 
 test('S09: invalid RETENTION_MONTHS deletes nothing', async () => {

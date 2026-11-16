@@ -2138,6 +2138,6 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Task 2: щоденне видалення записів, старших за `RETENTION_MONTHS` (Cron Trigger); хибне значення нічого не видаляє. Сценарій S09.
 - Рішення виконавця:
   - `handle(request, env, deps)` з `{verify, now, log}` замість `handle(request, env, verify)` зі специфікації;
-  - межа строку через `setUTCMonth` за неіснуючого дня зсувається вперед: запис може зникнути на день-два раніше, але не пізніше.
+  - межа строку: день, якого немає в цільовому місяці, зводиться до останнього дня місяця (спершу було зсування вперед через `setUTCMonth`; cross-review показав, що так запис зникав раніше 24 місяців, виправлено).
 - Повний pytest: 3500 passed, 1 skipped. `verify.py` на `beaefa9` (з `C:/tmp/sp-verify`): passed 3500, failed 0, skipped 1.
 - Worker не розгорнуто й не опубліковано. План периферії лишається: форма на сайті, сторінка `paid`, «Приватність», `docs/waitlist.md` з кроками власника в Cloudflare, `docs/packaging.md`, сценарії S07–S08.

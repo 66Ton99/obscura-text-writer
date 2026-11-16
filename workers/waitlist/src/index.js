@@ -91,12 +91,16 @@ export async function handle(request, env, deps = {}) {
   return result('ok');
 }
 
-// Rows older than RETENTION_MONTHS are deleted daily. A month that does not exist in the target month
-// (31 March − 1) rolls forward, so a row may go a day or two early, never late.
+// Rows older than RETENTION_MONTHS are deleted daily. A day missing from the target month (29 February
+// two years back, 31 March − 1) clamps to that month's last day, so no row goes before its time.
 export function retentionCutoff(now, months) {
   if (!/^\d+$/.test(String(months ?? '')) || Number(months) <= 0) return null;
-  const cutoff = new Date(now.getTime());
-  cutoff.setUTCMonth(cutoff.getUTCMonth() - Number(months));
+  const total = now.getUTCFullYear() * 12 + now.getUTCMonth() - Number(months);
+  const year = Math.floor(total / 12);
+  const month = total - year * 12;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cutoff = new Date(Date.UTC(year, month, Math.min(now.getUTCDate(), lastDay),
+    now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()));
   return stamp(cutoff);
 }
 
