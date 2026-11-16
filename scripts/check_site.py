@@ -7,7 +7,9 @@
 """
 import argparse
 import json
+import re
 import sys
+import tomllib
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -109,6 +111,35 @@ def check_waitlist(root,manifest,errors):
                 errors.append(f'{page["slug"]}: фрагмент форми посилається на privacy.html#{anchor} ({lang}), а такого якоря немає')
 
 
+WRANGLER='workers/waitlist/wrangler.toml'
+SITEKEY=re.compile(r'0x[0-9A-Za-z_-]{16,}')
+DATABASE_ID=re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+
+
+def publication_problems(root=ROOT):
+    """WAITLIST-001-S10: reasons the site must not be published yet, so no dead form goes live.
+
+    A site without a form page has none. The Turnstile site key must be a real one (`0x…`, not the placeholder
+    or a test key), the Worker must have its D1 database id, allow exactly the site's own origin, and its custom
+    domain must be the form's action host.
+    """
+    root=Path(root);manifest=load_manifest(root)
+    if not any(page_form(page) for page in manifest['pages']):return []
+    problems=[]
+    try:settings=waitlist_settings(manifest)
+    except ValueError as exc:return [str(exc)]
+    if not SITEKEY.fullmatch(settings['sitekey']):problems.append('site.json: waitlist.sitekey — заглушка чи тестовий ключ; потрібен публічний ключ віджета Turnstile (0x…)')
+    try:config=tomllib.loads((root/WRANGLER).read_text(encoding='utf-8'))
+    except (OSError,tomllib.TOMLDecodeError) as exc:return problems+[f'{WRANGLER}: не вдалося прочитати: {exc}']
+    database=(config.get('d1_databases') or [{}])[0].get('database_id','')
+    if not DATABASE_ID.fullmatch(str(database)):problems.append(f'{WRANGLER}: database_id — заглушка; впишіть id бази з wrangler d1 create')
+    origin=(manifest.get('base_url') or '').rstrip('/')
+    if (config.get('vars') or {}).get('ALLOWED_ORIGINS')!=origin:problems.append(f'{WRANGLER}: ALLOWED_ORIGINS має бути рівно "{origin}" (без localhost)')
+    domains=[route.get('pattern') for route in config.get('routes') or [] if route.get('custom_domain')]
+    if urlsplit(settings['action']).hostname not in domains:problems.append(f'{WRANGLER}: власний домен Worker не збігається з хостом waitlist.action')
+    return problems
+
+
 def rehash(root,slug):
     root=Path(root);manifest=load_manifest(root)
     if slug not in [page['slug'] for page in manifest['pages']]:raise ValueError(f'сторінки {slug} немає в docs/site/site.json')
@@ -121,7 +152,12 @@ def main(argv=None):
     if hasattr(sys.stdout,'reconfigure'):sys.stdout.reconfigure(encoding='utf-8')  # Windows consoles default to a legacy code page
     parser=argparse.ArgumentParser(description='Перевірити джерела сайту інструкцій.')
     parser.add_argument('--rehash',metavar='SLUG',help='записати хеші обох мовних версій після перевірки перекладу')
+    parser.add_argument('--publish',action='store_true',help='перевірити, що форма списку очікування готова до публікації')
     args=parser.parse_args(argv)
+    if args.publish:
+        problems=publication_problems(ROOT)
+        if problems:print('\n'.join(problems));return 1
+        print('Сайт готовий до публікації.');return 0
     if args.rehash:
         rehash(ROOT,args.rehash);print(f'Пару {args.rehash} підтверджено: хеші обох мовних версій записано в {SYNC}.');return 0
     errors=check(ROOT)

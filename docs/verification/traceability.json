@@ -6383,6 +6383,17 @@
       ]
     },
     {
+      "id": "WAITLIST-001-S10",
+      "requirement": "WAITLIST-001",
+      "scope": "Задача публікації зупиняється на check_site.py --publish, поки ключ Turnstile, database_id чи ALLOWED_ORIGINS не готові; крок стоїть перед збиранням.",
+      "tests": [
+        "tests/test_site_waitlist.py::test_s10_placeholders_block_publication",
+        "tests/test_site_waitlist.py::test_s10_localhost_origin_blocks_publication",
+        "tests/test_site_waitlist.py::test_s10_ready_site_publishes",
+        "tests/test_docs_site.py::test_workflow_publishes_only_from_main"
+      ]
+    },
+    {
       "id": "WAITLIST-001-S09",
       "requirement": "WAITLIST-001",
       "scope": "Щоденне видалення рядків, старших за RETENTION_MONTHS; хибне значення нічого не видаляє; розклад у wrangler.toml.",

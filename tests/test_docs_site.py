@@ -182,6 +182,10 @@ def test_workflow_publishes_only_from_main():
     for name,job in jobs.items():
         if name!='deploy':assert 'pages: write' not in job and 'upload-pages-artifact' not in job,name
     assert 'scripts/build_site.py' in jobs['build'] and 'scripts/check_site.py' in jobs['build']
+    # WAITLIST-001-S10: publishing stops before the build while the waitlist is not configured.
+    assert 'scripts/check_site.py --publish' in block
+    assert block.index('scripts/check_site.py --publish')<block.index('scripts/build_site.py')
+    assert text.count("- 'workers/waitlist/wrangler.toml'")==2
 
 
 @pytest.mark.req('DOCS-SITE')

@@ -5,7 +5,7 @@ import pytest
 
 from scripts import check_site
 from scripts.build_site import TURNSTILE_SCRIPT, build
-from tests.test_docs_site import make_site
+from tests.test_docs_site import ROOT, make_site
 
 ACTION='https://waitlist.obscurawriter.com/'
 TEST_KEY='1x00000000000000000000AA'
@@ -74,3 +74,49 @@ def test_s07_missing_privacy_anchor_fails_the_check(tmp_path):
     check_site.rehash(tmp_path,'privacy')
     errors=check_site.check(tmp_path)
     assert any('privacy.html#waitlist (en)' in error for error in errors),errors
+
+
+REAL_KEY='0x4AAAAAAAexampleexample'
+DATABASE='01234567-89ab-cdef-0123-456789abcdef'
+WRANGLER=(ROOT/'workers/waitlist/wrangler.toml').read_text(encoding='utf-8')
+
+
+def publishable(root,sitekey=REAL_KEY,database=DATABASE,origins='https://obscurawriter.com'):
+    """A waitlist site with base_url and a copy of wrangler.toml carrying the given values."""
+    site=waitlist_site(root,section={'action':ACTION,'sitekey':sitekey})
+    manifest=json.loads((site/'site.json').read_text(encoding='utf-8'))
+    manifest['base_url']='https://obscurawriter.com/'
+    (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
+    text=WRANGLER.replace('database_id = "REPLACE_WITH_DATABASE_ID"',f'database_id = "{database}"')
+    text=text.replace('ALLOWED_ORIGINS = "https://obscurawriter.com"',f'ALLOWED_ORIGINS = "{origins}"')
+    (root/'workers/waitlist').mkdir(parents=True,exist_ok=True)
+    (root/'workers/waitlist/wrangler.toml').write_text(text,encoding='utf-8')
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_placeholders_block_publication(tmp_path):
+    publishable(tmp_path,sitekey='REPLACE_WITH_SITEKEY',database='REPLACE_WITH_DATABASE_ID')
+    problems=check_site.publication_problems(tmp_path)
+    assert len(problems)==2 and any('sitekey' in p for p in problems) and any('database_id' in p for p in problems),problems
+    publishable(tmp_path/'test-key',sitekey=TEST_KEY)
+    problems=check_site.publication_problems(tmp_path/'test-key')
+    assert len(problems)==1 and 'sitekey' in problems[0],problems
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_localhost_origin_blocks_publication(tmp_path):
+    publishable(tmp_path,origins='https://obscurawriter.com,http://localhost:8000')
+    problems=check_site.publication_problems(tmp_path)
+    assert len(problems)==1 and 'ALLOWED_ORIGINS' in problems[0],problems
+
+
+@pytest.mark.req('WAITLIST-001')
+def test_s10_ready_site_publishes(tmp_path,monkeypatch,capsys):
+    publishable(tmp_path)
+    assert check_site.publication_problems(tmp_path)==[]
+    monkeypatch.setattr(check_site,'ROOT',tmp_path)
+    assert check_site.main(['--publish'])==0
+    assert 'Сайт готовий до публікації.' in capsys.readouterr().out
+    publishable(tmp_path/'bad',sitekey='REPLACE_WITH_SITEKEY')
+    monkeypatch.setattr(check_site,'ROOT',tmp_path/'bad')
+    assert check_site.main(['--publish'])==1
