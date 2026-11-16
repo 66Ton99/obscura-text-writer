@@ -75,7 +75,7 @@ WAITLIST_TEXT={
           'error':f'Не вдалося записати адресу. Спробуйте пізніше або напишіть на {PRIVACY_MAIL}.',
           'noscript':'Форма потребує JavaScript: без нього перевірку Cloudflare Turnstile не пройти.'},
     'en':{'title':'Notify me','email':'Email',
-          'consent':'I agree that my address is kept for one email about the paid version’s release, as described in the «<a href="{href}">Waitlist</a>» section of the Privacy page.',
+          'consent':'I agree that my address is kept for one email about the paid version’s release, as described in the “<a href="{href}">Waitlist</a>” section of the Privacy page.',
           'submit':'Sign up',
           'ok':'Done: you are on the list. We will write once, when the paid version is released.',
           'invalid':'Check the address and the consent box, then send the form again.',
@@ -116,7 +116,7 @@ def waitlist_form(manifest,lang):
             f'<input type="hidden" name="lang" value="{lang}">\n'
             f'<label for="waitlist-email">{text["email"]}</label>\n'
             '<input id="waitlist-email" type="email" name="email" required autocomplete="email" maxlength="254">\n'
-            f'<label class="waitlist-consent"><input type="checkbox" name="consent" value="yes" required> {consent}</label>\n'
+            f'<label class="waitlist-consent"><input type="checkbox" name="consent" value="yes" required> <span>{consent}</span></label>\n'
             f'<div class="cf-turnstile" data-sitekey="{esc(settings["sitekey"])}"></div>\n'
             f'<button type="submit">{text["submit"]}</button>\n</form>\n'
             f'<noscript><p>{text["noscript"]}</p></noscript>\n</section>\n')

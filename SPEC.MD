@@ -3947,7 +3947,7 @@ SPDX-вираз PEP 639 відкладено до задачі інсталят�
 
 Вибір мови SHALL робити `docs/site/site.js`, підключений у `<head>` кожної сторінки (`<html data-alt>` — адреса тієї самої сторінки іншою мовою). На українській сторінці скрипт MUST переходити (`location.replace`) на англійську версію з тим самим рядком запиту (мітки `utm_*` реклами), але без якоря, бо `id` розділів у мовах різні, коли збережений вибір — `en` або коли вибору немає, `navigator.languages` (або `navigator.language`) не містить жодного тегу `uk`/`uk-*` і user agent не схожий на пошукового робота. Збережений вибір `uk` залишає людину на українській сторінці. Клік на перемикач мови (`a[data-lang]`) зберігає вибір у `localStorage['obscura.site.lang']`; недоступне сховище не ламає ні переходу, ні сторінки. Англійські сторінки нікуди не переходять. Без JavaScript лишається вміст за адресою.
 
-Сторінки `privacy` («Приватність») і `report` («Поскаржитися на результат») SHALL бути в маніфесті обома мовами. `privacy` описує дані застосунку, сайту й листів з адресою privacy@obscurawriter.com і слугує політикою приватності для Microsoft Store; `report` — адреса `--report-url` збірки Store (PACKAGING-001) з адресою report@obscurawriter.com. Обидві адреси пошти — переадресація Cloudflare Email Routing; сайт не має форм, cookies, аналітики й рекламних пікселів.
+Сторінки `privacy` («Приватність») і `report` («Поскаржитися на результат») SHALL бути в маніфесті обома мовами. `privacy` описує дані застосунку, сайту й листів з адресою privacy@obscurawriter.com і слугує політикою приватності для Microsoft Store; `report` — адреса `--report-url` збірки Store (PACKAGING-001) з адресою report@obscurawriter.com. Обидві адреси пошти — переадресація Cloudflare Email Routing. Сторінка `paid` («Платна версія», у навігації перед `legal`) — адреса `--waitlist-url` збірки Store з формою списку очікування (WAITLIST-001); `privacy` описує її в розділі «Список очікування» / «Waitlist». Сайт не має cookies, аналітики й рекламних пікселів; єдина форма й єдиний сторонній скрипт (Cloudflare Turnstile) — на сторінці `paid`.
 
 `scripts/check_site.py` (викликається з `scripts/check_docs.py`, коли є маніфест) MUST падати, коли сторінки маніфесту немає хоча б однією мовою; коли SHA-256 будь-якої мовної версії (CRLF зводиться до LF) не дорівнює записаному в `docs/site/sync.json` у момент підтвердження пари (`python scripts/check_site.py --rehash <slug>`); коли посилання, якір чи зображення не розв'язується або веде за межі сайту (перевіряються всі посилання й зображення, які рендерить markdown-it, зокрема посилання-виноски); коли зображення не має alt або лежить за зовнішньою адресою; коли сторінка посилається на `docs/superpowers/`, `docs/research/`, `docs/diagnostics/`, `docs/specs/`, `SPEC.MD` чи `docs/STATUS.md`. Підтвердження пари — заява автора зміни, а не автоматична перевірка змісту перекладу.
 
@@ -4025,7 +4025,8 @@ Workflow `.github/workflows/site.yml` SHALL на `pull_request` лише зби�
 - GIVEN маніфест сайту
 - WHEN перевіряються сторінки
 - THEN `privacy` і `report` є обома мовами, `privacy` містить privacy@obscurawriter.com, `report` — report@obscurawriter.com і посилання на `privacy`
-- AND `docs/packaging.md` передає `--report-url https://obscurawriter.com/report.html`.
+- AND `paid` з `"form": "waitlist"` стоїть одразу перед `legal`, а `privacy` обома мовами має розділ списку очікування
+- AND `docs/packaging.md` передає `--report-url https://obscurawriter.com/report.html` і `--waitlist-url https://obscurawriter.com/paid.html`.
 
 ## WAITLIST-001. Список очікування платної версії (#119)
 

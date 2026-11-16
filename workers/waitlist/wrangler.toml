@@ -9,7 +9,7 @@ compatibility_date = "2026-11-01"
 ALLOWED_ORIGINS = "https://obscurawriter.com"
 RETENTION_MONTHS = "24"
 # Date of the Privacy edition the consent checkbox refers to (docs/site/uk/privacy.md).
-PRIVACY_EDITION = "2026-11-15"
+PRIVACY_EDITION = "2026-11-16"
 
 [[d1_databases]]
 binding = "DB"

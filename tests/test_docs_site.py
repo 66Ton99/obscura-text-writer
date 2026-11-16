@@ -318,3 +318,9 @@ def test_privacy_and_report_pages_carry_their_addresses():
         assert 'mailto:privacy@obscurawriter.com' in privacy
         assert 'mailto:report@obscurawriter.com' in report and '(privacy.md)' in report
     assert '--report-url https://obscurawriter.com/report.html' in (ROOT/'docs/packaging.md').read_text(encoding='utf-8')
+    # WAITLIST-001: the paid page with the form stands right before legal; Privacy describes the waitlist.
+    paid=next(page for page in manifest['pages'] if page['slug']=='paid')
+    assert paid.get('form')=='waitlist' and slugs[slugs.index('paid')+1]=='legal'
+    assert '## Список очікування' in (ROOT/'docs/site/uk/privacy.md').read_text(encoding='utf-8')
+    assert '## Waitlist' in (ROOT/'docs/site/en/privacy.md').read_text(encoding='utf-8')
+    assert '--waitlist-url https://obscurawriter.com/paid.html' in (ROOT/'docs/packaging.md').read_text(encoding='utf-8')

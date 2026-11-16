@@ -25,8 +25,10 @@
     {"slug": "mcp", "title": {"uk": "Чат-клієнти (MCP)", "en": "Chat clients (MCP)"}},
     {"slug": "story-language", "title": {"uk": "Мова й обсяг твору", "en": "Story language and length"}},
     {"slug": "troubleshooting", "title": {"uk": "Поширені проблеми", "en": "Troubleshooting"}},
+    {"slug": "paid", "title": {"uk": "Платна версія", "en": "Paid version"}, "form": "waitlist"},
     {"slug": "legal", "title": {"uk": "Умови, ліцензія й назва", "en": "Terms, license and name"}},
     {"slug": "privacy", "title": {"uk": "Приватність", "en": "Privacy"}},
     {"slug": "report", "title": {"uk": "Поскаржитися на результат", "en": "Report a result"}}
-  ]
+  ],
+  "waitlist": {"action": "https://waitlist.obscurawriter.com/", "sitekey": "REPLACE_WITH_SITEKEY"}
 }
