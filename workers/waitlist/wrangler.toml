@@ -14,7 +14,7 @@ PRIVACY_EDITION = "2026-11-16"
 [[d1_databases]]
 binding = "DB"
 database_name = "obscura-waitlist"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "2df99118-a20a-4fd9-9f6b-d9b2c48e1742"
 
 # Daily deletion of rows older than RETENTION_MONTHS (WAITLIST-001-S09).
 [triggers]
