@@ -13,7 +13,7 @@
 
 1. `npx wrangler login` — вхід у браузері.
 2. `npx wrangler d1 create obscura-waitlist --jurisdiction=eu`. У відповіді буде `database_id`. Юрисдикцію пізніше змінити не можна, лише створити нову базу.
-3. `npx wrangler d1 execute obscura-waitlist --remote --file schema.sql` — таблиця `waitlist`.
+3. Впишіть цей `database_id` у `wrangler.toml` (замість `REPLACE_WITH_DATABASE_ID`): wrangler бере id бази звідти, і з заглушкою наступна команда падає з `Invalid uuid`. Потім `npx wrangler d1 execute obscura-waitlist --remote --file schema.sql` — таблиця `waitlist`.
 4. Панель Cloudflare → Turnstile → **Add widget**: режим **Managed**, хости `obscurawriter.com` і `localhost`. Панель покаже публічний ключ (Site Key, починається з `0x`) і секрет (Secret Key).
 5. `database_id` і публічний ключ — не секрети: напишіть їх у PR або закомітьте в `wrangler.toml` (`database_id`) і `docs/site/site.json` (`waitlist.sitekey`). Секрет нікуди не пишіть, крім наступного кроку.
 6. `npx wrangler secret put TURNSTILE_SECRET` і вставте секрет у запит wrangler.
