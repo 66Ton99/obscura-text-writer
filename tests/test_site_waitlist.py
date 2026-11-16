@@ -1,5 +1,6 @@
 """WAITLIST-001 on the site: the builder renders the waitlist form (S07), the publish gate (S10)."""
 import json
+import re
 
 import pytest
 
@@ -102,7 +103,8 @@ def publishable(root,sitekey=REAL_KEY,database=DATABASE,origins='https://obscura
     manifest=json.loads((site/'site.json').read_text(encoding='utf-8'))
     manifest['base_url']='https://obscurawriter.com/'
     (site/'site.json').write_text(json.dumps(manifest,ensure_ascii=False),encoding='utf-8')
-    text=WRANGLER.replace('database_id = "REPLACE_WITH_DATABASE_ID"',f'database_id = "{database}"')
+    text=re.sub(r'(?m)^database_id = ".*"$',f'database_id = "{database}"',WRANGLER)
+    assert f'database_id = "{database}"' in text
     text=text.replace('ALLOWED_ORIGINS = "https://obscurawriter.com"',f'ALLOWED_ORIGINS = "{origins}"')
     (root/'workers/waitlist').mkdir(parents=True,exist_ok=True)
     (root/'workers/waitlist/wrangler.toml').write_text(text,encoding='utf-8')

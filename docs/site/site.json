@@ -30,5 +30,5 @@
     {"slug": "privacy", "title": {"uk": "Приватність", "en": "Privacy"}},
     {"slug": "report", "title": {"uk": "Поскаржитися на результат", "en": "Report a result"}}
   ],
-  "waitlist": {"action": "https://waitlist.obscurawriter.com/", "sitekey": "REPLACE_WITH_SITEKEY"}
+  "waitlist": {"action": "https://waitlist.obscurawriter.com/", "sitekey": "0x4AAAAAAGEKFrxOkOrqcixY"}
 }
