@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 
 from ..dependency_models import AcceptancePreview, AcceptanceRecord
-from ..domain import RevisionConflict, Scene, Story, VersionRef, new_id, now
+from ..domain import RevisionConflict, Scene, VersionRef, new_id, now
 from ..run_models import Run
 from .context_view import ContextView
 from .snapshots import build_author_baseline, resolve_freshness
@@ -90,7 +90,7 @@ def preview_prose_acceptance(repo, story_id):
 def accept_all_prose(repo, story_id, fingerprint):
     with repo.db.connection() as db:
         db.execute('BEGIN IMMEDIATE')
-        repo._get(db,'stories',story_id,Story)
+        repo._active_story(db,story_id)
         for (raw,) in db.execute('SELECT payload FROM runs WHERE story_id=?',(story_id,)).fetchall():
             run=Run.model_validate_json(raw)
             if run.request.mode=='impact' and run.state in ACTIVE_RUN_STATES:

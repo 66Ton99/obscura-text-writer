@@ -61,10 +61,10 @@ def test_only_prose_is_accepted_and_fresh_prose_gets_no_record(tmp_path):
     save_manual_prose(repo,first.id,'Нова проза 1.',repo.get_scene(first.id).revision)
     assert repo.get_version(brief.id).stale and repo.get_version(memory.id).stale
     waiting_ids=[s['scene_id'] for s in repo.preview_prose_acceptance(story.id)['scenes']]
-    assert first.id not in waiting_ids
+    assert waiting_ids==[second.id]
     accept_all(repo,story)
     assert repo.get_version(brief.id).stale and repo.get_version(memory.id).stale
-    assert all(r.scene_id in waiting_ids for r in repo.list_acceptances(story.id))
+    assert [r.scene_id for r in repo.list_acceptances(story.id)]==[second.id]
 
 
 @pytest.mark.req('DATA-010')
@@ -88,7 +88,7 @@ def test_open_book_review_blocks_bulk_acceptance(tmp_path):
     repo,story=book(tmp_path,2)
     swap(repo,story)
     preview=repo.preview_prose_acceptance(story.id)
-    assert preview['scenes']
+    assert len(preview['scenes'])==2
     repo.enqueue_run(Run(id='review',story_id=story.id,request_id='review',request=RunRequest(story_id=story.id,mode='impact'),state='needs_review',tasks=[]))
     with pytest.raises(ValueError,match='перевірку книги'):
         repo.accept_all_prose(story.id,preview['fingerprint'])
