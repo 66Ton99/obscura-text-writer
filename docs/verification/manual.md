@@ -210,6 +210,18 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 Після злиття PR, що змінює `docs/site/**`, відкрити вкладку Actions репозиторію й переконатися, що запуск workflow `site` для push у `main` завершився успішно, включно з кроком «Check the published address». Відкрити `https://obscurawriter.com/` і `…/en/install.html`: обидві сторінки відповідають, перемикач мови веде на ту саму сторінку іншою мовою, зміст відповідає новому коміту. Перевірити також `https://obscurawriter.com/robots.txt`, `/sitemap.xml` і будь-яку неіснуючу адресу (двомовна сторінка 404); стара адреса `https://ysilvestrov.github.io/obscura-text-writer/` переадресовує на домен. Вибір мови в справжньому браузері: у вікні InPrivate з мовою браузера English головна відкриває `/en/index.html`, з українською в списку мов лишається українська; після кліку на «Українська» в англійському браузері українська лишається й після перезавантаження. Перевірка щойно відкритого PR: у запуску workflow для `pull_request` немає задачі `deploy`.
 
 
+<a id="waitlist-live"></a>
+## Список очікування: перевірка наживо
+
+Після кроків власника з [docs/waitlist.md](../waitlist.md), до злиття PR, на гілці PR:
+1. У теці `workers/waitlist` тимчасово змінити в `wrangler.toml` `ALLOWED_ORIGINS` на `"https://obscurawriter.com,http://localhost:8000"` і виконати `npx wrangler deploy`.
+2. З кореня репозиторію `python scripts/build_site.py --out C:\tmp\wl-site`; у `C:\tmp\wl-site` — `python -m http.server 8000`; відкрити `http://localhost:8000/paid.html`. Віджет Turnstile видно під позначкою згоди.
+3. Записати нейтральну адресу (наприклад, `test.waitlist@example.com`) з позначкою згоди → сторінка з повідомленням «Готово». Ту саму адресу великими літерами → знову «Готово». Адресу без `@` (перевірку браузера обійти, прибравши `type="email"` у інструментах розробника) → повідомлення про хибну адресу. Без позначки згоди браузер форму не надсилає. Те саме на `http://localhost:8000/en/paid.html` → англійські повідомлення на англійській сторінці.
+4. У консолі D1: на адресу один рядок, `lang` відповідає сторінці, `privacy_edition` — дата редакції «Приватності», `created_at` — UTC. У панелі D1 видно юрисдикцію `eu`. Видалити тестові рядки (`DELETE FROM waitlist WHERE email LIKE 'test.waitlist%';`).
+5. `git restore workers/waitlist/wrangler.toml` і знову `npx wrangler deploy`. У панелі Worker → Settings → Variables `ALLOWED_ORIGINS` рівно `https://obscurawriter.com`.
+
+Наявність процедури не є фактичним PASS; результат записується в журналі виконання (без адрес, крім тестових).
+
 <a id="core-review"></a>
 ## Панель підтвердження ядра
 

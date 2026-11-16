@@ -2161,3 +2161,13 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
   - тести-ключі Turnstile (`1x…`) для перевірки наживо не годяться: `siteverify` повертає `hostname` `example.com`, який Worker відхиляє;
   - тексти форми зафіксовано в плані; PACKAGING-001 не змінюється, бо адреси сайту описує DOCS-SITE.
 - Проба: документація Turnstile дозволяє хост `localhost` на робочому віджеті (не рекомендує лишати його назавжди).
+- План злито в `main` (PR #193, `f0e9898`), власник дав старт реалізації 16.11.2026.
+
+### 16.11.2026 — Store, специфікація 3: список очікування, периферія (реалізація)
+
+- Task 1 (`b67958a`): збирач малює форму за `"form": "waitlist"` маніфесту, скрипт Turnstile лише на цій сторінці (місце `{scripts}` шаблону), `check_site.py` перевіряє розділ `waitlist` і якір «Приватності». Сценарій S07.
+- Task 2 (`5489e2d`): `check_site.py --publish` у задачі `deploy` перед збиранням; `workers/waitlist/wrangler.toml` серед шляхів тригерів workflow. Сценарій S10.
+- Task 3 (`194745b`): сторінка `paid` uk/en перед `legal`, редакція «Приватності» 16.11.2026 з розділом «Список очікування» / «Waitlist», `PRIVACY_EDITION = "2026-11-16"`, `--waitlist-url https://obscurawriter.com/paid.html`. Пари `paid` і `privacy` підтверджено `--rehash`. Перегляд у браузері: блок результату показує лише стан з якоря.
+- Task 4: `docs/waitlist.md` (кроки власника, SQL, заміна на `workers.dev`), `manual.md#waitlist-live` (S08), `CONTRIBUTING.md` про тести Worker без Node, SPEC: відомі обмеження WAITLIST-001 і S08.
+- Рішення виконавця: текст згоди обгорнуто в `<span>`, бо `display: flex` мітки розкладав текст і посилання в колонки (видно в браузері).
+- `check_site.py --publish` на гілці зараз відмовляє через заглушки `sitekey` і `database_id`, як задумано: злиття до кроків власника не публікує сайт.

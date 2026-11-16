@@ -4051,7 +4051,7 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 
 - **Модуль.** `workers/waitlist/src/index.js` (ES-модуль без залежностей npm): `REFUSAL`, `normalizeEmail`, `allowedOrigins`, `verifyTurnstile(token, ip, env)` (`POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, `FormData`), `handle(request, env, deps)` з підмінними `deps.verify`, `deps.now`, `deps.log`, `retentionCutoff(now, months)`, `purge(env, now)` і `export default { fetch, scheduled }`. `wrangler.toml`: `ALLOWED_ORIGINS = "https://obscurawriter.com"`, `RETENTION_MONTHS`, `PRIVACY_EDITION`, прив'язка D1 `DB` (`database_id` вписує власник після створення бази), маршрут `waitlist.obscurawriter.com` з `custom_domain = true`, `[triggers] crons`.
 - **Тести.** `workers/waitlist/test/index.test.mjs` (`node --test`, фейкова D1 і фейкова перевірка Turnstile; назва кожного тесту починається з ID сценарію). `tests/test_waitlist_worker.py` один раз запускає Node з репортером junit і для кожного сценарію перевіряє, що його тести Node пройшли. Без Node тести падають, а не пропускаються. Там само перевіряється, що `PRIVACY_EDITION` дорівнює даті редакції `docs/site/uk/privacy.md` і що в `wrangler.toml` немає секрету.
-- **Відомі обмеження.** Підтвердження адреси листом немає: на тарифі Free Cloudflare не надсилає листів довільним адресатам. Тому в списку можуть бути чужі чи помилкові адреси, а від ботів захищає лише Turnstile. Worker розгортає власник вручну (`wrangler deploy`), автодеплою з GitHub немає. Форма на сайті, сторінка `paid`, нова редакція «Приватності» й інструкція розгортання — окремий план периферії; до нього Worker не розгорнуто й не опубліковано.
+- **Відомі обмеження.** Підтвердження адреси листом немає: на тарифі Free Cloudflare не надсилає листів довільним адресатам. Тому в списку можуть бути чужі чи помилкові адреси, а від ботів захищає лише Turnstile. Worker розгортає власник вручну (`wrangler deploy`), автодеплою з GitHub немає; кроки, SQL і перевірку наживо описує `docs/waitlist.md`. Лист про вихід платної версії власник надсилає сам, поза цим компонентом. Якщо Worker недоступний, сайт про це не дізнається: людина бачить повідомлення про помилку з адресою privacy@.
 
 <a id="waitlist-001-s01"></a>
 #### Scenario: WAITLIST-001-S01 — Нова адреса
@@ -4100,6 +4100,13 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - WHEN сайт зібрано
 - THEN форма на `action` розділу, віджет із його `sitekey`, скрипт Turnstile, поле `lang` мови сторінки, чотири блоки результатів, посилання на розділ списку очікування в `privacy.html` і `<noscript>` є лише на `paid` обома мовами, а решта сторінок побайтово ті самі, що й без `form`
 - AND без розділу `waitlist`, з `action` не `https://`, з хибним `sitekey` чи іншим значенням `form` збірка відмовляє, а без якоря розділу в `privacy.md` будь-якою мовою падає `check_site.py`.
+
+<a id="waitlist-001-s08"></a>
+#### Scenario: WAITLIST-001-S08 — Перевірка наживо
+- GIVEN Worker розгорнуто в акаунті власника з тимчасовим `http://localhost:8000` в `ALLOWED_ORIGINS`, віджет Turnstile дозволяє `localhost`
+- WHEN форму надіслано з локальної збірки сайту: нова адреса, та сама великими літерами, адреса без `@`
+- THEN сторінки показують відповідно `ok`, `ok` і `invalid` потрібною мовою, а в D1 один рядок на адресу в базі з юрисдикцією `eu`
+- AND після перевірки `wrangler.toml` повернуто й Worker розгорнуто знову з `ALLOWED_ORIGINS` рівно `https://obscurawriter.com`.
 
 <a id="waitlist-001-s10"></a>
 #### Scenario: WAITLIST-001-S10 — Сайт не публікується з непрацюючою формою

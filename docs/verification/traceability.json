@@ -6383,6 +6383,16 @@
       ]
     },
     {
+      "id": "WAITLIST-001-S08",
+      "requirement": "WAITLIST-001",
+      "scope": "Справжній Worker, D1 і Turnstile з локальною збіркою сайту. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [],
+      "manual": {
+        "procedure": "docs/verification/manual.md#waitlist-live",
+        "reason": "Потрібні акаунт Cloudflare власника, розгорнутий Worker, справжня база D1 і віджет Turnstile; локальні тести не мають цих сервісів."
+      }
+    },
+    {
       "id": "WAITLIST-001-S10",
       "requirement": "WAITLIST-001",
       "scope": "Задача публікації зупиняється на check_site.py --publish, поки ключ Turnstile, database_id чи ALLOWED_ORIGINS не готові; крок стоїть перед збиранням.",
