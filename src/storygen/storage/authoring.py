@@ -221,6 +221,8 @@ def reorder_scenes(repo,story_id: str,scene_ids: list[str],expected_revision: in
         repo._save_scene_order(db,[scenes[id] for id in scene_ids]+archived)
         from .invalidation import invalidate_in_transaction
         invalidate_in_transaction(repo,db,[head for scene in scenes.values() for head in scene.heads.values()])
+        from .scene_numbering import renumber_active
+        renumber_active(repo,db,[scenes[id] for id in scene_ids])
         return repo._touch_story(db,story_id)
 
 from ..domain import VersionRef, SceneCreate, new_id, now
@@ -292,6 +294,8 @@ def set_scene_trashed(repo,story_id,scene_id,expected_revision,restore):
         repo._save_scene_order(db,active+archived)
         # A changed scene boundary invalidates subsequent context even without explicit dependency edges.
         _invalidate_later(repo,db,active[index:])
+        from .scene_numbering import renumber_active
+        renumber_active(repo,db,active)
         if not restore:
             from .invalidation import invalidate_in_transaction
             invalidate_in_transaction(repo,db,list(scene.heads.values()))

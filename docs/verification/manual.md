@@ -379,3 +379,8 @@ STORE-MCP-S08–S10. Автоматична частина — Playwright `tests
 - англійська локаль перекладає блок.
 
 Запуск із кодом робочої теки: `PYTHONPATH=<тека>/src` і `cd frontend; npx playwright test claude-connect`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
+
+<a id="scene-insert-browser"></a>
+## Нова сцена після відкритої в браузері
+
+IMPORT-NUMBER-S03. Автоматична частина — Playwright `tests/web/browser/scene-insert.spec.mjs` (один case: у творі з двома нумерованими сценами відкрито першу, «Додати сцену» вставляє нову другою з заголовком «## Сцена 2: …», план наступної сцени отримує «Сцена 3», список на desktop показує «2. Полудень»). Запуск: `cd frontend; ./node_modules/.bin/playwright test ../tests/web/browser/scene-insert.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.

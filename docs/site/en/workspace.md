@@ -17,10 +17,18 @@ If there are many scenes, click the **Scenes** heading with their count: the lis
 
 - **Characters** opens the character cards on a separate page.
 - **Settings** opens the models, writing, evaluator and budget for this story.
-- **Add scene** creates a scene at the end of the list and fills its outline from a template right away. Location, characters, key realisation and emotional focus are carried over from the previous scene's outline; its "End" becomes the "Start" of the new scene, and its "What happens" becomes "Previously". "End", "What happens" and the three "Beats" items stay empty. The number in the heading is the next one after the previous scene's number. In a Ukrainian story the outline labels are Ukrainian. Whatever the previous outline lacks stays empty; you can correct everything in the outline straight away.
+- **Add scene** creates a scene right after the open one (at the end of the list if no scene is open) and fills its outline from a template right away. Location, characters, key realisation and emotional focus are carried over from the previous scene's outline; its "End" becomes the "Start" of the new scene, and its "What happens" becomes "Previously". "End", "What happens" and the three "Beats" items stay empty. The number in the heading is the new scene's place in the list; the numbers in the outlines of the following scenes move on. A scene added at the end gets the number after the previous scene's number. In a Ukrainian story the outline labels are Ukrainian. Whatever the previous outline lacks stays empty; you can correct everything in the outline straight away.
 - The **☰ Story actions** menu holds everything that concerns the whole story: **Book revision** (the number next to it counts materials waiting for review), **Card and publication**, **Export…**, story evaluation and reports (when an evaluator is configured), the budget line and **Rename story**. The menu works from the keyboard; `Escape` closes it.
 
 ![Story actions menu](../../images/site/en/story-menu-desktop.png)
+
+## Change the scene order
+
+- Open a scene and press **Move up** or **Move down** in **Scene settings**. Each press moves the scene by one place.
+- Save the text first: a scene with unsaved edits does not move.
+- After a move the story's texts need review: what the model knows from earlier scenes depends on the order.
+- The number in the first line of the outline ("Scene 3: …") becomes the scene's number in the list. Only the number changes; a saved outline gets a new version and the previous one stays in the history. Scenes without a number in the outline (a prologue, an interlude) get no number but keep their place. The same happens when a scene is inserted in the middle, moved to the trash or restored.
+- In a story with parts and arcs these buttons cannot move a scene into another arc: use the [book structure](book-structure.md).
 
 ## Scene stages
 
