@@ -7,6 +7,8 @@ from pathlib import Path
 
 SITE='docs/site'
 IMAGES='docs/images/site'
+# WAITLIST-001: the consent link of the waitlist form points at this section of privacy.md in each language.
+WAITLIST_PRIVACY_ANCHOR={'uk':'список-очікування','en':'waitlist'}
 LABELS={'uk':{'name':'Українська','nav':'Розділи','lang':'Мова'},'en':{'name':'English','nav':'Sections','lang':'Language'}}
 
 

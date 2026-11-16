@@ -6372,6 +6372,17 @@
       ]
     },
     {
+      "id": "WAITLIST-001-S07",
+      "requirement": "WAITLIST-001",
+      "scope": "Форма списку очікування й скрипт Turnstile лише на сторінці з form; хибний розділ waitlist зупиняє збірку; якір «Приватності» перевіряється.",
+      "tests": [
+        "tests/test_site_waitlist.py::test_s07_form_only_on_the_form_page",
+        "tests/test_site_waitlist.py::test_s07_other_pages_unchanged_by_the_form",
+        "tests/test_site_waitlist.py::test_s07_bad_waitlist_section_stops_the_build",
+        "tests/test_site_waitlist.py::test_s07_missing_privacy_anchor_fails_the_check"
+      ]
+    },
+    {
       "id": "WAITLIST-001-S09",
       "requirement": "WAITLIST-001",
       "scope": "Щоденне видалення рядків, старших за RETENTION_MONTHS; хибне значення нічого не видаляє; розклад у wrangler.toml.",

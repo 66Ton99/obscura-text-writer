@@ -12,8 +12,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 if __package__ in (None,''):sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from scripts.build_site import markdown
-from scripts.site_common import IMAGES, SITE, heading_id, heading_text, load_manifest, page_hash, page_path, page_slug
+from scripts.build_site import markdown, page_form, waitlist_settings
+from scripts.site_common import IMAGES, SITE, WAITLIST_PRIVACY_ANCHOR, heading_id, heading_text, load_manifest, page_hash, page_path, page_slug
 
 ROOT=Path(__file__).resolve().parents[1]
 SYNC='docs/site/sync.json'
@@ -90,7 +90,23 @@ def check(root=ROOT):
             if changed:errors.append(f'{slug}: змінено {", ".join(changed)} без підтвердження пари; оновіть іншу мовну версію й виконайте {rehash_hint(slug)}')
         for lang in manifest['languages']:check_links(root,lang,slug,set(slugs),errors)
     for slug in sorted(set(sync)-set(slugs)):errors.append(f'{SYNC}: запис {slug} не відповідає жодній сторінці маніфесту')
+    check_waitlist(root,manifest,errors)
     return errors
+
+
+def check_waitlist(root,manifest,errors):
+    """WAITLIST-001-S07: the form fragment is not markdown, so its manifest section and privacy anchor are checked here."""
+    for page in manifest['pages']:
+        try:
+            if not page_form(page):continue
+            waitlist_settings(manifest)
+        except ValueError as exc:errors.append(str(exc));continue
+        if 'privacy' not in [item['slug'] for item in manifest['pages']]:
+            errors.append(f'{page["slug"]}: фрагмент форми посилається на privacy.html, а сторінки privacy немає в маніфесті');continue
+        for lang in manifest['languages']:
+            anchor=WAITLIST_PRIVACY_ANCHOR[lang];privacy=page_path(root,lang,'privacy')
+            if not privacy.is_file() or anchor not in page_anchors(privacy):
+                errors.append(f'{page["slug"]}: фрагмент форми посилається на privacy.html#{anchor} ({lang}), а такого якоря немає')
 
 
 def rehash(root,slug):
