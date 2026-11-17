@@ -74,3 +74,11 @@ def test_stand_server_sees_no_keys_of_the_author(monkeypatch):
     assert not [name for name in env if name.upper().endswith('_API_KEY')]
     # The OS credential store is shared with the author's Obscura: the stand server must not read or write it.
     assert env['PYTHON_KEYRING_BACKEND'] == 'keyring.backends.fail.Keyring'
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_fake_key_reaches_only_the_stand_env(monkeypatch):
+    monkeypatch.setenv('VENICE_API_KEY', 'real')
+    env = stand_env({'OPENROUTER_API_KEY': 'stand-fake-key'})
+    assert env['OPENROUTER_API_KEY'] == 'stand-fake-key' and 'VENICE_API_KEY' not in env
+    assert env['PYTHON_KEYRING_BACKEND'] == 'keyring.backends.fail.Keyring'
