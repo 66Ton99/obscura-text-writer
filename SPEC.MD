@@ -4663,14 +4663,14 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
   - перевірка сервера через `list_stories`;
   - «409 — прочитати знову»;
   - затвердження прози автором.
-- **Переносність.** Frontmatter SKILL.md MUST містити лише поля, які приймають і claude.ai, і Skills API: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. Поля `model`, `effort`, `context`, `agent` діють лише в Claude Code, а пакет із ними claude.ai відхиляє; `model` до того ж діє один хід. Тексти скілів англійською, `description` — з фразами наміру українською й англійською, відповіді — мовою автора.
+- **Переносність.** Frontmatter SKILL.md MUST містити лише поля, які приймають і claude.ai, і Skills API: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. Поля `model`, `effort`, `context`, `agent` діють лише в Claude Code, а пакет із ними claude.ai відхиляє; `model` до того ж діє один хід. Спільні правила й довідники лежать поза теками скілів, під `${CLAUDE_PLUGIN_ROOT}`, тож окремий скіл, завантажений у claude.ai без плагіна, їх не має; пакування для claude.ai вирішує окремий пакет. Тексти скілів англійською, `description` — з фразами наміру українською й англійською, відповіді — мовою автора.
 - **Розподіл моделей** описано в тілі скіла, у таблиці `draft-scene/references/chat-pipeline.md`:
   - draft і edit — рівень Opus, у Claude Code субагентом `opus`, якщо модель сесії слабша, у Desktop — порада автору;
   - brief — субагент `sonnet`, memory — основна сесія, у контексті якої вже є текст сцени. Так вирішив власник 2026-11-17 за виміром на нейтральній сцені: правило зі спеки зміни (незалежний еталон фактів, складений до прогонів) не пройшов жоден варіант memory. Opus щоразу отримував відмову схеми й пропускав 2–3 другорядні факти, Haiku губив факти, потрібні наступним сценам. Для brief правило проходили всі варіанти, проте завдання Haiku бідніші.
 - **Інваріант:** скіли називають лише інструменти з `storygen.mcp.bridge.TOOLS`, у вигляді `` `назва` `` або `mcp__obscura__назва`.
 - **Перевірка:**
   - структурна — `tests/test_claude_plugin.py`;
-  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config`.
+  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config` без оболонки, вебу й запису файлів (`--disallowedTools`), бо конфігурація MCP ізолює лише MCP.
 
   Прогони не торкаються робочого екземпляра автора. Процедура й правило провалу — `docs/verification/manual.md#claude-skills`, фактичні прогони — у журналі R-35.
 - **Відомі обмеження:**

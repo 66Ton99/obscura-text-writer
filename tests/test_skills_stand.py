@@ -17,6 +17,9 @@ def test_claude_command_is_isolated(tmp_path):
     assert '--strict-mcp-config' in cmd and cmd[cmd.index('--mcp-config')+1] == str(cfg)
     assert cmd[cmd.index('--max-budget-usd')+1] == '1.0' and cmd[cmd.index('--model')+1] == 'sonnet'
     assert cmd[cmd.index('--plugin-dir')+1] == str(tmp_path)
+    # The MCP config isolates only MCP: without this a stand run could reach the author's Obscura through a shell or HTTP.
+    blocked = cmd[cmd.index('--disallowedTools')+1].split(',')
+    assert {'Bash', 'PowerShell', 'WebFetch', 'WebSearch', 'Write', 'Edit', 'NotebookEdit'} <= set(blocked)
 
 
 @pytest.mark.req('CLAUDE-SKILLS')

@@ -19,7 +19,8 @@ from scripts.skills_stand import PLUGIN, claude_command, obscura_call, run_claud
 
 PIPELINE_ORDER = ['brief', 'draft', 'edit', 'memory']
 WRITES = {'create_story', 'import_plan_and_characters', 'save_draft', 'save_stage_result', 'update_settings', 'apply_role_preset',
-          'update_publication', 'add_scene', 'update_scene', 'update_story'}
+          'update_publication', 'add_scene', 'update_scene', 'update_story', 'start_run', 'upload_cover', 'add_signature',
+          'generate_cover', 'export_book'}
 
 
 def names(calls):

@@ -49,10 +49,15 @@ def write_mcp_config(path, port):
     return path
 
 
+# The MCP config isolates only MCP; a shell, HTTP or file writes could still reach the author's Obscura or files.
+BLOCKED_TOOLS = ('Bash', 'PowerShell', 'WebFetch', 'WebSearch', 'Write', 'Edit', 'NotebookEdit')
+
+
 def claude_command(prompt, *, mcp_config, plugin_dir, model, budget_usd):
     return [shutil.which('claude') or 'claude', '-p', prompt, '--plugin-dir', str(plugin_dir),
             '--mcp-config', str(mcp_config), '--strict-mcp-config', '--output-format', 'stream-json', '--verbose',
-            '--model', model, '--max-budget-usd', str(budget_usd), '--permission-mode', 'bypassPermissions']
+            '--model', model, '--max-budget-usd', str(budget_usd), '--permission-mode', 'bypassPermissions',
+            '--disallowedTools', ','.join(BLOCKED_TOOLS)]
 
 
 def _events(lines):

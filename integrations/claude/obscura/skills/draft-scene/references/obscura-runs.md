@@ -9,7 +9,7 @@ In `obscura` mode Obscura's models write the texts, and each run costs the autho
 
 ## A scene is four runs
 
-`start_run` runs exactly one stage. A scene therefore needs four runs: `brief` → `draft` → `edit` → `memory`. Take the next stage from the scene's state in `get_story`, not from memory of earlier calls.
+`start_run` runs exactly one stage. A scene therefore needs four runs: `brief` → `draft` → `edit` → `memory`. Take the next stage from the scene's state in `get_story`, not from memory of earlier calls. The state `prose` does not show whether memory is done: rely on the runs you watched in this conversation, and if unsure, say so in the preview card instead of starting a second memory run.
 
 Before the first stage of a scene, ask one card:
 - **«Покроково»** (step by step): consent before every stage.

@@ -12,7 +12,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/rules.md` first and follow it throughout. It 
 1. Find the story (`list_stories` if the author did not name it). Then call `get_story(story_id)`.
 2. Pick the scene:
    - the one the author named, or
-   - the first scene in order whose state is `not_started` or `no_text`.
+   - the first scene in order whose state is not `prose`. A scene in `no_text`, `draft` or `needs_review` is unfinished: continue it from its next stage, and after `needs_review` let the author look at the pending changes first.
+
+   A `prose` scene may still lack its memory. If the server answers «Спершу оновіть пам’ять попередньої сцени», finish the memory stage of the previous scene first.
 
    Confirm the choice in one line, together with how many scenes are left.
 3. `writing_mode` decides the branch:
