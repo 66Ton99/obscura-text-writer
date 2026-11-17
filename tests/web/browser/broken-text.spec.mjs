@@ -15,6 +15,10 @@ test('the editor banner counts broken letters and disappears once they are fixed
   await expect(banner).toContainText('У тексті пошкоджених символів «�»: 2.');
   await banner.getByRole('button',{name:'До наступного'}).click();
   expect(await page.evaluate(()=>getSelection().toString())).toBe('�');
+  const first=await page.evaluate(()=>getSelection().anchorOffset);
+  // The second of two adjacent characters starts exactly where the first selection ends.
+  await banner.getByRole('button',{name:'До наступного'}).click();
+  expect(await page.evaluate(()=>getSelection().anchorOffset)).toBe(first+1);
   await page.locator('.ProseMirror').fill('Вона пішла додому. Вечір був тихий.');
   await expect(banner).toBeHidden();
 });

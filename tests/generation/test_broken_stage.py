@@ -159,6 +159,7 @@ def test_editor_loop_pass_with_only_broken_edits_stops_as_no_changes(tmp_path, m
     worker._execute(run.id)
     current = worker.get_run(run.id)
     assert current.editor_loop['stop_reason'] == 'no_changes' and len(calls) == 1
+    assert 'Відкинуто правок із пошкодженими літерами «�»: 1.' in current.warning
 
 
 @pytest.mark.parametrize('mode', ['patches', 'diff'])

@@ -1,5 +1,5 @@
 from storygen.generation.broken_text import (
-    broken_diff_edits, count_broken, drop_broken_suggestions, drop_diff_edits, known_words, new_broken_words, request_parts,
+    broken_diff_edits, broken_patch, count_broken, drop_broken_suggestions, drop_diff_edits, known_words, new_broken_words, request_parts,
     stage_category, structured_broken,
 )
 from storygen.rewrite_diff import apply_rewrite_diff, build_rewrite_diff
@@ -77,6 +77,16 @@ def test_diff_insertion_into_existing_word_is_broken():
     assert R not in kept.candidate_text
     assert 'підвіконня' in kept.candidate_text
     assert apply_rewrite_diff(original, kept) == kept.candidate_text
+
+
+def test_patch_inside_a_word_is_judged_by_the_word_it_leaves():
+    from storygen.copyediting import CopyEdit
+    original = f'The cats slept on the windowsill. A note read {R}.'
+    known = known_words(original)
+    inside = CopyEdit(fragment_id='f000001', original='cat', replacement=R, category='grammar')
+    fixing = CopyEdit(fragment_id='f000001', original=f'read {R}', replacement='read it', category='grammar')
+    assert broken_patch(original, inside, known)
+    assert not broken_patch(original, fixing, known)
 
 
 def test_drop_all_edits_returns_none():

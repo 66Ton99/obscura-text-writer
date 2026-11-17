@@ -107,3 +107,7 @@ def test_cancel_returns_at_once_and_the_late_answer_closes_the_budget_record(mon
             time.sleep(0.05)
     assert len(finished) == 1
     assert finished[0]['cost'] == {'usd': .001, 'diem': 0} and finished[0]['complete'] is True
+    deadline = time.monotonic()+3
+    while (row := accounting.repo.billing('calls', scope='cli:mock')[0])['state'] != 'settled' and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert row['state'] == 'settled' and row['cost_source'] == 'provider', row

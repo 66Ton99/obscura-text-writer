@@ -1,4 +1,5 @@
 import threading
+from contextlib import contextmanager
 from typing import Iterator, Literal, Protocol
 
 import httpx
@@ -132,9 +133,10 @@ class OpenAIGenerationGateway:
         response_id=None
         blank_run=0
         deferred=False
+        hold={'late':False}
         try:
             require_accounting(self.settings,self.accounting)
-            with build_openai_client(self.settings,self.http_client) as client:
+            with self._client(hold) as client:
                 # SECURITY-002: error texts are cleaned of the credential this request was sent with; the stored key
                 # may be replaced or deleted before the provider answers.
                 used_key=client.api_key if self.settings.provider!='local' else None
@@ -158,11 +160,13 @@ class OpenAIGenerationGateway:
                     yield GenerationEvent(type='cancelled',usage=usage)
                     return
                 if body.get('stream') is False:
-                    call=BackgroundCall(lambda:self._complete(body))
+                    call=BackgroundCall(lambda:self._complete(client,body))
                     if not call.wait(cancel):
-                        # The provider still bills the whole answer: the call records it when it arrives.
+                        # The provider still bills the whole answer: the call records it when it arrives, and the
+                        # client (with an injected http client under it) stays open for it until then.
                         deferred=True
-                        call.on_late(self._finish_late)
+                        hold['late']=True
+                        call.on_late(lambda done:self._finish_late(done,client))
                         yield GenerationEvent(type='cancelled',usage=usage)
                         return
                     response=call.result()
@@ -260,16 +264,27 @@ class OpenAIGenerationGateway:
             if self.accounting and not deferred:
                 self.accounting.finish(self.settings,usage,complete=complete,cost=cost,response_id=response_id)
 
-    def _complete(self,body):
+    @contextmanager
+    def _client(self,hold):
         client=build_openai_client(self.settings,self.http_client)
         try:
-            return client.with_options(timeout=NONSTREAM_TIMEOUT).chat.completions.create(**sdk_arguments(body))
+            yield client
         finally:
-            if self.http_client is None:
-                client.close()  # An injected client belongs to the caller; closing it would end its other requests.
+            if not hold['late']:
+                client.close()
 
-    def _finish_late(self,call):
+    def _complete(self,client,body):
+        return client.with_options(timeout=NONSTREAM_TIMEOUT).chat.completions.create(**sdk_arguments(body))
+
+    def _finish_late(self,call,client=None):
         """Close the budget reservation of a cancelled non-streamed call with what the provider reported."""
+        try:
+            self._settle_late(call)
+        finally:
+            if client is not None:
+                client.close()
+
+    def _settle_late(self,call):
         if not self.accounting:
             return
         usage,cost,response_id,complete={},None,None,False

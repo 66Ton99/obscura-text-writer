@@ -99,6 +99,15 @@ def structured_broken(text, known):
     return found
 
 
+def _unit_broken(text, start, end, known):
+    """Whether the words around text[start:end], widened to whitespace, carry a new U+FFFD."""
+    while start > 0 and not text[start-1].isspace():
+        start -= 1
+    while end < len(text) and not text[end].isspace():
+        end += 1
+    return bool(new_broken_words(text[start:end], known))
+
+
 def broken_diff_edits(original, proposal, known):
     """Indices of diff edits whose resulting words, not the bare replacement, carry a new U+FFFD."""
     bad = set()
@@ -106,15 +115,22 @@ def broken_diff_edits(original, proposal, known):
     candidate = proposal.candidate_text
     for index, edit in enumerate(proposal.edits):
         start = edit.start+shift
-        end = start+len(edit.replacement)
         shift += len(edit.replacement)-(edit.end-edit.start)
-        while start > 0 and not candidate[start-1].isspace():
-            start -= 1
-        while end < len(candidate) and not candidate[end].isspace():
-            end += 1
-        if new_broken_words(candidate[start:end], known):
+        if _unit_broken(candidate, start, start+len(edit.replacement), known):
             bad.add(index)
     return bad
+
+
+def broken_patch(original, edit, known):
+    """Whether a copyedit patch leaves a new damaged word: `cat` → `�` inside `cats` gives `�s`. A patch whose anchor
+    is missing or ambiguous is judged by its replacement alone; `apply_copyedits` rejects it anyway."""
+    from ..copyediting import fragment_text
+    fragment = next((f for f in fragment_text(original) if f.id == edit.fragment_id), None)
+    if fragment is None or not edit.original or fragment.text.count(edit.original) != 1:
+        return bool(new_broken_words(edit.replacement, known))
+    start = fragment.start+fragment.text.index(edit.original)
+    text = original[:start]+edit.replacement+original[start+len(edit.original):]
+    return _unit_broken(text, start, start+len(edit.replacement), known)
 
 
 def drop_diff_edits(original, proposal, indices):

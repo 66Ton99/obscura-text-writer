@@ -35,12 +35,14 @@ export function createTextEditor(element){
       if(at<0)return;element.focus();element.setSelectionRange(at,at+1);return;
     }
     const dom=engine.view.dom,doc=dom.ownerDocument,walker=doc.createTreeWalker(dom,4);
-    const selection=doc.getSelection(),after=selection?.rangeCount?selection.getRangeAt(0):null;
+    const selection=doc.getSelection(),range=selection?.rangeCount?selection.getRangeAt(0):null;
+    // A collapsed range at the selection end: the next character may start right there, as in "��".
+    const after=range?doc.createRange():null;if(after)after.setStart(range.endContainer,range.endOffset);
     let first=null,found=null;
     for(let node=walker.nextNode();node;node=walker.nextNode()){
       for(let i=node.data.indexOf(BROKEN);i>=0;i=node.data.indexOf(BROKEN,i+1)){
         first??={node,i};
-        if(!found&&(!after||after.comparePoint(node,i)>0))found={node,i};
+        if(!found&&(!after||after.comparePoint(node,i)>=0))found={node,i};
       }
     }
     const target=found||first;if(!target)return;

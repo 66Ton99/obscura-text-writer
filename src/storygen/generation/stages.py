@@ -353,8 +353,8 @@ def execute_stage(
             editor_warnings=[]
             attempt.context['editor_warnings']=editor_warnings
             proposal,_=parse_editor_output(text,editor_warnings)
-            kept=[edit for edit in proposal.edits if not broken_text.new_broken_words(edit.replacement,known)]
             original=repo.read_text(draft_id)
+            kept=[edit for edit in proposal.edits if not broken_text.broken_patch(original,edit,known)]
             if len(kept)!=len(proposal.edits):
                 warning=broken_text.dropped_warning(len(proposal.edits)-len(kept))
                 if context.fragments.get('edit_loop_run_id'):
