@@ -35,7 +35,7 @@ Go through these gates in this order. At each gate, ask only what the author has
 4. **Title.** If there is none, offer a card with 3 titles. The author can type their own.
 5. **Only if not said:** point of view, place and time, content rating, language. Offer the default for each. The content rating is required: Obscura will not generate text without it.
 
-**Series or a world with rules.** If the idea has lore, magic rules, factions or a planned cycle, suggest writing a series bible before the first book. If the `series-bible` skill is available, use it for that. Otherwise note it as a later step and go on.
+**Series or a world with rules.** If the idea has lore, magic rules, factions or a planned cycle, suggest writing a series bible before the first book. Use the `series-bible` skill for that; if the author prefers to start with the book, note the bible as a later step and go on.
 
 ## Summary and consent
 
