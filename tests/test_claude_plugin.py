@@ -37,9 +37,10 @@ def frontmatter(path):
 
 
 def tool_mentions(text):
-    """Every MCP tool a skill names: `mcp__obscura__x` or a backticked snake_case name with a tool verb prefix."""
+    """Every MCP tool a skill names: `mcp__obscura__x` or a backticked snake_case name with a tool verb prefix,
+    bare or in call syntax such as `get_run(run_id)`."""
     found = set(re.findall(r'mcp__obscura__(\w+)', text))
-    found |= {name for name in re.findall(r'`([a-z]+(?:_[a-z]+)+)`', text) if name.startswith(TOOL_PREFIXES)}
+    found |= {name for name in re.findall(r'`([a-z]+(?:_[a-z]+)+)(?:`|\()', text) if name.startswith(TOOL_PREFIXES)}
     return found
 
 
@@ -103,3 +104,11 @@ def test_unknown_tool_name_is_reported(tmp_path):
     found = problems(copy)
     assert any('get_storyy' in p for p in found) and any('save_drafts' in p for p in found)
     assert not any('next_offset' in p for p in found)
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_unknown_tool_in_call_syntax_is_reported(tmp_path):
+    copy = copy_plugin(tmp_path)
+    path = copy/'skills/draft-scene/SKILL.md'
+    path.write_text(path.read_text(encoding='utf-8') + '\nWatch with `get_runs(run_id)`.\n', encoding='utf-8')
+    assert any('get_runs' in p for p in problems(copy))

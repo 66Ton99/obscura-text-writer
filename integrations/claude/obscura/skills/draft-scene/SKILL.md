@@ -12,7 +12,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/rules.md` first and follow it throughout. It 
 1. Find the story (`list_stories` if the author did not name it). Then call `get_story(story_id)`.
 2. Pick the scene:
    - the one the author named, or
-   - the first scene in order whose state is not `prose`. A scene in `no_text`, `draft` or `needs_review` is unfinished: continue it from its next stage, and after `needs_review` let the author look at the pending changes first.
+   - the first scene in order that is unfinished: `not_started`, `no_text`, `draft` or `needs_review`. Continue it from its next stage; after `needs_review`, let the author look at the pending changes first.
+
+   `prose`, `impact_current`, `impact_pending` and `impact_changes` are written scenes. `impact_changes` means an earlier edit requires changes to this scene: tell the author and let them decide in Obscura, but do not count it as the next scene to write.
 
    A `prose` scene may still lack its memory. If the server answers «Спершу оновіть пам’ять попередньої сцени», finish the memory stage of the previous scene first.
 

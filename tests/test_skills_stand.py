@@ -37,6 +37,12 @@ def test_tool_calls_and_cost_from_stream_json():
 
 
 @pytest.mark.req('CLAUDE-SKILLS')
+def test_stream_without_result_event_is_an_error():
+    lines = [json.dumps({'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'half'}]}})]
+    assert parse_result(lines).is_error is True
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
 def test_tool_errors_name_the_refused_tool():
     lines = [json.dumps({'type': 'assistant', 'message': {'content': [
                  {'type': 'tool_use', 'id': 't1', 'name': 'mcp__obscura__save_stage_result', 'input': {}},

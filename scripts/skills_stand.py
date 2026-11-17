@@ -122,7 +122,8 @@ def obscura_call(http, name, arguments):
 
 def parse_result(lines):
     lines = list(lines)
-    result = Result(tool_calls=tool_calls(lines), errors=tool_errors(lines))
+    # No `result` event means the session was cut off: an error until the stream proves otherwise.
+    result = Result(tool_calls=tool_calls(lines), errors=tool_errors(lines), is_error=True)
     texts = []
     for event in _events(lines):
         if event.get('type') == 'assistant':
@@ -146,7 +147,9 @@ def run_claude(cmd, out, timeout=1800):
     out.write_text(proc.stdout, encoding='utf-8')
     if proc.stderr:
         out.with_suffix('.stderr.txt').write_text(proc.stderr, encoding='utf-8')
-    return parse_result(proc.stdout.splitlines())
+    result = parse_result(proc.stdout.splitlines())
+    result.is_error = result.is_error or proc.returncode != 0
+    return result
 
 
 @contextlib.contextmanager

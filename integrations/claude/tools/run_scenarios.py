@@ -69,13 +69,23 @@ def pipeline_problems(calls, *, state, patches):
     if firsts != sorted(firsts):
         problems.append(f'порядок етапів: {saves}')
     if patches:
+        # Calls are requests, not successes: the scene's final state shows what the server accepted.
         if 'edit' not in saves:
             problems.append('edit не збережено')
+        elif state not in ('needs_review', 'prose'):
+            problems.append(f'сцена не дійшла до правок: стан {state}')
         elif state == 'needs_review' and 'memory' in saves[saves.index('edit'):]:
             problems.append("пам'ять після правок, що чекають перегляду автора")
     elif [s for s in PIPELINE_ORDER if s in saves] != PIPELINE_ORDER:
         problems.append(f'не всі етапи збережено: {saves}; стан сцени {state}')
+    elif state != 'prose':
+        problems.append(f'сцена не дійшла до прози: стан {state}')
     return problems
+
+
+def verdict(problems, result):
+    """A failed or cut-off claude session is never skill behaviour that passed, whatever its text says."""
+    return ['сесія claude завершилась помилкою'] * bool(result.is_error) + list(problems)
 
 
 def check_s05(stand, calls, text, ctx):
@@ -137,7 +147,7 @@ def run(scenario, work, model, budget):
         result = run_claude(claude_command(spec['prompt'], mcp_config=stand.mcp_config, plugin_dir=PLUGIN, model=model,
                                            budget_usd=budget), work/'run.jsonl')
         ctx['errors'] = result.errors
-        problems = spec['check'](stand, result.tool_calls, result.text, ctx)
+        problems = verdict(spec['check'](stand, result.tool_calls, result.text, ctx), result)
     (work/'text.md').write_text(result.text, encoding='utf-8')
     row = {'scenario': scenario, 'model': model, 'passed': not problems, 'problems': problems, 'cost_usd': result.cost_usd,
            'tools': [n for n in names(result.tool_calls) if n not in ('ToolSearch',)], 'errors': result.errors[:5],

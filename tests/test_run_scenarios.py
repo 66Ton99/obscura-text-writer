@@ -6,7 +6,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'integrations'/'claude'/'tools'))
 
-from run_scenarios import creation_problems, pipeline_problems  # noqa: E402
+from run_scenarios import creation_problems, pipeline_problems, verdict  # noqa: E402
+from scripts.skills_stand import Result  # noqa: E402
 
 CREATE = [('create_story', {}), ('get_templates', {}), ('import_plan_and_characters', {}), ('get_story', {})]
 
@@ -33,3 +34,21 @@ def test_memory_after_edit_awaiting_review_is_a_problem():
     calls = [('save_stage_result', {'stage': 'brief'}), ('save_draft', {}), ('save_stage_result', {'stage': 'edit'}),
              ('save_stage_result', {'stage': 'memory'})]
     assert pipeline_problems(calls, state='needs_review', patches=True) == ["пам'ять після правок, що чекають перегляду автора"]
+
+
+FULL = [('save_stage_result', {'stage': 'brief'}), ('save_draft', {}), ('save_stage_result', {'stage': 'edit'}),
+        ('save_stage_result', {'stage': 'memory'})]
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_attempted_saves_without_finished_prose_are_a_problem():
+    assert pipeline_problems(FULL, state='draft', patches=False) == ['сцена не дійшла до прози: стан draft']
+    assert pipeline_problems(FULL[2:3], state='no_text', patches=True) == ['сцена не дійшла до правок: стан no_text']
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_failed_claude_session_never_passes():
+    failed = Result(tool_calls=[], cost_usd=0.0, usage={}, text='Requested model is unavailable', is_error=True, errors=[])
+    assert verdict([], failed) == ['сесія claude завершилась помилкою']
+    ok = Result(tool_calls=[], cost_usd=0.0, usage={}, text='done', is_error=False, errors=[])
+    assert verdict([], ok) == []
