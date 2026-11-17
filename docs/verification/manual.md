@@ -401,3 +401,8 @@ IMPORT-NUMBER-S03. Автоматична частина — Playwright `tests/w
 ## Прийняття всієї прози на сторінці «Перевірка книги»
 
 DATA-010-S02. Автоматична частина — Playwright `tests/web/browser/prose-acceptance.spec.mjs` (один case на desktop і mobile: дві сцени з прозою, перестановка робить прозу застарілою; сторінка має заголовок «Перевірка книги», кнопка «Прийняти всю прозу як авторську» видима, підтвердження називає «Вечір», «Ранок», після прийняття кнопка зникає, `GET /impact` не має pending, проза обох сцен `current`). Запуск: `cd frontend; ./node_modules/.bin/playwright test -c playwright.config.mjs ../tests/web/browser/prose-acceptance.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
+
+<a id="broken-text-browser"></a>
+## Банер пошкоджених літер у редакторі
+
+BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web/browser/broken-text.spec.mjs` (один case на desktop і mobile: чернетка з двома «�» показує банер «У тексті пошкоджених символів «�»: 2.», «До наступного» виділяє «�», після заміни тексту банер зникає). Запуск: `PYTHONPATH=<тека>/src`, `cd frontend; ./node_modules/.bin/playwright test -c playwright.config.mjs ../tests/web/browser/broken-text.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
