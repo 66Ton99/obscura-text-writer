@@ -7,6 +7,7 @@ The output directory is written over, not emptied: build into a fresh directory 
 """
 import argparse
 import html
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,7 +16,7 @@ from urllib.parse import unquote, urlsplit
 from markdown_it import MarkdownIt
 
 if __package__ in (None,''):sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from scripts.site_common import IMAGES, LABELS, SITE, heading_id, heading_text, load_manifest, page_path, page_slug
+from scripts.site_common import IMAGES, LABELS, SITE, WAITLIST_PRIVACY_ANCHOR, heading_id, heading_text, load_manifest, page_path, page_slug
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -60,6 +61,67 @@ def render(root,lang,slug,slugs):
     return md.renderer.render(tokens,md.options,{})
 
 
+# WAITLIST-001: a page marked `"form": "waitlist"` in the manifest gets this form after its markdown, and only
+# that page loads Turnstile. Raw HTML in markdown is escaped, so the builder owns the fragment and its texts.
+TURNSTILE_SCRIPT='<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+PRIVACY_MAIL='<a href="mailto:privacy@obscurawriter.com">privacy@obscurawriter.com</a>'
+WAITLIST_TEXT={
+    'uk':{'title':'Повідомити мене','email':'Електронна пошта',
+          'consent':'Погоджуюся, щоб мою адресу зберігали для одного листа про вихід платної версії, як описано в розділі «<a href="{href}">Список очікування</a>» сторінки «Приватність».',
+          'submit':'Записатися',
+          'ok':'Готово: ви в списку. Ми напишемо один раз, коли вийде платна версія.',
+          'invalid':'Перевірте адресу й позначку згоди та надішліть форму ще раз.',
+          'captcha':'Перевірка Cloudflare не пройшла або застаріла. Оновіть сторінку й спробуйте ще раз.',
+          'error':f'Не вдалося записати адресу. Спробуйте пізніше або напишіть на {PRIVACY_MAIL}.',
+          'noscript':'Форма потребує JavaScript: без нього перевірку Cloudflare Turnstile не пройти.'},
+    'en':{'title':'Notify me','email':'Email',
+          'consent':'I agree that my address is kept for one email about the paid version’s release, as described in the “<a href="{href}">Waitlist</a>” section of the Privacy page.',
+          'submit':'Sign up',
+          'ok':'Done: you are on the list. We will write once, when the paid version is released.',
+          'invalid':'Check the address and the consent box, then send the form again.',
+          'captcha':'The Cloudflare check failed or expired. Reload the page and try again.',
+          'error':f'The address could not be saved. Try again later or write to {PRIVACY_MAIL}.',
+          'noscript':'The form needs JavaScript: the Cloudflare Turnstile check cannot run without it.'},
+}
+RESULT_ROLES=(('ok','status'),('invalid','alert'),('captcha','alert'),('error','alert'))
+
+
+def page_form(page):
+    """None for an ordinary page, 'waitlist' for the waitlist page; any other value stops the build."""
+    form=page.get('form')
+    if form is None:return None
+    if form!='waitlist':raise ValueError(f'site.json: сторінка {page.get("slug")}: form може бути лише "waitlist"')
+    return form
+
+
+def waitlist_settings(manifest):
+    """The manifest's `waitlist` section: an https `action` and a `sitekey` of letters, digits, `_` and `-`."""
+    section=manifest.get('waitlist')
+    if not isinstance(section,dict):raise ValueError('site.json: сторінка з form потребує розділу waitlist з action і sitekey')
+    action,sitekey=section.get('action'),section.get('sitekey')
+    if not isinstance(action,str) or not action.startswith('https://') or any(ch.isspace() for ch in action) or not urlsplit(action).hostname:
+        raise ValueError('site.json: waitlist.action має бути адресою https://')
+    if not isinstance(sitekey,str) or not re.fullmatch(r'[0-9A-Za-z_-]+',sitekey):
+        raise ValueError('site.json: waitlist.sitekey має містити лише літери, цифри, _ і -')
+    return section
+
+
+def waitlist_form(manifest,lang):
+    esc=lambda value:html.escape(value,quote=True)
+    settings=waitlist_settings(manifest);text=WAITLIST_TEXT[lang]
+    consent=text['consent'].replace('{href}',esc(f'privacy.html#{WAITLIST_PRIVACY_ANCHOR[lang]}'))
+    results=''.join(f'<p class="waitlist-result" id="waitlist-{state}" role="{role}">{text[state]}</p>\n' for state,role in RESULT_ROLES)
+    return (f'<section class="waitlist" aria-labelledby="waitlist-form">\n<h2 id="waitlist-form">{text["title"]}</h2>\n{results}'
+            f'<form class="waitlist-form" method="post" action="{esc(settings["action"])}">\n'
+            f'<input type="hidden" name="lang" value="{lang}">\n'
+            f'<label for="waitlist-email">{text["email"]}</label>\n'
+            '<input id="waitlist-email" type="email" name="email" required autocomplete="email" maxlength="254">\n'
+            f'<label class="waitlist-consent"><input type="checkbox" name="consent" value="yes" required> <span>{consent}</span></label>\n'
+            f'<div class="cf-turnstile" data-sitekey="{esc(settings["sitekey"])}"></div>\n'
+            f'<button type="submit">{text["submit"]}</button>\n</form>\n'
+            f'<noscript><p>{text["noscript"]}</p></noscript>\n</section>\n')
+
+
 LOCALES={'uk':'uk_UA','en':'en_US'}
 
 
@@ -95,10 +157,21 @@ def head_meta(manifest,lang,slug,title):
     return ''.join(line+'\n' for line in lines)
 
 
-def page_html(template,manifest,lang,slug,content):
+def nav_icons(manifest):
+    """{slug: icon} from `nav_icon`: one short symbol (an emoji), and on one menu item only, so it stands out."""
+    icons={page['slug']:page['nav_icon'] for page in manifest['pages'] if 'nav_icon' in page}
+    for slug,icon in icons.items():
+        if not isinstance(icon,str) or not 1<=len(icon)<=4 or any(ch.isspace() or ch in '<>&"\'' for ch in icon):
+            raise ValueError(f'site.json: сторінка {slug}: nav_icon має бути одним символом-емодзі')
+    if len(icons)>1:raise ValueError(f'site.json: nav_icon може мати лише одна сторінка, а має {len(icons)}: {", ".join(icons)}')
+    return icons
+
+
+def page_html(template,manifest,lang,slug,content,scripts=''):
     pages=manifest['pages'];base='' if lang=='uk' else '../'
-    titles={page['slug']:page['title'][lang] for page in pages}
-    nav='\n'.join(f'<li><a href="{page["slug"]}.html"'+(' aria-current="page"' if page['slug']==slug else '')+f'>{html.escape(titles[page["slug"]])}</a></li>' for page in pages)
+    titles={page['slug']:page['title'][lang] for page in pages};icons=nav_icons(manifest)
+    label=lambda name:(f'<span class="nav-icon" aria-hidden="true">{icons[name]}</span> ' if name in icons else '')+html.escape(titles[name])
+    nav='\n'.join(f'<li><a href="{page["slug"]}.html"'+(' aria-current="page"' if page['slug']==slug else '')+f'>{label(page["slug"])}</a></li>' for page in pages)
     other='en' if lang=='uk' else 'uk'
     switch_href=f'en/{slug}.html' if lang=='uk' else f'../{slug}.html'
     # data-lang: site.js remembers a language picked here, so it wins over the browser languages.
@@ -106,7 +179,7 @@ def page_html(template,manifest,lang,slug,content):
     home='index.html' if 'index' in titles else f'{pages[0]["slug"]}.html'
     values={'lang':lang,'title':html.escape(titles[slug]),'base':base,'home':home,'switch':switch,'nav':nav,'alt':switch_href,
             'meta':head_meta(manifest,lang,slug,f'{titles[slug]} · Obscura Text Writer'),
-            'content':content,'nav_label':LABELS[lang]['nav'],'lang_label':LABELS[lang]['lang']}
+            'scripts':scripts,'content':content,'nav_label':LABELS[lang]['nav'],'lang_label':LABELS[lang]['lang']}
     content=values.pop('content');out=template
     for key,value in values.items():out=out.replace('{'+key+'}',value)
     return out.replace('{content}',content)  # last: page text may contain literal {placeholders}
@@ -123,7 +196,9 @@ def build(root=ROOT,out=None):
         folder.mkdir(parents=True,exist_ok=True)
         for page in manifest['pages']:
             target=folder/f'{page["slug"]}.html'
-            target.write_text(page_html(template,manifest,lang,page['slug'],render(root,lang,page['slug'],slugs)),encoding='utf-8',newline='\n')
+            content=render(root,lang,page['slug'],slugs);scripts=''
+            if page_form(page):content+=waitlist_form(manifest,lang);scripts=TURNSTILE_SCRIPT+'\n'
+            target.write_text(page_html(template,manifest,lang,page['slug'],content,scripts),encoding='utf-8',newline='\n')
             written.append(target)
     for name in ('site.css','site.js'):shutil.copyfile(root/SITE/name,out/name);written.append(out/name)
     images=root/IMAGES

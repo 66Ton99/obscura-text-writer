@@ -2161,3 +2161,21 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
   - тести-ключі Turnstile (`1x…`) для перевірки наживо не годяться: `siteverify` повертає `hostname` `example.com`, який Worker відхиляє;
   - тексти форми зафіксовано в плані; PACKAGING-001 не змінюється, бо адреси сайту описує DOCS-SITE.
 - Проба: документація Turnstile дозволяє хост `localhost` на робочому віджеті (не рекомендує лишати його назавжди).
+- План злито в `main` (PR #193, `f0e9898`), власник дав старт реалізації 16.11.2026.
+
+### 16.11.2026 — Store, специфікація 3: список очікування, периферія (реалізація)
+
+- Task 1 (`b67958a`): збирач малює форму за `"form": "waitlist"` маніфесту, скрипт Turnstile лише на цій сторінці (місце `{scripts}` шаблону), `check_site.py` перевіряє розділ `waitlist` і якір «Приватності». Сценарій S07.
+- Task 2 (`5489e2d`): `check_site.py --publish` у задачі `deploy` перед збиранням; `workers/waitlist/wrangler.toml` серед шляхів тригерів workflow. Сценарій S10.
+- Task 3 (`194745b`): сторінка `paid` uk/en перед `legal`, редакція «Приватності» 16.11.2026 з розділом «Список очікування» / «Waitlist», `PRIVACY_EDITION = "2026-11-16"`, `--waitlist-url https://obscurawriter.com/paid.html`. Пари `paid` і `privacy` підтверджено `--rehash`. Перегляд у браузері: блок результату показує лише стан з якоря.
+- Task 4: `docs/waitlist.md` (кроки власника, SQL, заміна на `workers.dev`), `manual.md#waitlist-live` (S08), `CONTRIBUTING.md` про тести Worker без Node, SPEC: відомі обмеження WAITLIST-001 і S08.
+- Рішення виконавця: текст згоди обгорнуто в `<span>`, бо `display: flex` мітки розкладав текст і посилання в колонки (видно в браузері).
+- `check_site.py --publish` на гілці зараз відмовляє через заглушки `sitekey` і `database_id`, як задумано: злиття до кроків власника не публікує сайт.
+- Повний pytest на `ce1e537`: без падінь (код 0).
+- Cross-review гілки (agy/gemini-3.8-flash; перша спроба впала за таймаутом 15 хв під навантаженням паралельного pytest, повтор пройшов): 5 зауважень, усі виправлено. Справжній дефект один: `check_site.py --publish` падав трасуванням `ValueError` на хибному значенні `form` замість рядка проблеми (тест `test_s10_bad_form_value_is_a_problem_not_a_crash` RED→GREEN). Решта: опис DOCS-SITE-S10 у traceability, маркер `WAITLIST-001` на тесті workflow, тести гілок (домен Worker, сайт без форми, немає сторінки `privacy`, український якір) і точні тексти проблем.
+- Фінальне рев'ю: самоперевірка, без субагентів.
+- `verify.py` на `21efb49` (з `C:/tmp/sp-verify`): passed 3521, failed 0, skipped 1.
+- Task 5 — кроки власника: база D1 `obscura-waitlist` у юрисдикції `eu` (перевірено `wrangler d1 info`), таблиця `waitlist`, віджет Turnstile, секрет `TURNSTILE_SECRET`, `wrangler deploy` з власним доменом `waitlist.obscurawriter.com` і cron. `database_id` (`8ad7521`) і sitekey (`060b164`) закомічено; `check_site.py --publish` — «Сайт готовий до публікації.». Дві пастки розгортання дописано в `docs/waitlist.md` (`b0851ab`, `df6f623`): id бази має бути в `wrangler.toml` до створення таблиці; cron потребує піддомену `workers.dev` (code 10063).
+- Дефект, усунений у `060b164`: допоміжна функція тесту S10 підміняла текст заглушки в справжньому `wrangler.toml` і після `8ad7521` перестала її знаходити; тепер підміняє рядок `database_id`. Тести перед `8ad7521` не запускались.
+- WAITLIST-001-S08 наживо (16.11.2026, `manual.md#waitlist-live`): PASS. Worker тимчасово з `ALLOWED_ORIGINS` для `http://localhost:8000`; українська сторінка → «Готово», рядок `lang=uk`, `privacy_edition=2026-11-16`, `created_at` в UTC, адреса малими літерами; англійська сторінка з тестовою адресою → «Done: you are on the list…», рядок `lang=en`. Без позначки згоди браузер форму не надсилає (підказку показує Chrome мовою свого інтерфейсу — не дефект сторінки). Хибну адресу наживо не перевіряли (покрито тестами Worker). Тестовий рядок видалено; адресу власника, записану на українській сторінці, залишено до його рішення. `wrangler.toml` відновлено, повторний `deploy`: `ALLOWED_ORIGINS` рівно `https://obscurawriter.com`.
+- Після злиття: перевірити форму на `obscurawriter.com` і прибрати `localhost` з хостів віджета Turnstile.

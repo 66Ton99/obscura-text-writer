@@ -1,6 +1,6 @@
 # Privacy
 
-Version of 15.11.2026. This page describes what data the author of the Obscura Text Writer project sees when you use the application or this site, or write to us. Send privacy questions and requests to [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com).
+Version of 16.11.2026. This page describes what data the author of the Obscura Text Writer project sees when you use the application or this site, join the paid version waitlist, or write to us. Send privacy questions and requests to [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com).
 
 ## The application
 
@@ -12,7 +12,8 @@ Version of 15.11.2026. This page describes what data the author of the Obscura T
 
 ## This site
 
-- The site is static: no accounts, forms, cookies, analytics or advertising pixels. A language you picked with the switcher is remembered only in your browser (`localStorage`).
+- The site has no accounts, cookies, analytics or advertising pixels. A language you picked with the switcher is remembered only in your browser (`localStorage`).
+- The only form is the waitlist on the [Paid version](paid.md) page. Cloudflare Turnstile runs there: it checks that a person is filling in the form and for that processes technical browser data under Cloudflare's privacy policy. What happens to your address is described below, in the [Waitlist](#waitlist) section.
 - The site is hosted on GitHub Pages. GitHub may log technical request data, including the IP address, for security and to run the service, under its privacy policy. Domain names are served by Cloudflare (DNS).
 - Links to GitHub, model providers and other sites lead to services with their own privacy rules.
 
@@ -22,9 +23,17 @@ Version of 15.11.2026. This page describes what data the author of the Obscura T
 - This data is used only to answer and handle your message and is not shared with third parties unless the law requires it. Messages are kept as long as needed to handle them, or until you ask for deletion.
 - Do not send provider keys. Attach parts of your stories only when the message cannot be handled without them.
 
+## Waitlist
+
+- When you sign up on the [Paid version](paid.md) page, we keep your email address, the page language, the date of signing up and the date of the version of this page you agreed to. The IP address goes only to Cloudflare Turnstile for the check and is not kept.
+- The purpose is one email about the paid version's release. The basis is your consent, given with the checkbox in the form.
+- Entries are stored in a Cloudflare D1 database in the EU jurisdiction. Cloudflare processes them on behalf of the project author.
+- The address is kept until the release email, but no longer than 24 months from signing up: older entries are deleted automatically every day. After the email the list is deleted entirely.
+- The address is not confirmed by email. If someone else entered your address or you changed your mind, write to [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com) and the entry will be deleted.
+
 ## Your rights
 
-You can ask which of your messages are kept, and have them corrected or deleted, by writing to [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com). The data in your data directory is yours: you manage it yourself, and the project author has no access to it.
+You can ask which of your messages and your waitlist entry are kept, and have them corrected or deleted, by writing to [privacy@obscurawriter.com](mailto:privacy@obscurawriter.com). The data in your data directory is yours: you manage it yourself, and the project author has no access to it.
 
 The application is for adults only. See also [Terms, license and name](legal.md).
 

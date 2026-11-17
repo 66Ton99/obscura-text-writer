@@ -82,6 +82,8 @@ def test_privacy_edition_matches_site():
     privacy = (ROOT / 'docs' / 'site' / 'uk' / 'privacy.md').read_text(encoding='utf-8')
     day, month, year = re.search(r'Редакція від (\d{2})\.(\d{2})\.(\d{4})', privacy).groups()
     assert wrangler()['vars']['PRIVACY_EDITION'] == f'{year}-{month}-{day}'
+    english = (ROOT / 'docs' / 'site' / 'en' / 'privacy.md').read_text(encoding='utf-8')
+    assert re.search(r'Version of (\d{2})\.(\d{2})\.(\d{4})', english).groups() == (day, month, year)
 
 
 @pytest.mark.req('WAITLIST-001')

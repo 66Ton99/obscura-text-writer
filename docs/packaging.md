@@ -17,7 +17,7 @@
   --out C:\tmp\obscura-build `
   --report-url https://obscurawriter.com/report.html `
   --support-url https://<адреса подяки> `
-  --waitlist-url https://<адреса запису на платну версію> `
+  --waitlist-url https://obscurawriter.com/paid.html `
   --identity-name <Name з Partner Center> `
   --publisher "<Publisher з Partner Center>" `
   --publisher-display-name "<назва видавця>" `
@@ -26,7 +26,8 @@
 ```
 
 - `--out` — порожня або відсутня тека. Скрипт пише лише в неї; Python і PyInstaller можуть користуватися системною тимчасовою текою.
-- `--report-url` обов’язковий для видання `store`: це сторінка сайту [Поскаржитися на результат](https://obscurawriter.com/report.html) з адресою report@obscurawriter.com (для англійського інтерфейсу є `…/en/report.html`, але в збірку передається одна адреса). Політика приватності для сторінки в Partner Center — https://obscurawriter.com/privacy.html. Інші адреси можна не задавати.
+- `--report-url` обов’язковий для видання `store`: це сторінка сайту [Поскаржитися на результат](https://obscurawriter.com/report.html) з адресою report@obscurawriter.com (для англійського інтерфейсу є `…/en/report.html`, але в збірку передається одна адреса). Політика приватності для сторінки в Partner Center — https://obscurawriter.com/privacy.html.
+- `--waitlist-url` — сторінка сайту [Платна версія](https://obscurawriter.com/paid.html) з формою списку очікування (для англійського інтерфейсу є `…/en/paid.html`, але в збірку передається одна адреса). Її відкривають посилання «Повідомте про платну версію» і підказка в чаті про межу видання. Як розгорнути форму — [docs/waitlist.md](waitlist.md). Інші адреси можна не задавати.
 - Ідентичність пакета (`--identity-name`, `--publisher`, `--publisher-display-name`, `--display-name`) дає Partner Center після резервування назви застосунку. Для пробного збирання підійдуть будь-які значення.
 - `--skip-msix` зупиняється після самоперевірки й не потребує ні ідентичності, ні `makeappx`.
 - `--allow-vendor-runtime` — див. розділ про інтерпретатор.
