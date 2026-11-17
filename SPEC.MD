@@ -4649,11 +4649,13 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 
 Репозиторій SHALL містити плагін Claude Code `obscura` зі скілами, що ведуть автора від задуму до книжки через інструменти MCP-BRIDGE. Сервер для цього не змінюється. Маркетплейс `obscura` лежить в `integrations/claude/.claude-plugin/marketplace.json`, плагін — в `integrations/claude/obscura/`. Встановлення в Claude Code: `claude plugin marketplace add "<тека Obscura>\integrations\claude"` і `claude plugin install obscura@obscura`. Плагін MUST NOT містити конфігурації MCP-сервера (`.mcp.json`, `mcpServers`): сервер реєструє «Підключити до Claude» (STORE-MCP-001) або команда із сайту, тож друга реєстрація дублювала б запис чи вказувала б на інший порт.
 
-- **Скіли першого пакета:**
+- **Скіли:**
   - `start-story` — ворота інтерв’ю: герої → ідея/план/фінал → обсяг → назва → решта; підсумок, згода, `create_story` → `get_templates` → `import_plan_and_characters` → `get_story`;
-  - `draft-scene` — гілка `chat`: brief → draft → edit → memory через `get_stage_task`/`save_stage_result`/`save_draft`, відповідь edit строго за `result_format` (`prose`, `patches`, `diff`), зупинка на перегляді правок і підтвердженні пам’яті; гілка `obscura`: чотири запуски `start_run` на сцену, перегляд без `confirm` перед кожним, згода покроково або на всю сцену, стеження через `get_run`.
-
-  `series-bible`, `publish`, `setup-models` додає наступний пакет.
+  - `draft-scene` — гілка `chat`: brief → draft → edit → memory через `get_stage_task`/`save_stage_result`/`save_draft`, відповідь edit строго за `result_format` (`prose`, `patches`, `diff`), зупинка на перегляді правок і підтвердженні пам’яті; гілка `obscura`: чотири запуски `start_run` на сцену, перегляд без `confirm` перед кожним, згода покроково або на всю сцену, стеження через `get_run`;
+  - `series-bible` — питання про світ → перелік статей (сцена «Сцена N: <тема>», 400–800 слів, без художніх подій) → згода → окремий твір «<Серія>: біблія» з преамбулою «Серія: <назва>» / «Номер: біблія» → `get_story` із `series.bible` = true; статті пише `draft-scene` після окремого прохання;
+  - `publish` — `get_story` (незавершений твір експортується лише за згодою, з `allow_incomplete`) → `get_publication` → автор лише з відповіді автора (наявний підпис або `add_signature`), анотація, жанри, ключові слова, цикл → згода → `update_publication` → `generate_cover` у вибраній палітрі зі збереженої картки → `update_publication({cover_id})` → `export_book`;
+  - `setup-models` — ціль (без цензури, бюджет, провайдер із ключем) → власний пресет (`apply_role_preset` з переглядом) або рецепт із `setup-models/references/recipes.md` → одна згода на таблицю «роль → модель, тариф» → для кожної ролі `update_settings({provider, model})` і звірка `get_settings(models_for_role, models_query)` з точним `id`, тарифом і `uncensored` → заміна з тієї самої родини за згодою або відкат до збережених полів. Ключ у чаті не приймається: скіл нічого не змінює й просить вписати ключ в інтерфейсі.
+- **Рецепти моделей** — довідка, а не обіцянка: OpenRouter (звичайний рейтинг) і Venice (без цензури) по три бюджети «дешево / баланс / якість», зі стандартними назвами ключів і датою перевірки за живими каталогами. Письменник і редактор у кожному рецепті — різні моделі, за можливості різних родин (рішення власника 2026-11-17: редактор тієї самої моделі майже нічого не виправляє); те саме правило діє під час пошуку заміни. Без цензури рекомендується, коли рейтинг сексуального змісту ≥ 1 або темних тем 2.
 - **Спільні правила** — `obscura/shared/rules.md`, на який посилається кожен SKILL.md через `${CLAUDE_PLUGIN_ROOT}`:
   - мова автора;
   - одне питання за раз (`AskUserQuestion` або нумеровані варіанти);
@@ -4670,13 +4672,16 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - **Інваріант:** скіли називають лише інструменти з `storygen.mcp.bridge.TOOLS`, у вигляді `` `назва` `` або `mcp__obscura__назва`.
 - **Перевірка:**
   - структурна — `tests/test_claude_plugin.py`;
-  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config` без оболонки, вебу й запису файлів (`--disallowedTools`), бо конфігурація MCP ізолює лише MCP. Сервер стенда не бачить ключів провайдерів: змінні `*_API_KEY` прибрано, а сховище ключів ОС, спільне з Obscura автора, вимкнено (`PYTHON_KEYRING_BACKEND`).
+  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config` без оболонки, вебу й запису файлів (`--disallowedTools`), бо конфігурація MCP ізолює лише MCP. Сервер стенда не бачить ключів провайдерів: змінні `*_API_KEY` прибрано, а сховище ключів ОС, спільне з Obscura автора, вимкнено (`PYTHON_KEYRING_BACKEND`). Сценарій може додати змінні (`start_stand(work, extra_env)`): S08-b дає фіктивний `OPENROUTER_API_KEY`, бо публічний каталог OpenRouter відповідає й на нього, а моделей `setup-models` не викликає.
 
   Прогони не торкаються робочого екземпляра автора. Сесія `claude`, що завершилась помилкою чи обірвалася, сценарію не проходить, а етапи зараховуються за станом сцени на сервері, не за самими викликами. Процедура й правило провалу — `docs/verification/manual.md#claude-skills`, фактичні прогони — у журналі R-35.
 - **Відомі обмеження:**
   - вимір розподілу — одна сцена й три прогони на варіант;
   - вартість у прогонах — оцінка за цінами API, а за підпискою claude.ai витрачається її ліміт;
   - для встановлення через `.mcpb` назва сервера `obscura` не перевірена;
+  - рецепти застарівають разом із каталогами провайдерів; звірка після запису ловить зниклу модель, але не кращу нову;
+  - роль, якої до `setup-models` не було, після відкату лишається з неперевіреною моделлю: чат не може прибрати роль, тож лише повідомляє автору;
+  - кнопка «Запропонувати» анотації в Obscura використовує роль планувальника, і дешевий планувальник із малим вікном може не вмістити довгу книжку; `publish` пише анотацію в чаті, а зміну ролі описано в #196 (R-38);
   - пакування для Store (ZIP для Desktop, кнопка встановлення) — окремий пакет.
 
 <a id="claude-skills-s01"></a>
@@ -4721,6 +4726,27 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - WHEN автор просить написати сцену
 - THEN `start_run` з `confirm=true` не викликається
 - AND чат радить налаштувати моделі.
+
+<a id="claude-skills-s07"></a>
+#### Scenario: CLAUDE-SKILLS-S07 — Публікація без вигаданого автора
+- GIVEN твір `chat`, у першій сцені якого є проза, а в решти немає
+- WHEN автор просить підготувати публікацію, не назвавши автора
+- THEN жодного `add_signature` і жодного `update_publication` з `author_ids`, а чат питає ім’я
+- AND повний запит з автором, палітрою «Ліс» і FB2 дає `generate_cover(palette='forest')`, після нього `update_publication` з `cover_id`, і `export_book(format='fb2', allow_incomplete=true)` з повідомленням, що твір незавершений.
+
+<a id="claude-skills-s08"></a>
+#### Scenario: CLAUDE-SKILLS-S08 — Моделі з рецепта, звірені з каталогом
+- GIVEN твір `obscura` без налаштованих ролей
+- WHEN автор надсилає ключ API в чат
+- THEN `update_settings` і `apply_role_preset` з `confirm` не викликаються, а ключ у відповіді не повторюється
+- AND коли ключ OpenRouter є в середовищі сервера, а автор погоджується з дешевим рецептом, кожна налаштована роль має модель із живого каталогу OpenRouter, щонайменше одну роль звірено через `models_for_role`, а письменник і редактор — різні моделі.
+
+<a id="claude-skills-s09"></a>
+#### Scenario: CLAUDE-SKILLS-S09 — Біблія серії після згоди з переліком
+- GIVEN порожній стенд
+- WHEN автор хоче цикл, не давши переліку статей
+- THEN `create_story` не викликається, а чат ставить питання
+- AND повний запит із переліком і згодою створює рівно один твір, `get_story` якого має `series.bible` = true, і жодної статті не записано (`save_draft`, `save_stage_result`, `start_run`).
 
 <a id="writing-mode"></a>
 ### Requirement: WRITING-MODE — Режим твору: пише чат чи Obscura

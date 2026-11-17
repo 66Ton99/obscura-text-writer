@@ -5949,6 +5949,52 @@
       }
     },
     {
+      "id": "CLAUDE-SKILLS-S07",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "publish: автор лише з відповіді автора, обкладинка в названій палітрі й у картці, FB2 з allow_incomplete. Автоматично перевіряються функції перевірки прогону. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_run_scenarios.py::test_publish_without_author_never_sets_one",
+        "tests/test_run_scenarios.py::test_publish_without_author_never_adds_a_signature",
+        "tests/test_run_scenarios.py::test_publish_cover_uses_the_named_palette",
+        "tests/test_run_scenarios.py::test_publish_cover_must_be_set_on_the_card",
+        "tests/test_run_scenarios.py::test_publish_with_cover_set_has_no_problems"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
+      "id": "CLAUDE-SKILLS-S08",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "setup-models: ключ у чаті нічого не змінює; ролі з рецепта є в живому каталозі, звірені, письменник ≠ редактор; фіктивний ключ лише в середовищі сервера стенда. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_run_scenarios.py::test_key_pasted_in_chat_means_no_settings_writes",
+        "tests/test_run_scenarios.py::test_configured_role_with_model_missing_from_catalog_is_a_problem",
+        "tests/test_run_scenarios.py::test_roles_written_without_any_check_are_a_problem",
+        "tests/test_run_scenarios.py::test_recipe_with_same_writer_and_editor_is_a_problem",
+        "tests/test_skills_stand.py::test_fake_key_reaches_only_the_stand_env"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
+      "id": "CLAUDE-SKILLS-S09",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "series-bible: нічого до згоди з переліком; з дозволом один твір із series.bible = true і без статей. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_run_scenarios.py::test_bible_created_before_consent_is_a_problem",
+        "tests/test_run_scenarios.py::test_bible_with_consent_must_be_marked_as_bible",
+        "tests/test_run_scenarios.py::test_bible_with_consent_writes_no_articles"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
       "id": "WRITING-MODE-S01",
       "requirement": "WRITING-MODE",
       "scope": "Режим під час створення з форми й моста, типове значення форми, чинний запис без поля, невідомий режим. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",

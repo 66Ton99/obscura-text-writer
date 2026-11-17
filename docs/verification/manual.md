@@ -405,7 +405,7 @@ DATA-010-S02. Автоматична частина — Playwright `tests/web/br
 <a id="claude-skills"></a>
 ## Скіли Obscura для Claude: сценарії поведінки
 
-CLAUDE-SKILLS-S04…S06. Поведінку моделі pytest детерміновано не перевірить, тож сценарії проганяються сесіями `claude -p` на ізольованому стенді:
+CLAUDE-SKILLS-S04…S09. Поведінку моделі pytest детерміновано не перевірить, тож сценарії проганяються сесіями `claude -p` на ізольованому стенді:
 - окрема тека даних у `C:/tmp`;
 - вільний порт;
 - `--strict-mcp-config`;
@@ -416,12 +416,12 @@ CLAUDE-SKILLS-S04…S06. Поведінку моделі pytest детермін
 Запуск (у середовищі має бути `claude` з входом в акаунт):
 
 ```
-python integrations/claude/tools/run_scenarios.py --scenario S04-a --scenario S04-b --scenario S05-a --scenario S05-b --scenario S06 --work C:/tmp/<назва> --model sonnet
+python integrations/claude/tools/run_scenarios.py --scenario S04-a --scenario S04-b --scenario S05-a --scenario S05-b --scenario S06 --scenario S07-a --scenario S07-b --scenario S08-a --scenario S08-b --scenario S09-a --scenario S09-b --work C:/tmp/<назва> --model sonnet
 ```
 
 Опис сценаріїв і тверджень — `integrations/claude/obscura/evals/*.json` (формат `skill-creator`). Скрипт друкує рядок JSON на сценарій: `passed`, `problems`, `cost_usd`, послідовність інструментів. У `C:/tmp/<назва>/<сценарій>/` лишаються `run.jsonl`, `text.md` і `summary.json`.
 
-Автоматично перевіряються послідовність викликів і кінцевий стан стенда. Вручну за `text.md` перевіряються:
+Автоматично перевіряються послідовність викликів і кінцевий стан стенда. S08-b звіряє налаштовані ролі з живим каталогом `https://openrouter.ai/api/v1/models`, тож потребує мережі; сервер стенда отримує фіктивний `OPENROUTER_API_KEY` лише у своєму середовищі. Вручну за `text.md` перевіряються:
 - одне питання за раз;
 - рядок прогресу після кожного етапу;
 - мова відповіді.
