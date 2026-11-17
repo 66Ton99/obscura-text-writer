@@ -128,3 +128,11 @@ def test_bible_with_consent_must_be_marked_as_bible():
 def test_bible_with_consent_writes_no_articles():
     calls = [('create_story', {}), ('get_templates', {}), ('import_plan_and_characters', {}), ('get_story', {}), ('save_draft', {})]
     assert bible_problems(calls, {'title': 'Маяки', 'number': None, 'bible': True}, consent=True) ==         ["після створення записано тексти: ['save_draft']"]
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_role_left_with_the_default_window_is_a_problem():
+    calls = [('update_settings', {}), ('get_settings', {'models_for_role': 'writer'})]
+    roles = {'writer': {'provider': 'openrouter', 'model': 'deepseek/deepseek-v4-flash', 'context_tokens': 8192}}
+    assert settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': {'deepseek/deepseek-v4-flash'}}) == \
+        ['роль writer: context_tokens 8192 — менше 32768, сцени не вмістяться']

@@ -20,7 +20,7 @@ An editor that is the writer's own model barely corrects anything. In every reci
 
 | Budget | planner | writer | editor | memory |
 |---|---|---|---|---|
-| Cheap | `google/gemma-4-26b-a4b-it` (0.0765/0.255) | `deepseek/deepseek-v4-flash` (0.09/0.18) | `z-ai/glm-5.3-flash` (0.15/0.5) | `google/gemma-4-26b-a4b-it` |
+| Cheap | `google/gemma-4-26b-a4b-it` (0.0765/0.255) | `deepseek/deepseek-v4-flash` (0.09/0.18) | `z-ai/glm-5.3-flash` (0.0399/0.0784) | `google/gemma-4-26b-a4b-it` |
 | Balanced | `deepseek/deepseek-v4-flash` | `deepseek/deepseek-v4.1-flash` (0.3/1.2) | `qwen/qwen3.7-plus` (0.32/1.28) | `deepseek/deepseek-v4-flash` |
 | Quality | `anthropic/claude-sonnet-5.5` (2/10) | `anthropic/claude-sonnet-5.5` | `openai/gpt-6.1-sol` (2/10) | `deepseek/deepseek-v4.1-flash` |
 

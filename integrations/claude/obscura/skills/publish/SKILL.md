@@ -14,7 +14,7 @@ This skill fills the book's publication card, draws a text cover and exports the
 `get_story(story_id)`. Export takes only the prose the author has approved in Obscura.
 
 - Every scene has prose: go on.
-- Some scenes do not: tell the author which ones and ask whether to export the unfinished book anyway. On a yes, export later with `allow_incomplete=true` and say in the final message that the book is unfinished. On a no, stop and suggest finishing them with the `draft-scene` skill.
+- Some scenes do not: tell the author which ones and ask whether to export the unfinished book anyway. A request that names the export and says to go on without questions already answers yes. On a yes, export later with `allow_incomplete=true` and say in the final message that the book is unfinished. On a no, stop and suggest finishing them with the `draft-scene` skill.
 
 ## 2. Read the card
 

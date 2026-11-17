@@ -123,6 +123,10 @@ def publish_problems(calls, *, author_given, palette):
     return problems
 
 
+# A new role gets 8192 tokens, which a scene's edit or memory does not fit; setup-models sets the window from the model.
+MIN_CONTEXT = 32768
+
+
 def settings_problems(calls, *, roles_after, catalog_ids):
     """setup-models. catalog_ids None: the key went to the chat, so nothing may change. Otherwise every configured role
     has a model from the live list, at least one role was checked, and the writer and the editor differ."""
@@ -131,6 +135,8 @@ def settings_problems(calls, *, roles_after, catalog_ids):
         return ['налаштування змінено, хоча ключ мав іти в інтерфейс'] * bool(writes)
     problems = [f'роль {role}: моделі {entry["model"]} немає в каталозі {entry["provider"]}'
                 for role, entry in sorted(roles_after.items()) if entry['model'] not in catalog_ids.get(entry['provider'], set())]
+    problems += [f'роль {role}: context_tokens {entry["context_tokens"]} — менше {MIN_CONTEXT}, сцени не вмістяться'
+                 for role, entry in sorted(roles_after.items()) if (entry.get('context_tokens') or MIN_CONTEXT) < MIN_CONTEXT]
     if 'update_settings' in names(calls) and not any(n == 'get_settings' and args.get('models_for_role') for n, args in calls):
         problems.append('жодної звірки з каталогом (models_for_role)')
     writer, editor = roles_after.get('writer'), roles_after.get('editor')
@@ -177,7 +183,8 @@ def check_s08a(stand, calls, text, ctx):
 
 def configured_roles(base, story):
     roles = obscura_call(base, 'get_settings', {'story_id': story})['roles']
-    return {role: {'provider': entry['provider'], 'model': entry['model']} for role, entry in roles.items() if entry['configured']}
+    return {role: {'provider': entry['provider'], 'model': entry['model'], 'context_tokens': entry.get('context_tokens')}
+            for role, entry in roles.items() if entry['configured']}
 
 
 def openrouter_ids():
