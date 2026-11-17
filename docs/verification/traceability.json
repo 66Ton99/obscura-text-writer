@@ -5973,7 +5973,8 @@
         "tests/test_run_scenarios.py::test_configured_role_with_model_missing_from_catalog_is_a_problem",
         "tests/test_run_scenarios.py::test_roles_written_without_any_check_are_a_problem",
         "tests/test_run_scenarios.py::test_recipe_with_same_writer_and_editor_is_a_problem",
-        "tests/test_skills_stand.py::test_fake_key_reaches_only_the_stand_env"
+        "tests/test_skills_stand.py::test_fake_key_reaches_only_the_stand_env",
+        "tests/test_run_scenarios.py::test_role_left_with_the_default_window_is_a_problem"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#claude-skills",
