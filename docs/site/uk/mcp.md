@@ -112,7 +112,7 @@ codex mcp add obscura -- C:\Obscura\.venv\Scripts\storygen-mcp.exe
 - `publish` — картка публікації, текстова обкладинка й експорт у FB2, EPUB чи PDF;
 - `setup-models` — моделі для чотирьох ролей за жанром і бюджетом, зі звіркою зі списком провайдера.
 
-**Встановлення.** Спершу підключіть Obscura до Claude Code (див. [Підключення](#підключення)). Потім у терміналі, замінивши `C:\Obscura` на теку, де лежить Obscura:
+**Встановлення.** Спершу підключіть Obscura до Claude Code (див. [Підключення](#підключення)). Скіли входять у версію з вихідного коду; у версію з Microsoft Store вони ще не входять. Потім у терміналі, замінивши `C:\Obscura` на теку, де лежить Obscura:
 
 ```powershell
 claude plugin marketplace add "C:\Obscura\integrations\claude"

@@ -112,7 +112,7 @@ Skills are ready-made instructions for Claude Code that lead the conversation st
 - `publish` — the publication card, a text cover and export to FB2, EPUB or PDF;
 - `setup-models` — models for the four roles by genre and budget, checked against the provider's list.
 
-**Installation.** First connect Obscura to Claude Code (see [Connecting](#connecting)). Then, in a terminal, replacing `C:\Obscura` with the folder where Obscura lives:
+**Installation.** First connect Obscura to Claude Code (see [Connecting](#connecting)). The skills come with the source version; the Microsoft Store version does not include them yet. Then, in a terminal, replacing `C:\Obscura` with the folder where Obscura lives:
 
 ```powershell
 claude plugin marketplace add "C:\Obscura\integrations\claude"
