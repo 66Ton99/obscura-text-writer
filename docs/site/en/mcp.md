@@ -102,6 +102,36 @@ Or add a `[mcp_servers.obscura]` section with the line `command = 'C:\Obscura\.v
 
 Browser chat clients (claude.ai, chatgpt.com) do not support local servers.
 
+## Skills for Claude Code
+
+Skills are ready-made instructions for Claude Code that lead the conversation step by step: one question at a time, with a summary and your consent before every write. The chat works with Obscura without them too, but then you explain every step yourself. The `obscura` set has five skills:
+
+- `start-story` — from an idea to a story with a plan and character cards;
+- `series-bible` — a world bible for a cycle of books: articles on magic, organisations, geography, chronology;
+- `draft-scene` — a scene stage by stage: brief, draft, edit, memory; in "Obscura writes" mode, runs of its models;
+- `publish` — the publication card, a text cover and export to FB2, EPUB or PDF;
+- `setup-models` — models for the four roles by genre and budget, checked against the provider's list.
+
+**Installation.** First connect Obscura to Claude Code (see [Connecting](#connecting)). The skills come with the source version; the Microsoft Store version does not include them yet. Then, in a terminal, replacing `C:\Obscura` with the folder where Obscura lives:
+
+```powershell
+claude plugin marketplace add "C:\Obscura\integrations\claude"
+```
+
+```powershell
+claude plugin install obscura@obscura
+```
+
+**Using them.** Just ask the chat, for example "I want to write a story about a lighthouse" or "set up models for my story", and Claude picks the right skill itself. You can also name a skill: `/obscura:start-story`, `/obscura:publish` and so on.
+
+The skills do not accept API keys in the chat. If you send a key to the chat, the skill changes nothing and asks you to enter the key in Obscura's settings; it is better to revoke that key at the provider.
+
+**Updating and removing.** A new version of Obscura updates the skills too: Claude Code takes them from the Obscura folder in the next session. To remove the set:
+
+```powershell
+claude plugin uninstall obscura@obscura
+```
+
 ## Writing with the chat
 
 1. Discuss the idea, the plan and the characters with the chat.
