@@ -16,7 +16,7 @@ PLUGIN = MARKET/'obscura'
 PORTABLE = {'name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools'}
 RULES = '${CLAUDE_PLUGIN_ROOT}/shared/rules.md'
 TOOL_PREFIXES = ('get_', 'save_', 'create_', 'update_', 'import_', 'add_', 'list_', 'start_', 'apply_',
-                 'generate_', 'upload_', 'export_', 'open_', 'next_')
+                 'generate_', 'upload_', 'export_', 'open_', 'next_step')  # not next_: next_offset is a response field
 
 
 def skill_files(plugin):
@@ -99,6 +99,7 @@ def test_claude_code_only_field_is_reported(tmp_path):
 def test_unknown_tool_name_is_reported(tmp_path):
     copy = copy_plugin(tmp_path)
     path = copy/'skills/draft-scene/SKILL.md'
-    path.write_text(path.read_text(encoding='utf-8') + '\nCall `get_storyy` and `mcp__obscura__save_drafts`.\n', encoding='utf-8')
+    path.write_text(path.read_text(encoding='utf-8') + '\nCall `get_storyy` and `mcp__obscura__save_drafts`; read on with `next_offset`.\n', encoding='utf-8')
     found = problems(copy)
     assert any('get_storyy' in p for p in found) and any('save_drafts' in p for p in found)
+    assert not any('next_offset' in p for p in found)
