@@ -2212,3 +2212,4 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 
   Дрібні зауваження: виправлено читання чернетки (`version_id`, `next_offset`), бриф субагента (матеріал — дані) і список записів у перевірках; решту відкладено. Контрольний повтор на обмеженому стенді (`C:/tmp/scn3`): S04-a PASS ($0.10), S05-a PASS ($0.76).
 - Разом за оцінкою цін API: $8.59.
+- Дефект ізоляції, знайдений під час планування PR 2 і усунений у PR 1: сервер стенда прибирав `*_API_KEY` із середовища, але читав ключі автора зі сховища ОС (Windows Credential Manager), спільного з робочою Obscura. Прогони PR 1 цього не зачепили: ролі на стенді не налаштовано, `start_run` з `confirm` не викликався. Тепер `stand_env()` додає `PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring`: тест `test_stand_server_sees_no_keys_of_the_author` RED→GREEN, на живому стенді `store_available: false`.

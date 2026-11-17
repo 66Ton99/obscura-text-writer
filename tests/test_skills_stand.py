@@ -3,7 +3,8 @@ import json
 
 import pytest
 
-from scripts.skills_stand import claude_command, obscura_call, parse_result, tool_calls, tool_errors, write_mcp_config
+from scripts.skills_stand import (claude_command, obscura_call, parse_result, stand_env, tool_calls, tool_errors,
+                                  write_mcp_config)
 
 
 @pytest.mark.req('CLAUDE-SKILLS')
@@ -64,3 +65,12 @@ def test_obscura_call_reaches_the_given_server(tmp_path):
     story = obscura_call(http, 'create_story', {'title': 'Стенд', 'language': 'uk'})
     assert story['title'] == 'Стенд'
     assert [s['id'] for s in obscura_call(http, 'list_stories', {})] == [story['id']]
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_stand_server_sees_no_keys_of_the_author(monkeypatch):
+    monkeypatch.setenv('OPENROUTER_API_KEY', 'real-key-of-the-author')
+    env = stand_env()
+    assert not [name for name in env if name.upper().endswith('_API_KEY')]
+    # The OS credential store is shared with the author's Obscura: the stand server must not read or write it.
+    assert env['PYTHON_KEYRING_BACKEND'] == 'keyring.backends.fail.Keyring'

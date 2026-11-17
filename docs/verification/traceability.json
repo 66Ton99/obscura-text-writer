@@ -5908,6 +5908,7 @@
       "tests": [
         "tests/test_skills_stand.py::test_claude_command_is_isolated",
         "tests/test_skills_stand.py::test_obscura_call_reaches_the_given_server",
+        "tests/test_skills_stand.py::test_stand_server_sees_no_keys_of_the_author",
         "tests/test_run_scenarios.py::test_creation_alone_has_no_problems",
         "tests/test_run_scenarios.py::test_writing_scenes_after_creation_is_a_problem"
       ],

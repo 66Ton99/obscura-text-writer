@@ -4670,7 +4670,7 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - **Інваріант:** скіли називають лише інструменти з `storygen.mcp.bridge.TOOLS`, у вигляді `` `назва` `` або `mcp__obscura__назва`.
 - **Перевірка:**
   - структурна — `tests/test_claude_plugin.py`;
-  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config` без оболонки, вебу й запису файлів (`--disallowedTools`), бо конфігурація MCP ізолює лише MCP.
+  - поведінка — сценарії `integrations/claude/obscura/evals/*.json`, які `integrations/claude/tools/run_scenarios.py` проганяє на ізольованому стенді `scripts/skills_stand.py`: новий сервер у теці `C:/tmp`, `claude -p --plugin-dir … --mcp-config … --strict-mcp-config` без оболонки, вебу й запису файлів (`--disallowedTools`), бо конфігурація MCP ізолює лише MCP. Сервер стенда не бачить ключів провайдерів: змінні `*_API_KEY` прибрано, а сховище ключів ОС, спільне з Obscura автора, вимкнено (`PYTHON_KEYRING_BACKEND`).
 
   Прогони не торкаються робочого екземпляра автора. Сесія `claude`, що завершилась помилкою чи обірвалася, сценарію не проходить, а етапи зараховуються за станом сцени на сервері, не за самими викликами. Процедура й правило провалу — `docs/verification/manual.md#claude-skills`, фактичні прогони — у журналі R-35.
 - **Відомі обмеження:**

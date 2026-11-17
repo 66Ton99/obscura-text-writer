@@ -152,10 +152,16 @@ def run_claude(cmd, out, timeout=1800):
     return result
 
 
+def stand_env():
+    """The stand server's environment: no provider keys, and no OS credential store, which the author's Obscura shares."""
+    from scripts.capture_screenshots import server_env
+    return server_env() | {'PYTHON_KEYRING_BACKEND': 'keyring.backends.fail.Keyring'}
+
+
 @contextlib.contextmanager
 def start_stand(work):
     """A fresh Obscura on a free port with `work/data`; stopped on exit."""
-    from scripts.capture_screenshots import ensure_port_free, free_port, server_command, server_env, wait_for
+    from scripts.capture_screenshots import ensure_port_free, free_port, server_command, wait_for
     work = Path(work).resolve()
     data = work/'data'
     if data.exists() and any(data.iterdir()):
@@ -166,7 +172,7 @@ def start_stand(work):
     port = free_port()
     ensure_port_free(port)
     base = f'http://127.0.0.1:{port}'
-    server = subprocess.Popen(server_command(data, port, env_file), cwd=ROOT, env=server_env(),
+    server = subprocess.Popen(server_command(data, port, env_file), cwd=ROOT, env=stand_env(),
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         wait_for(base+'/', server)
