@@ -647,7 +647,7 @@ Read-only розбір останнього запуску06.11.2026 вияви�
 
 ## R-35 — Скіли Obscura для Claude і кнопка «Підключити до Claude»
 
-**Статус:** запит власника 14.11.2026, GitHub [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173). Дослідження `docs/research/2026-11-14-claude-skills-distribution.md`. Місце в черзі не визначене; специфікацію зміни оформлюють перед реалізацією.
+**Статус:** перший пакет реалізовано 17.11.2026: локальний плагін Claude Code зі скілами `start-story`, `draft-scene`, `publish`, `series-bible`, `setup-models` (специфікація `docs/superpowers/specs/2026-11/2026-11-17-claude-skills-plugin-design.md`, PR [#195](https://github.com/ysilvestrov/obscura-text-writer/pull/195) і [#197](https://github.com/ysilvestrov/obscura-text-writer/pull/197); GitHub [#173](https://github.com/ysilvestrov/obscura-text-writer/issues/173) закрито). Не зроблено, окремими пакетами: пакування для Store (ZIP скілів для Desktop, кнопка встановлення плагіна), методика в MCP для клієнтів без скілів, скіл `revise`. Дослідження `docs/research/2026-11-14-claude-skills-distribution.md`.
 
 - Мета: автор, який установив Obscura зі Store, однією кнопкою підключає її до Claude Desktop або Claude Code й отримує не лише MCP-інструменти, а й скіли, що ведуть від розмитого наміру до плану, персонажів, чернетки й публікації.
 - Поточний стан: MCP-міст (R-32) підключається вручну з робочої копії; у пакет MSIX міст не входить; скілів немає, методика є лише в інструкціях сервера й `next_steps`.
