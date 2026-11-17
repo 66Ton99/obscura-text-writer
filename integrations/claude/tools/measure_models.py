@@ -33,9 +33,9 @@ def fixture(name):
     return (FIXTURE/name).read_text(encoding='utf-8')
 
 
-def prepare(base, stage):
-    """A chat story with the fixture plan; for memory also brief, draft and prose saved without a model."""
-    story = obscura_call(base, 'create_story', {'title': 'Лист на пристані', 'language': 'uk',
+def prepare(base, stage, writing_mode='chat'):
+    """A story with the fixture plan; for memory also brief, draft and prose saved without a model."""
+    story = obscura_call(base, 'create_story', {'title': 'Лист на пристані', 'language': 'uk', 'writing_mode': writing_mode,
                                                 'content_rating': {'sexual': 0, 'violence': 0, 'themes': 0}})
     obscura_call(base, 'import_plan_and_characters', {'story_id': story['id'], 'plan_markdown': fixture('plan.md'),
                                                       'characters_markdown': fixture('characters.md')})

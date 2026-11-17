@@ -1,0 +1,32 @@
+{
+  "skill_name": "start-story",
+  "runner": "integrations/claude/tools/run_scenarios.py",
+  "evals": [
+    {
+      "id": 1,
+      "scenario": "S04-a",
+      "prompt": "Хочу написати оповідання про друзів, але не знаю, з чого почати.",
+      "setup": "empty stand",
+      "expected_output": "Чат ставить одне питання (бажано карткою) про героїв чи задум і нічого не створює.",
+      "assertions": [
+        "no write tool (create_story, import_plan_and_characters, …) is called",
+        "the reply asks exactly one question"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "scenario": "S04-b",
+      "prompt": "Створи в Obscura оповідання «Лист на пристані», 7000 слів, 7 сцен по 1000, українською, рейтинг 0 за всіма осями, режим chat. Герої: Анна, 41 рік, висока, коротке сивувате волосся, темно-синє пальто, доглядачка маяка, говорить мало й точно; Петро, 58 років, кремезний, руда борода, рибалка, говорить голосно й жартує. Ідея: Анна отримує анонімний лист, що в четвер лампа маяка згасне, і разом із Петром з’ясовує, хто стежить за маяком. Фінал: виявляється, що лист написав старий доглядач, який хотів попередити про контрабандистів; Анна й Петро їх затримують. Сцени розплануй самостійно за структурою. Я погоджуюсь із цим описом — створюй одразу, без додаткових питань.",
+      "setup": "empty stand",
+      "expected_output": "Повний запит із явною згодою: твір створено одразу, без зайвих питань.",
+      "assertions": [
+        "create_story is called exactly once",
+        "get_templates → import_plan_and_characters → get_story follow in this order",
+        "the stand has one story with scenes",
+        "at most one question"
+      ],
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "skill_name": "draft-scene",
+  "runner": "integrations/claude/tools/run_scenarios.py",
+  "evals": [
+    {
+      "id": 1,
+      "scenario": "S05-a",
+      "prompt": "Напиши першу сцену твору «Лист на пристані». Питань не став: я погоджуюсь на всі етапи цієї сцени.",
+      "setup": "chat story with the fixture plan imported",
+      "expected_output": "Сцена 1 проходить brief → draft → edit → memory, з рядком прогресу після кожного етапу.",
+      "assertions": [
+        "stages are saved in the order brief, draft, edit, memory",
+        "all four stages are saved",
+        "fewer than 3 refusals of save_stage_result",
+        "a progress line after each stage (manual)"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "scenario": "S05-b",
+      "prompt": "Напиши першу сцену твору «Лист на пристані». Питань не став: я погоджуюсь на всі етапи цієї сцени.",
+      "setup": "chat story, editor edit_mode=patches",
+      "expected_output": "Редактор у режимі patches: edit віддається у форматі patches; якщо правки чекають перегляду, чат зупиняється й просить автора.",
+      "assertions": [
+        "edit is saved",
+        "no memory save after edits that wait for the author's review",
+        "fewer than 3 refusals of save_stage_result"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "scenario": "S06",
+      "prompt": "Напиши першу сцену твору «Лист на пристані».",
+      "setup": "obscura story with the fixture plan, roles not configured",
+      "expected_output": "Режим obscura без ролей: жодного запуску з confirm=true, порада налаштувати моделі.",
+      "assertions": [
+        "no start_run with confirm=true",
+        "the reply suggests configuring models"
+      ],
+      "files": []
+    }
+  ]
+}

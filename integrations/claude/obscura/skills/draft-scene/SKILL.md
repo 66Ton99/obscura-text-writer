@@ -21,6 +21,13 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/rules.md` first and follow it throughout. It 
 
 Only the author changes the mode, in the story's settings in Obscura. Never work around it: in `obscura` mode the server refuses texts from chat.
 
+## What the author's request covers
+
+- **`chat` mode:** "write the scene" (or "write the next scenes") is consent to save that scene's brief, draft, edit and memory. Do not ask again before each stage.
+
+  A rewrite of the author's existing draft is not covered: ask first, because it replaces their text in the current version. The earlier version stays in Obscura's history.
+- **`obscura` mode:** every run costs the author money, so runs need their own consent, as `obscura-runs.md` describes.
+
 ## Before each scene (chat mode)
 
 Go through `${CLAUDE_PLUGIN_ROOT}/skills/draft-scene/references/continuity.md`:
