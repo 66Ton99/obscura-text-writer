@@ -1,0 +1,11 @@
+{
+  "name": "obscura",
+  "owner": {"name": "Obscura"},
+  "plugins": [
+    {
+      "name": "obscura",
+      "source": "./obscura",
+      "description": "Write stories with Claude in Obscura: from an idea to a finished book."
+    }
+  ]
+}
