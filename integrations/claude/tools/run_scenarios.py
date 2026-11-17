@@ -125,9 +125,10 @@ def publish_problems(calls, *, author_given, palette):
 
 # A new role gets 8192 tokens, which a scene's edit or memory does not fit; setup-models sets the window from the model.
 MIN_CONTEXT = 32768
+ROLES = ('planner', 'writer', 'editor', 'memory')
 
 
-def settings_problems(calls, *, roles_after, catalog_ids):
+def settings_problems(calls, *, roles_after, catalog_ids, all_roles=False):
     """setup-models. catalog_ids None: the key went to the chat, so nothing may change. Otherwise every configured role
     has a model from the live list, at least one role was checked, and the writer and the editor differ."""
     if catalog_ids is None:
@@ -137,8 +138,14 @@ def settings_problems(calls, *, roles_after, catalog_ids):
                 for role, entry in sorted(roles_after.items()) if entry['model'] not in catalog_ids.get(entry['provider'], set())]
     problems += [f'роль {role}: context_tokens {entry["context_tokens"]} — менше {MIN_CONTEXT}, сцени не вмістяться'
                  for role, entry in sorted(roles_after.items()) if (entry.get('context_tokens') or MIN_CONTEXT) < MIN_CONTEXT]
-    if 'update_settings' in names(calls) and not any(n == 'get_settings' and args.get('models_for_role') for n, args in calls):
+    checked = {args.get('models_for_role') for n, args in calls if n == 'get_settings' and args.get('models_for_role')}
+    if 'update_settings' in names(calls) and not checked:
         problems.append('жодної звірки з каталогом (models_for_role)')
+    elif checked:
+        problems += [f'роль {role} не звірено з каталогом (models_for_role)' for role in sorted(set(roles_after) - checked)]
+    missing = sorted(set(ROLES) - set(roles_after))
+    if all_roles and missing:
+        problems.append(f'не налаштовано ролі: {", ".join(missing)}')
     writer, editor = roles_after.get('writer'), roles_after.get('editor')
     if writer and editor and writer['model'] == editor['model']:
         problems.append('письменник і редактор — одна модель')
@@ -161,12 +168,30 @@ def asked(calls, text):
     return 'AskUserQuestion' in names(calls) or '?' in text
 
 
+AUTHOR_WORDS = ('автор', 'author', 'ім’я', "ім'я", 'name')
+
+
+def author_asked(calls, text):
+    """A question about the author's name: in a card, or in a text line that ends with a question mark."""
+    cards = [json.dumps(args, ensure_ascii=False).lower() for name, args in calls if name == 'AskUserQuestion']
+    lines = [line.lower() for line in text.splitlines() if '?' in line]
+    return any(word in chunk for chunk in cards + lines for word in AUTHOR_WORDS)
+
+
+def author_problems(card, signatures, expected):
+    names_by_id = {item['id']: item['display_name'] for item in signatures}
+    authors = [names_by_id.get(i, i) for i in card.get('author_ids') or []]
+    return [] if authors == [expected] else [f'автори картки {authors}, а не {expected}']
+
+
 def check_s07a(stand, calls, text, ctx):
-    return publish_problems(calls, author_given=False, palette=None) + ['немає питання до автора'] * (not asked(calls, text))
+    return publish_problems(calls, author_given=False, palette=None) + ['немає питання про автора'] * (not author_asked(calls, text))
 
 
 def check_s07b(stand, calls, text, ctx):
     problems = publish_problems(calls, author_given=True, palette='forest')
+    publication = obscura_call(stand.base, 'get_publication', {'story_id': ctx['story']})
+    problems += author_problems(publication['card'], publication['signatures'], 'Ірина Коваль')
     if not any(n == 'export_book' and args.get('format') == 'fb2' and args.get('allow_incomplete') for n, args in calls):
         problems.append('немає експорту fb2 з allow_incomplete')
     if not any(word in text.lower() for word in ('незаверш', 'не заверш', 'incomplete', 'unfinished', 'без прози')):
@@ -196,7 +221,7 @@ def check_s08b(stand, calls, text, ctx):
     roles = configured_roles(stand.base, ctx['story'])
     if not roles:
         return ['ролі не налаштовано']
-    return settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': openrouter_ids()})
+    return settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': openrouter_ids()}, all_roles=True)
 
 
 def check_s09a(stand, calls, text, ctx):
@@ -235,7 +260,8 @@ SCENARIOS = {
     'S06': {'setup': 'obscura', 'check': check_s06,
             'prompt': 'Напиши першу сцену твору «Лист на пристані».'},
     'S07-a': {'setup': 'memory', 'check': check_s07a,
-              'prompt': 'Підготуй публікацію «Листа на пристані».'},
+              'signature': 'Олена Мирна',
+              'prompt': 'Підготуй публікацію «Листа на пристані», навіть якщо книжка ще незавершена.'},
     'S07-b': {'setup': 'memory', 'check': check_s07b,
               'prompt': ('Опублікуй «Лист на пристані»: автор — Ірина Коваль, анотацію й жанри вибери сам, обкладинка в палітрі '
                          '«Ліс», експорт FB2. Питань не став, я погоджуюсь.')},
@@ -250,7 +276,7 @@ SCENARIOS = {
               'prompt': ('Створи в Obscura біблію серії «Маяки» українською, рейтинг 0 за всіма осями, режим chat. Світ: '
                          'узбережжя Сіверського моря, де маяки живляться магією світла; доглядачі маяків — гільдія «Варта '
                          'вогнів»; світло слабшає взимку й сильнішає в бурю; контрабандисти використовують «темні ліхтарі», що '
-                         'гасять маяки. Статті, по 1000 слів: 1. Узбережжя й маяки; 2. Магія світла та її межі; 3. Гільдія '
+                         'гасять маяки. Статті, по 800 слів: 1. Узбережжя й маяки; 2. Магія світла та її межі; 3. Гільдія '
                          '«Варта вогнів»; 4. Контрабандисти й темні ліхтарі; 5. Хронологія узбережжя. Персонажів циклу поки '
                          'немає. Я погоджуюсь із цим переліком — створюй одразу, без додаткових питань.')},
 }
@@ -264,6 +290,8 @@ def run(scenario, work, model, budget):
         if spec['setup']:
             stage = 'memory' if spec['setup'] == 'memory' else 'brief'
             ctx['story'], ctx['scene'] = prepare(stand.base, stage, 'obscura' if spec['setup'] == 'obscura' else 'chat')
+            if spec.get('signature'):
+                obscura_call(stand.base, 'add_signature', {'display_name': spec['signature']})
             if spec['setup'] == 'patches':
                 setup_patches(stand.base, ctx['story'])
                 ctx['patches'] = True

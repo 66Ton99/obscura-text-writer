@@ -24,8 +24,8 @@ This skill fills the book's publication card, draws a text cover and exports the
 
 Ask only what is missing from the card or from the author's request, one card each.
 
-1. **Author** — always required. Offer a card with the `display_name` of the non-archived `signatures` plus "another name".
-   - An existing name: take its `id`.
+1. **Author** — always required. If the card already has `author_ids`, ask once to confirm them. Otherwise offer a card with the `display_name` of the non-archived `signatures` plus "another name".
+   - An existing name, or a name the author gives that matches a signature exactly: take its `id`. Never add a duplicate.
    - A new name the author gives (in the request or on the card): `add_signature(display_name)` and take the new `id`. A new signature is a write: do it only once the author has named that person as the author.
 2. **Annotation** — 2–3 sentences, no spoiler of the ending, in the story's language. Base it on the plan from `get_story` and the prose (`get_scene_text(scene_id, 'prose')`, following `next_offset`). Show it for approval. Text the author dictated needs no second approval.
 3. **Genres** — 1–3 codes from the `genres` catalog, offered on a card with their names.

@@ -156,7 +156,7 @@ def stand_env(extra=None):
     """The stand server's environment: no provider keys, and no OS credential store, which the author's Obscura shares.
     `extra` adds variables of a scenario, such as a fake key that lets the server read a provider's public model list."""
     from scripts.capture_screenshots import server_env
-    return server_env() | {'PYTHON_KEYRING_BACKEND': 'keyring.backends.fail.Keyring'} | dict(extra or {})
+    return server_env() | dict(extra or {}) | {'PYTHON_KEYRING_BACKEND': 'keyring.backends.fail.Keyring'}
 
 
 @contextlib.contextmanager

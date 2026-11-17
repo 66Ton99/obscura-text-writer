@@ -82,3 +82,9 @@ def test_fake_key_reaches_only_the_stand_env(monkeypatch):
     env = stand_env({'OPENROUTER_API_KEY': 'stand-fake-key'})
     assert env['OPENROUTER_API_KEY'] == 'stand-fake-key' and 'VENICE_API_KEY' not in env
     assert env['PYTHON_KEYRING_BACKEND'] == 'keyring.backends.fail.Keyring'
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_scenario_env_cannot_reopen_the_keyring():
+    env = stand_env({'PYTHON_KEYRING_BACKEND': 'keyring.backends.Windows.WinVaultKeyring'})
+    assert env['PYTHON_KEYRING_BACKEND'] == 'keyring.backends.fail.Keyring'

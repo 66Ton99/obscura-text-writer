@@ -6,7 +6,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'integrations'/'claude'/'tools'))
 
-from run_scenarios import (bible_problems, creation_problems, pipeline_problems, publish_problems,  # noqa: E402
+from run_scenarios import (author_asked, author_problems, bible_problems, creation_problems, pipeline_problems,  # noqa: E402
+                           publish_problems,
                            settings_problems, verdict)
 from scripts.skills_stand import Result  # noqa: E402
 
@@ -108,7 +109,7 @@ def test_roles_written_without_any_check_are_a_problem():
 
 @pytest.mark.req('CLAUDE-SKILLS')
 def test_recipe_with_same_writer_and_editor_is_a_problem():
-    calls = [('update_settings', {}), ('get_settings', {'models_for_role': 'writer'})]
+    calls = [('update_settings', {})] + [('get_settings', {'models_for_role': r}) for r in ('planner', 'writer', 'editor', 'memory')]
     roles = {role: {'provider': 'openrouter', 'model': 'deepseek/deepseek-v4-flash'} for role in ('planner', 'writer', 'editor', 'memory')}
     assert settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': {'deepseek/deepseek-v4-flash'}}) ==         ['письменник і редактор — одна модель']
 
@@ -136,3 +137,35 @@ def test_role_left_with_the_default_window_is_a_problem():
     roles = {'writer': {'provider': 'openrouter', 'model': 'deepseek/deepseek-v4-flash', 'context_tokens': 8192}}
     assert settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': {'deepseek/deepseek-v4-flash'}}) == \
         ['роль writer: context_tokens 8192 — менше 32768, сцени не вмістяться']
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_partial_recipe_is_a_problem():
+    calls = [('update_settings', {}), ('get_settings', {'models_for_role': 'writer'})]
+    roles = {'writer': {'provider': 'openrouter', 'model': 'deepseek/deepseek-v4-flash', 'context_tokens': 131072}}
+    assert settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': {'deepseek/deepseek-v4-flash'}}, all_roles=True) == \
+        ['не налаштовано ролі: editor, memory, planner']
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_every_configured_role_must_be_checked():
+    calls = [('update_settings', {}), ('get_settings', {'models_for_role': 'writer'})]
+    roles = {role: {'provider': 'openrouter', 'model': model, 'context_tokens': 131072}
+             for role, model in (('writer', 'a/w'), ('editor', 'a/e'))}
+    assert settings_problems(calls, roles_after=roles, catalog_ids={'openrouter': {'a/w', 'a/e'}}) == \
+        ['роль editor не звірено з каталогом (models_for_role)']
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_publish_author_must_be_the_named_one():
+    card = {'author_ids': ['s2']}
+    signatures = [{'id': 's1', 'display_name': 'Ірина Коваль'}, {'id': 's2', 'display_name': 'Олена Мирна'}]
+    assert author_problems(card, signatures, 'Ірина Коваль') == ["автори картки ['Олена Мирна'], а не Ірина Коваль"]
+    assert author_problems({'author_ids': ['s1']}, signatures, 'Ірина Коваль') == []
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_author_question_is_required():
+    assert author_asked([], 'Як чинити з другою сценою?') is False
+    assert author_asked([], 'Чиє ім’я поставити автором?') is True
+    assert author_asked([('AskUserQuestion', {'questions': [{'question': 'Who is the author?'}]})], '') is True

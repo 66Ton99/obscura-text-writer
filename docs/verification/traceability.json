@@ -5957,7 +5957,9 @@
         "tests/test_run_scenarios.py::test_publish_without_author_never_adds_a_signature",
         "tests/test_run_scenarios.py::test_publish_cover_uses_the_named_palette",
         "tests/test_run_scenarios.py::test_publish_cover_must_be_set_on_the_card",
-        "tests/test_run_scenarios.py::test_publish_with_cover_set_has_no_problems"
+        "tests/test_run_scenarios.py::test_publish_with_cover_set_has_no_problems",
+        "tests/test_run_scenarios.py::test_publish_author_must_be_the_named_one",
+        "tests/test_run_scenarios.py::test_author_question_is_required"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#claude-skills",
@@ -5974,7 +5976,10 @@
         "tests/test_run_scenarios.py::test_roles_written_without_any_check_are_a_problem",
         "tests/test_run_scenarios.py::test_recipe_with_same_writer_and_editor_is_a_problem",
         "tests/test_skills_stand.py::test_fake_key_reaches_only_the_stand_env",
-        "tests/test_run_scenarios.py::test_role_left_with_the_default_window_is_a_problem"
+        "tests/test_run_scenarios.py::test_role_left_with_the_default_window_is_a_problem",
+        "tests/test_run_scenarios.py::test_partial_recipe_is_a_problem",
+        "tests/test_run_scenarios.py::test_every_configured_role_must_be_checked",
+        "tests/test_skills_stand.py::test_scenario_env_cannot_reopen_the_keyring"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#claude-skills",
