@@ -3,6 +3,7 @@
 // and the story revision; a refused save keeps the typed text.
 import {t,msg,uiText,diagnostic} from './i18n.js';
 import {api,json,notice} from './api.js';
+import {createTextEditor} from './text-editor.js';
 import {state} from './editor.js';
 import {confirmDialog} from './dialogs.js';
 import {summaryRows} from './timeline-summaries.js';
@@ -45,7 +46,7 @@ function draw(){
     if(editing?.key===row.key){
       const area=document.createElement('textarea');area.value=editing.text;area.rows=5;area.className='timeline-summary-editor';
       area.oninput=()=>{editing.text=area.value};
-      item.append(area);
+      item.append(area);createTextEditor(area).write(editing.text);
       actions.append(button(()=>t('summaries.save'),()=>save(row),true),button(()=>t('summaries.cancel'),()=>{editing=null;draw()}));
     }
     item.append(actions);section.append(item);

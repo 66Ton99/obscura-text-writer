@@ -1,4 +1,5 @@
 import threading
+from contextlib import contextmanager
 from typing import Iterator, Literal, Protocol
 
 import httpx
@@ -14,6 +15,54 @@ from .catalog import ModelLimitsError, validate_limits
 from .requests import generation_request, sdk_arguments, strict_schema
 from .accounting import require_accounting, normalize_usage
 from ..billing.models import BudgetError
+
+
+NONSTREAM_TIMEOUT = 300  # Seconds; the longest successful Venice answer in the log took 181 s.
+
+
+class BackgroundCall:
+    """One blocking provider call in a daemon thread, so cancellation never waits for the answer."""
+
+    def __init__(self,work):
+        self.response=None
+        self.error=None
+        self._done=threading.Event()
+        self._lock=threading.Lock()
+        self._late=None
+        self._work=work
+        threading.Thread(target=self._run,daemon=True).start()
+
+    def _run(self):
+        try:
+            self.response=self._work()
+        except BaseException as exc:
+            self.error=exc
+        with self._lock:
+            self._done.set()
+            late=self._late
+        if late:
+            late(self)
+
+    def wait(self,cancel,poll=0.25):
+        """True once the call finished; False as soon as `cancel` is set first."""
+        while not self._done.wait(poll):
+            if cancel.is_set():
+                with self._lock:
+                    if not self._done.is_set():
+                        return False
+        return True
+
+    def on_late(self,callback):
+        with self._lock:
+            if not self._done.is_set():
+                self._late=callback
+                return
+        callback(self)
+
+    def result(self):
+        if self.error is not None:
+            raise self.error
+        return self.response
 
 
 class GenerationEvent(DomainModel):
@@ -83,9 +132,11 @@ class OpenAIGenerationGateway:
         cost=None
         response_id=None
         blank_run=0
+        deferred=False
+        hold={'late':False}
         try:
             require_accounting(self.settings,self.accounting)
-            with build_openai_client(self.settings,self.http_client) as client:
+            with self._client(hold) as client:
                 # SECURITY-002: error texts are cleaned of the credential this request was sent with; the stored key
                 # may be replaced or deleted before the provider answers.
                 used_key=client.api_key if self.settings.provider!='local' else None
@@ -108,40 +159,74 @@ class OpenAIGenerationGateway:
                 if self.accounting and not self.accounting.before(self.settings,body,client,cancelled=cancel.is_set):
                     yield GenerationEvent(type='cancelled',usage=usage)
                     return
-                with client.chat.completions.create(**sdk_arguments(body)) as stream:
-                    for chunk in stream:
-                        response_id=getattr(chunk,'id',response_id)
-                        if cancel.is_set():
-                            yield GenerationEvent(type='cancelled',usage=usage)
-                            return
-                        if chunk.usage is not None:
-                            usage=normalize_usage(chunk.usage)
-                        chunk_cost=getattr(chunk,'cost',None)
-                        if chunk_cost is not None:
-                            cost=chunk_cost
-                            usage['cost']=cost
-                        if getattr(chunk,'error',None):
-                            raise RuntimeError('Provider stream error')
-                        for choice in chunk.choices or []:
-                            if choice.index!=0:
-                                continue
-                            delta=choice.delta
-                            denied=getattr(delta,'refusal',None)
-                            if denied:
-                                refusal=True
-                                yield GenerationEvent(type='delta',text=denied,refusal=True)
-                            if delta.content:
-                                has_text=True
-                                yield GenerationEvent(type='delta',text=delta.content)
-                                if structured:
-                                    stripped=delta.content.rstrip()
-                                    blank_run=blank_run+len(delta.content) if not stripped else len(delta.content)-len(stripped)
-                                    if blank_run>WHITESPACE_RUNAWAY_LIMIT:
-                                        # Constrained decoding with a masked closing token degenerates into whitespace until the cap.
-                                        yield GenerationEvent(type='error',usage=usage,message=whitespace_runaway_message(),failure={'category':'degenerate_output'})
-                                        return
-                            if choice.finish_reason:
-                                finish=choice.finish_reason
+                if body.get('stream') is False:
+                    call=BackgroundCall(lambda:self._complete(client,body))
+                    if not call.wait(cancel):
+                        # The provider still bills the whole answer: the call records it when it arrives, and the
+                        # client (with an injected http client under it) stays open for it until then.
+                        deferred=True
+                        hold['late']=True
+                        call.on_late(lambda done:self._finish_late(done,client))
+                        yield GenerationEvent(type='cancelled',usage=usage)
+                        return
+                    response=call.result()
+                    response_id=getattr(response,'id',response_id)
+                    if response.usage is not None:
+                        usage=normalize_usage(response.usage)
+                    chunk_cost=getattr(response,'cost',None)
+                    if chunk_cost is not None:
+                        cost=chunk_cost
+                        usage['cost']=cost
+                    for choice in response.choices or []:
+                        if choice.index!=0:
+                            continue
+                        message=choice.message
+                        denied=getattr(message,'refusal',None)
+                        if denied:
+                            refusal=True
+                            yield GenerationEvent(type='delta',text=denied,refusal=True)
+                        if message.content:
+                            has_text=True
+                            yield GenerationEvent(type='delta',text=message.content)
+                            if structured and len(message.content)-len(message.content.rstrip())>WHITESPACE_RUNAWAY_LIMIT:
+                                yield GenerationEvent(type='error',usage=usage,message=whitespace_runaway_message(),failure={'category':'degenerate_output'})
+                                return
+                        finish=choice.finish_reason
+                else:
+                    with client.chat.completions.create(**sdk_arguments(body)) as stream:
+                        for chunk in stream:
+                            response_id=getattr(chunk,'id',response_id)
+                            if cancel.is_set():
+                                yield GenerationEvent(type='cancelled',usage=usage)
+                                return
+                            if chunk.usage is not None:
+                                usage=normalize_usage(chunk.usage)
+                            chunk_cost=getattr(chunk,'cost',None)
+                            if chunk_cost is not None:
+                                cost=chunk_cost
+                                usage['cost']=cost
+                            if getattr(chunk,'error',None):
+                                raise RuntimeError('Provider stream error')
+                            for choice in chunk.choices or []:
+                                if choice.index!=0:
+                                    continue
+                                delta=choice.delta
+                                denied=getattr(delta,'refusal',None)
+                                if denied:
+                                    refusal=True
+                                    yield GenerationEvent(type='delta',text=denied,refusal=True)
+                                if delta.content:
+                                    has_text=True
+                                    yield GenerationEvent(type='delta',text=delta.content)
+                                    if structured:
+                                        stripped=delta.content.rstrip()
+                                        blank_run=blank_run+len(delta.content) if not stripped else len(delta.content)-len(stripped)
+                                        if blank_run>WHITESPACE_RUNAWAY_LIMIT:
+                                            # Constrained decoding with a masked closing token degenerates into whitespace until the cap.
+                                            yield GenerationEvent(type='error',usage=usage,message=whitespace_runaway_message(),failure={'category':'degenerate_output'})
+                                            return
+                                if choice.finish_reason:
+                                    finish=choice.finish_reason
                 complete=finish is not None
                 if cancel.is_set():
                     yield GenerationEvent(type='cancelled',usage=usage)
@@ -176,8 +261,45 @@ class OpenAIGenerationGateway:
             else:
                 yield GenerationEvent(type='cancelled' if cancel.is_set() else 'error',finish_reason=finish,usage=usage,message='Запит перервано або провайдер недоступний. Автоматичного повтору немає.')
         finally:
-            if self.accounting:
+            if self.accounting and not deferred:
                 self.accounting.finish(self.settings,usage,complete=complete,cost=cost,response_id=response_id)
+
+    @contextmanager
+    def _client(self,hold):
+        client=build_openai_client(self.settings,self.http_client)
+        try:
+            yield client
+        finally:
+            if not hold['late']:
+                client.close()
+
+    def _complete(self,client,body):
+        return client.with_options(timeout=NONSTREAM_TIMEOUT).chat.completions.create(**sdk_arguments(body))
+
+    def _finish_late(self,call,client=None):
+        """Close the budget reservation of a cancelled non-streamed call with what the provider reported."""
+        try:
+            self._settle_late(call)
+        finally:
+            if client is not None:
+                client.close()
+
+    def _settle_late(self,call):
+        if not self.accounting:
+            return
+        usage,cost,response_id,complete={},None,None,False
+        response=call.response
+        if response is not None:
+            usage=normalize_usage(response.usage) if response.usage is not None else {}
+            cost=getattr(response,'cost',None)
+            if cost is not None:
+                usage['cost']=cost
+            response_id=getattr(response,'id',None)
+            complete=any(choice.finish_reason for choice in response.choices or [])
+        try:
+            self.accounting.finish(self.settings,usage,complete=complete,cost=cost,response_id=response_id)
+        except Exception:
+            pass  # A late reconciliation must never raise in a background thread; the record stays unresolved.
 
 
 def build_generation_gateway(settings: ProviderSettings,http_client: httpx.Client | None = None,accounting=None) -> GenerationGateway:

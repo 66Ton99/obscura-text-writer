@@ -30,6 +30,15 @@ def venice_reasoning(settings):
     return {'reasoning':{'effort':effort}} if effort else {}
 
 
+def streams(stage, settings, context=None):
+    """Whether the stage's request streams: the captured body decides, else the same rule as `generation_request`."""
+    body = getattr(context, 'api_request', None)
+    if body:
+        return body.get('stream', True) is not False
+    from ..generation.broken_text import stage_category
+    return not (settings.provider.provider == 'venice' and stage_category(stage, settings.edit_mode) in (1, 2))
+
+
 def generation_request(stage, settings, system, user, fragments):
     from ..generation.models import StoryBlueprint, WritersBrief
     from ..memory.models import MemorySnapshot
@@ -39,7 +48,12 @@ def generation_request(stage, settings, system, user, fragments):
     body = {'model': provider.model, 'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}],
         'max_tokens': settings.max_output_tokens, 'temperature': settings.temperature, 'stream': True}
     if settings.stop_sequences: body['stop'] = settings.stop_sequences
-    if provider.include_usage: body['stream_options'] = {'include_usage': True}
+    from ..generation.broken_text import stage_category
+    if provider.provider == 'venice' and stage_category(stage, settings.edit_mode) in (1, 2):
+        # Spec 2026-11-17-broken-letters-guard: Venice's streaming detokenizer can split a Cyrillic letter into two
+        # U+FFFD; stages whose reply the author cannot edit or accepts by units wait for the whole answer instead.
+        body['stream'] = False
+    elif provider.include_usage: body['stream_options'] = {'include_usage': True}
     if provider.provider == 'local' and provider.local_disable_thinking:
         body['reasoning_effort'] = 'none'
     if provider.provider == 'venice':

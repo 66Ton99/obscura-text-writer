@@ -1,3 +1,4 @@
+import json
 import threading
 
 import httpx
@@ -120,6 +121,8 @@ def test_successful_catalog_allows_unknown_or_fitting_actual_request(monkeypatch
     def handler(request):
         calls.append(request.method)
         if request.method=='GET':return httpx.Response(200,json={'data':[row]})
+        if json.loads(request.content)['stream'] is False:  # Venice memory waits for the whole answer.
+            return httpx.Response(200,json={'id':'synthetic','object':'chat.completion','created':0,'model':'test','choices':[{'index':0,'message':{'role':'assistant','content':'Done'},'finish_reason':'stop'}]})
         return httpx.Response(200,headers={'content-type':'text/event-stream'},text='data: {"id":"synthetic","choices":[{"index":0,"delta":{"content":"Done"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n')
     ctx=context(provider,output=8192,window=262144)
     ctx.estimated_tokens=247808 if caps=='boundary' else 101778

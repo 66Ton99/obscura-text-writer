@@ -30,6 +30,7 @@
 | A material is marked outdated | Its sources changed. Regenerate it, or in the version history press **Review and accept text** and then **Continue after accepted stage**. |
 | "Changed in another tab" | Your edits stay in the form. Refresh the data and repeat the action. |
 | A cost "needs reconciliation" | After a failure the cost is unknown. Reconcile the amount in **Call history and reconciliation** once the run is over. |
+| The text has «�» characters, such as «p��lm» | The provider lost a letter in transit; it cannot be recovered. The app does not save memory or classification with such words: run the stage again. Damaged editor edits are dropped and the rest are shown. In prose, a banner above the editor shows the count: **Next** selects the next one, fix the word by hand. On Venice these memory and edit stages show no live text: the screen says "Waiting for the full model answer". |
 
 ## Export
 
