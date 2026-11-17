@@ -88,6 +88,15 @@ def execute_stage(
         repo.save_attempt(attempt)
         raise
     text=''.join(parts)
+    from . import broken_text
+    guard=broken_text.stage_category(stage,context.settings.edit_mode)
+    if guard:
+        instructions,document=(broken_text.request_parts(context.api_request) if context.api_request else
+            (context.system_text or '',context.user_text or ''))
+        known=broken_text.known_words(document,instructions)
+    else:
+        known=frozenset()
+    broken=broken_text.structured_broken(text,known) if guard==1 else []
     accounting=getattr(gateway,'accounting',None)
     if accounting:
         attempt.context['accounting']=accounting.result
@@ -140,6 +149,15 @@ def execute_stage(
             attempt.error=(terminal.message or 'Редактор повернув порожню відповідь. Автоматичного повтору немає.')+' Прийняття недоступне; поточний текст не змінено.'
         else:
             attempt.error=terminal.message if terminal else 'Потік не має підтвердженого завершення'
+    elif broken:
+        # Spec 2026-11-17-broken-letters-guard: a reply the author cannot edit is rejected whole; only the count is
+        # reported, never the words (MEMORY-004 keeps document text out of diagnostics).
+        attempt.state='failed'
+        attempt.error=broken_text.failure_message(len(broken))
+        terminal.failure={'category':'broken_output','message':attempt.error}
+        attempt.context['classification_failure' if stage=='classify' else 'generation_failure']=dict(terminal.failure)
+    elif guard==3 and stage not in {'brief','prepare'} and broken_text.new_broken_words(text,known):
+        attempt.context['broken_text_warnings']=[broken_text.kept_warning(len(broken_text.new_broken_words(text,known)))]
     if attempt.state!='running':
         if stage in {'impact_delta','impact_check','impact_part','review_part'}:
             category=('cancelled' if attempt.state=='cancelled' else 'refusal_content' if attempt.finish_reason=='content_filter' else 'refusal_unknown' if terminal and terminal.refusal else 'output_limit' if attempt.finish_reason=='length' else 'empty_output' if attempt.finish_reason=='stop' and not text.strip() else (terminal.failure.get('category','technical') if terminal else 'incomplete'))
@@ -210,7 +228,7 @@ def execute_stage(
             return repo.save_attempt(attempt)
         if stage=='rewrite':
             from .assisted_writing import save_rewrite_result
-            return save_rewrite_result(repo,attempt,context,text)
+            return save_rewrite_result(repo,attempt,context,text,known)
         proposed=False
         if stage=='timeline_summary':
             from .timeline_summary import finish_summary
@@ -221,6 +239,11 @@ def execute_stage(
                 'eligible_fields':json.loads(context.fragments['publication_eligible'])}
             attempt.context['publication_warnings']=[]
             proposal['suggestions']=parse_suggestions(text,proposal['eligible_fields'],attempt.context['publication_warnings'])
+            proposal['suggestions'],dropped=broken_text.drop_broken_suggestions(proposal['suggestions'],known)
+            if dropped:
+                if not proposal['suggestions']:
+                    raise ValueError('Усі поля пропозиції мають пошкоджені літери «�»; сирий текст збережено')
+                attempt.context['publication_warnings'].append(broken_text.dropped_warning(dropped))
             proposal['fingerprint']=fingerprint(proposal)
             attempt.context['publication_proposal']=proposal
             attempt.state='completed'
@@ -242,6 +265,8 @@ def execute_stage(
             attempt.context['planner_warnings']=[]
             brief,text=parse_planner_output(text,stage,attempt.context['planner_warnings'])
             proposed=bool(brief.proposed_changes)
+            if broken_text.new_broken_words(text,known):
+                attempt.context['broken_text_warnings']=[broken_text.kept_warning(len(broken_text.new_broken_words(text,known)))]
             if brief.introduced:
                 try:
                     from ..book.protagonists import scene_hero
@@ -260,6 +285,8 @@ def execute_stage(
             from .planner_output import parse_planner_output
             attempt.context['planner_warnings']=[]
             _,text=parse_planner_output(text,stage,attempt.context['planner_warnings'])
+            if broken_text.new_broken_words(text,known):
+                attempt.context['broken_text_warnings']=[broken_text.kept_warning(len(broken_text.new_broken_words(text,known)))]
         elif stage=='memory':
             scene=repo.get_scene(scene_id)
             previous = (
@@ -299,6 +326,14 @@ def execute_stage(
             draft_id=context.fragments['copyedit_draft_id']
             original=repo.read_text(draft_id)
             proposal=build_rewrite_diff(original,text)
+            bad=broken_text.broken_diff_edits(original,proposal,known)
+            if bad:
+                proposal=broken_text.drop_diff_edits(original,proposal,bad)
+                if context.fragments.get('edit_loop_run_id'):
+                    attempt.context['broken_text_warnings']=[broken_text.dropped_warning(len(bad))]
+                elif proposal is None:
+                    raise ValueError('Редактор не запропонував змін')
+                text=proposal.candidate_text if proposal else original
             if context.fragments.get('edit_loop_run_id'):
                 from .editor_loop import save_pass_result
                 return save_pass_result(repo,attempt,context,original,text)
@@ -306,6 +341,8 @@ def execute_stage(
             require_editor_changes(original,text)
             attempt.context['copyedit_proposal']={'protocol_version':2,'draft_id':draft_id,'proposal':proposal.model_dump()}
             attempt.context['editor_warnings']=rewrite_warnings(original,text,proposal.edits)
+            if bad:
+                attempt.context['editor_warnings'].append(broken_text.dropped_warning(len(bad)))
             attempt.state='needs_review'
             attempt.error='Перегляньте зміни редактора та явно прийміть вибір. Поточну прозу не змінено.'
             return repo.save_attempt(attempt)
@@ -317,6 +354,18 @@ def execute_stage(
             attempt.context['editor_warnings']=editor_warnings
             proposal,_=parse_editor_output(text,editor_warnings)
             original=repo.read_text(draft_id)
+            kept=[edit for edit in proposal.edits if not broken_text.broken_patch(original,edit,known)]
+            if len(kept)!=len(proposal.edits):
+                warning=broken_text.dropped_warning(len(proposal.edits)-len(kept))
+                if context.fragments.get('edit_loop_run_id'):
+                    attempt.context['broken_text_warnings']=[warning]
+                    if not kept:
+                        from .editor_loop import save_pass_result
+                        return save_pass_result(repo,attempt,context,original,original)
+                elif not kept:
+                    raise ValueError('Редактор не запропонував змін')
+                editor_warnings.append(warning)
+                proposal=proposal.model_copy(update={'edits':kept})
             text=apply_copyedits(original,proposal)
             if context.fragments.get('edit_loop_run_id'):
                 from .editor_loop import save_pass_result

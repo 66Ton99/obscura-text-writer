@@ -2,6 +2,7 @@ import threading
 
 
 from ..authoring.blueprints import get_role_settings
+from ..providers.requests import streams
 from ..domain import RevisionConflict, new_id
 from ..storage.locking import AppInstanceLock
 from ..providers.streaming import build_generation_gateway
@@ -533,7 +534,7 @@ class RunCoordinator:
                 self.event(
                     id,
                     'stage_started',
-                    {'stage':stage,'scene_id':scene_id,'model':role.provider.model,'provider':role.provider.provider,'estimated_tokens':context.estimated_tokens}
+                    {'stage':stage,'scene_id':scene_id,'model':role.provider.model,'provider':role.provider.provider,'estimated_tokens':context.estimated_tokens,'streaming':streams(stage,role,context)}
                 )
                 attempt=execute_stage(
                     self.repo,
@@ -550,7 +551,7 @@ class RunCoordinator:
                     current=self.get_run(id)
                     current.state='cancelled' if stage in {'publication_suggest','rewrite','timeline_summary'} and (self.cancel_event.is_set() or current.state in {'cancellation_requested','cancelled'}) else attempt.state
                     current.error=attempt.error
-                    warnings=attempt.context.get('publication_warnings',[])
+                    warnings=attempt.context.get('publication_warnings',[])+attempt.context.get('broken_text_warnings',[])
                     if warnings:
                         current.warning=merge_warnings(current.warning,warnings)
                         self.event(id,'context_warning',{'warnings':warnings,'stage':stage,'scene_id':None})
@@ -642,7 +643,7 @@ class RunCoordinator:
             self.event(
                 id,
                 'stage_started',
-                {'stage':stage,'scene_id':scene_id,'model':context.settings.provider.model,'provider':context.settings.provider.provider,'estimated_tokens':context.estimated_tokens}
+                {'stage':stage,'scene_id':scene_id,'model':context.settings.provider.model,'provider':context.settings.provider.provider,'estimated_tokens':context.estimated_tokens,'streaming':streams(stage,context.settings,context)}
             )
             attempt=execute_stage(
                 self.repo,
@@ -657,7 +658,7 @@ class RunCoordinator:
             )
             with self.condition:
                 current=self.get_run(id)
-                warnings=attempt.context.get('memory_warnings',[])+attempt.context.get('editor_warnings',[])+attempt.context.get('planner_warnings',[])
+                warnings=attempt.context.get('memory_warnings',[])+attempt.context.get('editor_warnings',[])+attempt.context.get('planner_warnings',[])+attempt.context.get('broken_text_warnings',[])
                 if warnings:
                     current.warning=merge_warnings(current.warning,warnings)
                     self._save(current)

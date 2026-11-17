@@ -432,3 +432,8 @@ python integrations/claude/tools/run_scenarios.py --scenario S04-a --scenario S0
 - **провал, що не повторюється у двох повторних прогонах,** — записується в журнал як нестабільність і PR не блокує.
 
 Вартість у `cost_usd` — оцінка за цінами API; за підпискою claude.ai вона витрачає ліміт підписки. Цей розділ — процедура, а не доказ виконання. Фактичні прогони (дата, коміт, модель, результат) записуються в журнал виконання R-35.
+
+<a id="broken-text-browser"></a>
+## Банер пошкоджених літер у редакторі
+
+BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web/browser/broken-text.spec.mjs` (один case на desktop і mobile: чернетка з двома «�» показує банер «У тексті пошкоджених символів «�»: 2.», «До наступного» виділяє «�», після заміни тексту банер зникає). Запуск: `PYTHONPATH=<тека>/src`, `cd frontend; ./node_modules/.bin/playwright test -c playwright.config.mjs ../tests/web/browser/broken-text.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.

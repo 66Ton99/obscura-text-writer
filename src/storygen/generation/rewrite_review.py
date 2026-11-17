@@ -25,7 +25,7 @@ def rewrite_preview(repo,scene_id,attempt_id):
     return dict(attempt_id=attempt.id,protocol_version=2,original=original,preview=candidate,edits=edits,groups=groups,
         has_changes=bool(edits),default_selected_indices=[],proposal_fingerprint=fingerprint,expected_revision=scene.revision,
         expected_comments_revision=notes.revision,decisions=attempt.context.get('rewrite_decisions',[]),comments=notes.model_dump(),
-        can_apply=reason is None,reason=reason,warnings=[],classification_history=[],can_classify=False)
+        can_apply=reason is None,reason=reason,warnings=list(attempt.context.get('rewrite_warnings',[])),classification_history=[],can_classify=False)
 
 
 def selection_preview(repo,scene_id,attempt_id,indices,expected_revision,fingerprint,expected_comments_revision):

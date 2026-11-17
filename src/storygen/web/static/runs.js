@@ -124,7 +124,7 @@ async function showViolations(run){
 }
 setInterval(()=>{if(active&&!terminal.has(active.state))uiText(elapsed,"textContent",()=>(t("m_61cb5f9a3bb9",{p0:(Math.floor((Date.now()-started)/1000))})))},1000);
 async function follow(run){
-  const epoch=++followEpoch;let stateFetch=0;
+  const epoch=++followEpoch;let stateFetch=0,waitingWhole=false;
   source?.close();last=0;started=Date.parse(run.created_at);live.hidden=false;
   if('planned_telemetry' in run)draw(run);else drawPending(run);
   const saved=await api('/api/runs/'+run.id);if(epoch!==followEpoch)return;draw(saved.run);uiText(live,"textContent",()=>(saved.partial));
@@ -135,8 +135,8 @@ async function follow(run){
   source=new EventSource(`/api/runs/${run.id}/events`);
   const reader=source;
   source.onmessage=async message=>{try{if(epoch!==followEpoch)return;const event=JSON.parse(message.data);last=event.seq;
-    if(event.type==='stage_started'){if(event.created_at)started=Date.parse(event.created_at);uiText(live,"textContent",()=>(''));const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>((event.data.edit_loop_pass?t("m_9a029cc4638c",{p0:(event.data.edit_loop_pass),p1:(event.data.edit_loop_limit)}):'')+`${event.data.stage} · ${event.data.model} · ${event.data.provider}`));status.append(p)}
-    if(event.type==='delta')live.textContent+=event.data.text;
+    if(event.type==='stage_started'){if(event.created_at)started=Date.parse(event.created_at);uiText(live,"textContent",()=>(''));const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>((event.data.edit_loop_pass?t("m_9a029cc4638c",{p0:(event.data.edit_loop_pass),p1:(event.data.edit_loop_limit)}):'')+`${event.data.stage} · ${event.data.model} · ${event.data.provider}`));status.append(p);waitingWhole=event.data.streaming===false;if(waitingWhole)uiText(live,"textContent",()=>t('run.waiting_whole_answer'))}
+    if(event.type==='delta'){if(waitingWhole){waitingWhole=false;uiText(live,"textContent",()=>'')}live.textContent+=event.data.text}
     if(event.type==='stage_finished'){if(Object.keys(event.data.usage||{}).length){runCosts=addRunCost(runCosts,run.id,event.data.attempt_id,event.data.usage);if(active?.id===run.id&&summaryNode?.isConnected){summaryNode.replaceWith(summaryButton(active));applyExpanded(active)}}else{const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>(t("m_59303d743463")));status.append(p)}await refresh({fresh:true})}
     if(event.type==='evaluation_warning'||event.type==='evaluation_skipped'){notice(event.data.failure?.message||event.data.reason||event.data.reasons?.join('; ')||t("m_8c627045acd1"),'warning');document.dispatchEvent(new CustomEvent('evaluation-policy-changed'))}
     if(event.type==='state'||event.type==='context_warning'){const stamp=++stateFetch,current=await api('/api/runs/'+run.id,{fresh:true});if(epoch!==followEpoch||stamp!==stateFetch)return;draw(current.run);if(terminal.has(current.run.state)){uiText(live,"textContent",()=>(current.partial));reader.close();followEpoch++;notice(names[current.run.state]+(current.run.error||current.run.warning?': '+(current.run.error||current.run.warning):''),current.run.warning&&current.run.state!=='failed'?'warning':runKind(current.run.state));await refresh({fresh:true})}}

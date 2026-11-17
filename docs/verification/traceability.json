@@ -1007,6 +1007,66 @@
       ]
     },
     {
+      "id": "BROKEN-TEXT-S01",
+      "requirement": "BROKEN-TEXT",
+      "scope": "Відхилення пам’яті й класифікатора з новим пошкодженим словом. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "tests": [
+        "tests/generation/test_broken_stage.py::test_memory_with_new_broken_word_fails_without_a_version",
+        "tests/generation/test_broken_stage.py::test_memory_copying_an_old_broken_word_is_saved",
+        "tests/generation/test_broken_stage.py::test_memory_copying_a_broken_one_letter_word_is_saved",
+        "tests/generation/test_broken_stage.py::test_classifier_with_a_new_broken_word_fails_with_its_own_category",
+        "tests/generation/test_broken_text.py::test_compact_json_and_escapes_in_the_request_do_not_glue_words",
+        "tests/generation/test_broken_text.py::test_structured_checks_decoded_strings"
+      ]
+    },
+    {
+      "id": "BROKEN-TEXT-S02",
+      "requirement": "BROKEN-TEXT",
+      "scope": "Відкидання пошкоджених правок diff/patches/rewrite і публікації. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "tests": [
+        "tests/generation/test_broken_stage.py::test_diff_drops_only_the_broken_edit",
+        "tests/generation/test_broken_stage.py::test_diff_with_only_broken_edits_has_no_changes",
+        "tests/generation/test_broken_stage.py::test_patches_drop_only_the_broken_edit",
+        "tests/generation/test_broken_stage.py::test_rewrite_drops_broken_edits_and_reports_them",
+        "tests/generation/test_broken_stage.py::test_editor_loop_pass_with_only_broken_edits_stops_as_no_changes",
+        "tests/generation/test_broken_stage.py::test_editor_loop_summary_reports_dropped_edits",
+        "tests/generation/test_broken_text.py::test_diff_insertion_into_existing_word_is_broken",
+        "tests/generation/test_broken_text.py::test_publication_drops_damaged_fields_and_list_items"
+      ]
+    },
+    {
+      "id": "BROKEN-TEXT-S03",
+      "requirement": "BROKEN-TEXT",
+      "scope": "Попередження для прози лише з кількістю. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "tests": [
+        "tests/generation/test_broken_stage.py::test_draft_is_saved_with_a_count_only_warning",
+        "tests/generation/test_broken_stage.py::test_clean_draft_has_no_warning"
+      ]
+    },
+    {
+      "id": "BROKEN-TEXT-S04",
+      "requirement": "BROKEN-TEXT",
+      "scope": "Venice без потоку: тіло, одна дельта з вартістю, тайм-аут, скасування й пізній облік. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "tests": [
+        "tests/providers/test_nonstream_venice.py::test_only_venice_reject_and_unit_stages_wait_for_the_whole_answer",
+        "tests/providers/test_nonstream_venice.py::test_whole_answer_becomes_one_delta_and_a_terminal_with_cost",
+        "tests/providers/test_nonstream_venice.py::test_the_whole_answer_gets_a_300_second_read_timeout_and_errors_stay_generation_errors",
+        "tests/providers/test_nonstream_venice.py::test_cancel_returns_at_once_and_the_late_answer_closes_the_budget_record"
+      ]
+    },
+    {
+      "id": "BROKEN-TEXT-S05",
+      "requirement": "BROKEN-TEXT",
+      "scope": "Банер редактора з кількістю «�» і переходом до наступного. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "tests": [
+        "tests/generation/test_broken_text.py::test_count_broken"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#broken-text-browser",
+        "reason": "check_docs.py індексує лише pytest; Playwright case tests/web/browser/broken-text.spec.mjs (банер, кнопка «До наступного», зникнення після виправлення) виконується окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "UI-001-S01",
       "requirement": "UI-001",
       "scope": "Незбережені ручні зміни. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
