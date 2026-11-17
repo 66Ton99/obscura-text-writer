@@ -6,7 +6,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'integrations'/'claude'/'tools'))
 
-from run_scenarios import (author_asked, author_problems, bible_problems, creation_problems, pipeline_problems,  # noqa: E402
+from run_scenarios import (author_asked, author_problems, bible_problems, creation_problems, outcome_problems,  # noqa: E402
+                           pipeline_problems,
                            publish_problems,
                            settings_problems, verdict)
 from scripts.skills_stand import Result  # noqa: E402
@@ -169,3 +170,17 @@ def test_author_question_is_required():
     assert author_asked([], 'Як чинити з другою сценою?') is False
     assert author_asked([], 'Чиє ім’я поставити автором?') is True
     assert author_asked([('AskUserQuestion', {'questions': [{'question': 'Who is the author?'}]})], '') is True
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_prose_without_saved_memory_is_a_problem():
+    assert pipeline_problems(FULL, state='prose', patches=False, memory_saved=False) == ["пам'ять сцени не збережено"]
+    assert pipeline_problems(FULL, state='prose', patches=False, memory_saved=True) == []
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_publish_outcome_needs_a_saved_cover_and_a_successful_export():
+    calls = [('export_book', {'format': 'fb2'})]
+    assert outcome_problems({'cover': None}, calls, [('export_book', 'Obscura відповіла 422')]) == \
+        ['обкладинку не збережено в картці', 'жоден експорт не вдався']
+    assert outcome_problems({'cover': {'id': 'c1'}}, calls + calls, [('export_book', '422')]) == []

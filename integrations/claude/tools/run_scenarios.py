@@ -63,7 +63,7 @@ def check_s04b(stand, calls, text, ctx):
     return problems
 
 
-def pipeline_problems(calls, *, state, patches):
+def pipeline_problems(calls, *, state, patches, memory_saved=True):
     saves = [s for s in pipeline_saves(calls) if s]
     firsts = [saves.index(stage) for stage in PIPELINE_ORDER if stage in saves]
     problems = []
@@ -81,6 +81,9 @@ def pipeline_problems(calls, *, state, patches):
         problems.append(f'не всі етапи збережено: {saves}; стан сцени {state}')
     elif state != 'prose':
         problems.append(f'сцена не дійшла до прози: стан {state}')
+    elif not memory_saved:
+        # 'prose' says nothing about memory: the scene's state is the prose head only.
+        problems.append("пам'ять сцени не збережено")
     return problems
 
 
@@ -92,7 +95,8 @@ def verdict(problems, result):
 def check_s05(stand, calls, text, ctx):
     state = next(s['state'] for s in obscura_call(stand.base, 'get_story', {'story_id': ctx['story']})['scenes']
                  if s['id'] == ctx['scene'])
-    problems = pipeline_problems(calls, state=state, patches=bool(ctx.get('patches')))
+    memory = obscura_call(stand.base, 'get_scene_text', {'scene_id': ctx['scene'], 'material': 'memory'})
+    problems = pipeline_problems(calls, state=state, patches=bool(ctx.get('patches')), memory_saved=bool(memory.get('version_id')))
     refused = [e for e in ctx['errors'] if e[0] == 'save_stage_result']
     if len(refused) >= 3:
         problems.append(f'{len(refused)} відмов save_stage_result')
@@ -178,6 +182,15 @@ def author_asked(calls, text):
     return any(word in chunk for chunk in cards + lines for word in AUTHOR_WORDS)
 
 
+def outcome_problems(publication, calls, errors):
+    """Calls are requests: the saved card must hold a cover, and at least one export must have succeeded."""
+    problems = ['обкладинку не збережено в картці'] * (publication.get('cover') is None)
+    exports, failed = names(calls).count('export_book'), [e for e in errors if e[0] == 'export_book']
+    if exports and len(failed) >= exports:
+        problems.append('жоден експорт не вдався')
+    return problems
+
+
 def author_problems(card, signatures, expected):
     names_by_id = {item['id']: item['display_name'] for item in signatures}
     authors = [names_by_id.get(i, i) for i in card.get('author_ids') or []]
@@ -192,6 +205,7 @@ def check_s07b(stand, calls, text, ctx):
     problems = publish_problems(calls, author_given=True, palette='forest')
     publication = obscura_call(stand.base, 'get_publication', {'story_id': ctx['story']})
     problems += author_problems(publication['card'], publication['signatures'], 'Ірина Коваль')
+    problems += outcome_problems(publication, calls, ctx['errors'])
     if not any(n == 'export_book' and args.get('format') == 'fb2' and args.get('allow_incomplete') for n, args in calls):
         problems.append('немає експорту fb2 з allow_incomplete')
     if not any(word in text.lower() for word in ('незаверш', 'не заверш', 'incomplete', 'unfinished', 'без прози')):
