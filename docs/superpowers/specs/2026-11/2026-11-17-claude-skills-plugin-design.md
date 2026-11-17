@@ -1,7 +1,7 @@
 # Скіли Obscura для Claude: локальний плагін
 
 Дата: 2026-11-17
-Статус: чекає на затвердження
+Статус: затверджено 2026-11-17
 Spec-review: codex/gpt-6.1-sol @ 0703719 (author: claude) — 6 findings: 6 fixed, 0 rejected
 
 ## Для власника
