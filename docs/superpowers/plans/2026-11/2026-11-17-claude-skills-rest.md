@@ -48,14 +48,15 @@
 
   | Рецепт | Провайдер | planner | writer | editor | memory |
   |---|---|---|---|---|---|
-  | Без цензури · дешево | venice | `glm-5-3-flash-uncensored` (0.165/0.55) | те саме | те саме | те саме |
-  | Без цензури · баланс | venice | `deepseek-v4-1-flash-1017-uncensored` (0.33/1.32) | те саме | те саме | те саме |
-  | Без цензури · якість | venice | `deepseek-v4-1-flash-1017-uncensored` | `aion-labs-aion-3-5` (3.75/7.5) | `aion-labs-aion-3-5` | `deepseek-v4-1-flash-1017-uncensored` |
-  | Звичайний · дешево | openrouter | `deepseek/deepseek-v4-flash` (0.09/0.18) | те саме | те саме | те саме |
-  | Звичайний · баланс | openrouter | `deepseek/deepseek-v4-flash` | `deepseek/deepseek-v4.1-flash` (0.3/1.2) | `deepseek/deepseek-v4.1-flash` | `deepseek/deepseek-v4-flash` |
-  | Звичайний · якість | openrouter | `anthropic/claude-sonnet-5.5` (2/10) | `anthropic/claude-sonnet-5.5` | `anthropic/claude-sonnet-5.5` | `deepseek/deepseek-v4.1-flash` |
+  | Без цензури · дешево | venice | `gemma-4-uncensored` (0.1625/0.5) | `deepseek-v4-1-flash-1017-uncensored` (0.33/1.32) | `glm-5-3-flash-uncensored` (0.165/0.55) | `gemma-4-uncensored` |
+  | Без цензури · баланс | venice | `deepseek-v4-1-flash-1017-uncensored` | `deepseek-v4-1-flash-1017-uncensored` | `qwen-3-6-plus` (0.625/3.75) | `deepseek-v4-1-flash-1017-uncensored` |
+  | Без цензури · якість | venice | `deepseek-v4-1-flash-1017-uncensored` | `aion-labs-aion-3-5` (3.75/7.5) | `qwen-3-6-plus` | `deepseek-v4-1-flash-1017-uncensored` |
+  | Звичайний · дешево | openrouter | `google/gemma-4-26b-a4b-it` (0.0765/0.255) | `deepseek/deepseek-v4-flash` (0.09/0.18) | `z-ai/glm-5.3-flash` (0.15/0.5) | `google/gemma-4-26b-a4b-it` |
+  | Звичайний · баланс | openrouter | `deepseek/deepseek-v4-flash` | `deepseek/deepseek-v4.1-flash` (0.3/1.2) | `qwen/qwen3.7-plus` (0.32/1.28) | `deepseek/deepseek-v4-flash` |
+  | Звичайний · якість | openrouter | `anthropic/claude-sonnet-5.5` (2/10) | `anthropic/claude-sonnet-5.5` | `openai/gpt-6.1-sol` (2/10) | `deepseek/deepseek-v4.1-flash` |
 
-  Плюс: звичайний твір із ключем лише Venice бере рецепт «без цензури» того ж бюджету; родини для пошуку заміни (`glm`, `deepseek`, `aion`, `claude-sonnet`); примітка, що рецепт — довідка й звіряється з живим каталогом.
+  Правило (рішення власника 17.11.2026): письменник і редактор — різні моделі, за можливості різних родин; це правило діє й під час пошуку заміни.
+  Плюс: звичайний твір із ключем лише Venice бере рецепт «без цензури» того ж бюджету; родини для пошуку заміни (`gemma`, `glm`, `deepseek`, `qwen`, `aion`, `claude-sonnet`, `gpt`); примітка, що рецепт — довідка й звіряється з живим каталогом.
 - [ ] **Step 3:** `python -m pytest tests/test_claude_plugin.py -q` — Expected: усі passed (нові назви інструментів відомі, frontmatter переносний).
 - [ ] **Step 4: Commit** `feat(skills): setup-models with model recipes`
 
