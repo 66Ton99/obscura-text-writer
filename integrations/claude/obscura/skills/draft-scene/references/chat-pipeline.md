@@ -49,15 +49,18 @@ The order is required. An error such as "Спершу завершіть поп�
 - **After three refusals in a row,** stop and show the violations to the author.
 - **409:** the task is stale or needs the author. Take the task again with `get_stage_task`.
 - **Limits:** `max_chars` takes 1000–20000. Larger values give 422.
+- **Memory shape:** every group of the memory answer keeps all its keys, even when they are empty. For example, `character_states` needs `add`, `update` and `retire`, so send `"update": [], "retire": []` when there is nothing to change. A group with only `add` is refused as a schema violation.
 
 ## Model routing
 
 | Step | Claude Code | Claude Desktop |
 |---|---|---|
-| brief | main session (pending measurement) | main session |
+| brief | a subagent with model `sonnet` | main session |
 | draft | Opus level: if the session model is weaker, give the step to a subagent with model `opus` | suggest that the author picks the strongest model |
 | edit | as draft | as draft |
-| memory | main session (pending measurement) | main session |
+| memory | main session: the scene text is already in its context | main session |
+
+The brief and memory choices come from a measurement on one neutral scene, three runs per model. Haiku dropped facts the next scenes need, such as the plan for Thursday in the test scene.
 
 **Brief for a subagent.** A subagent does not see the conversation and cannot ask the author anything. Give it everything it needs:
 - `scene_id` and the stage;
