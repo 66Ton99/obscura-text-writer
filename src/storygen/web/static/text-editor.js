@@ -10,9 +10,44 @@ export function createTextEditor(element){
   let metadata={material:'plan',content_format:'plain',version_id:null};
   let baselineText='',baselineFormat='plain',sourceRef=null,commentHandlers={};
   const inputHandlers=new Set(),transactionHandlers=new Set(),buttons=new Map();
-  const emit=()=>{for(const handler of inputHandlers)handler()};
+  const emit=()=>{refreshBroken();for(const handler of inputHandlers)handler()};
   element.addEventListener('input',emit);
-  function visibility(){element.hidden=!shown||!!engine;if(wrapper)wrapper.hidden=!shown||!engine;}
+  // Spec 2026-11-17-broken-letters-guard: letters a provider lost show as U+FFFD; the count is derived from the text.
+  const BROKEN='\uFFFD';
+  let banner=null,brokenLabel=null;
+  function brokenCount(){const text=engine?engine.view.state.doc.textContent:element.value;let n=0;for(const ch of text)if(ch===BROKEN)n++;return n;}
+  function refreshBroken(){
+    const doc=element.ownerDocument;if(!doc?.createElement)return;
+    const count=brokenCount();
+    if(!banner){
+      if(!count)return;
+      banner=doc.createElement('div');banner.className='broken-text-banner';banner.setAttribute('role','status');
+      brokenLabel=doc.createElement('span');
+      const next=doc.createElement('button');next.type='button';next.className='secondary';uiText(next,'textContent',()=>t('broken_text.next'));
+      next.onclick=selectNextBroken;banner.append(brokenLabel,next);element.before(banner);
+    }
+    uiText(brokenLabel,'textContent',()=>t('broken_text.banner',{p1:brokenCount()}));
+    banner.hidden=!count||!shown;
+  }
+  function selectNextBroken(){
+    if(!engine){
+      const value=element.value;let at=value.indexOf(BROKEN,element.selectionEnd||0);if(at<0)at=value.indexOf(BROKEN);
+      if(at<0)return;element.focus();element.setSelectionRange(at,at+1);return;
+    }
+    const dom=engine.view.dom,doc=dom.ownerDocument,walker=doc.createTreeWalker(dom,4);
+    const selection=doc.getSelection(),after=selection?.rangeCount?selection.getRangeAt(0):null;
+    let first=null,found=null;
+    for(let node=walker.nextNode();node;node=walker.nextNode()){
+      for(let i=node.data.indexOf(BROKEN);i>=0;i=node.data.indexOf(BROKEN,i+1)){
+        first??={node,i};
+        if(!found&&(!after||after.comparePoint(node,i)>0))found={node,i};
+      }
+    }
+    const target=found||first;if(!target)return;
+    engine.focus();selection.setBaseAndExtent(target.node,target.i,target.node,target.i+1);
+    target.node.parentElement?.scrollIntoView({block:'center'});
+  }
+  function visibility(){element.hidden=!shown||!!engine;if(wrapper)wrapper.hidden=!shown||!engine;if(banner)banner.hidden=!shown||!brokenCount();}
   function update(){
     if(!engine)return;
     const marks=engine.view.state.storedMarks||engine.view.state.selection.$from.marks();
@@ -54,7 +89,7 @@ export function createTextEditor(element){
         engine.view.dom.setAttribute('role','textbox');engine.view.dom.setAttribute('aria-multiline','true');
         engine.view.dom.setAttribute('aria-labelledby',element.getAttribute('aria-labelledby')||'scene-title');update();
       }
-      visibility();
+      visibility();refreshBroken();
     },
     snapshot:()=>engine?{...metadata,...engine.snapshot()}:{source:element.value,...metadata},
     identity:()=>({...metadata}),

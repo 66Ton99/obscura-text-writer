@@ -1,4 +1,5 @@
 """Bounded editor passes on immutable working copies, with one final review."""
+from ..providers.requests import streams
 from ..authoring.blueprints import get_role_settings
 from ..domain import StageAttempt,new_id
 from ..dependency_models import TargetCAS
@@ -202,7 +203,8 @@ def finish(worker,run,reason):
                 context=ctx.model_dump(),partial_path=f'stories/{run.story_id}/runs/{id}/partial.txt')
             summary.context.update(copyedit_proposal={'protocol_version':2,'draft_id':data['base_version_id'],'proposal':proposal.model_dump()},
                 edit_loop_summary={'run_id':run.id,'attempt_ids':[a.id for a in model_attempts(repo,run)],'stop_reason':reason,'task_cursor':task_key(run)},
-                editor_warnings=rewrite_warnings(before,after,proposal.edits),run_cursor=run.cursor)
+                editor_warnings=rewrite_warnings(before,after,proposal.edits)+list(dict.fromkeys(
+                    w for a in model_attempts(repo,run) for w in a.context.get('broken_text_warnings',[]))),run_cursor=run.cursor)
             if reason=='pass_failed':
                 summary.context['edit_loop_summary'].update(failed_attempt_id=data['failed_attempt_id'],
                     failure_message=data.get('failure_message'),
@@ -289,7 +291,8 @@ def _execute(worker,id):
             settings=role(repo,run.story_id)
             ctx=context(repo,scene_id(run),settings,progress(run)['current_version_id'],run.id,loop_task=task_key(run),loop_pass=pass_index(run))
             worker.event(id,'stage_started',dict(stage='edit',scene_id=scene_id(run),model=settings.provider.model,
-                provider=settings.provider.provider,estimated_tokens=ctx.estimated_tokens,edit_loop_pass=len(attempts)+1,edit_loop_limit=run.request.edit_pass_limit))
+                provider=settings.provider.provider,estimated_tokens=ctx.estimated_tokens,edit_loop_pass=len(attempts)+1,edit_loop_limit=run.request.edit_pass_limit,
+                streaming=streams('edit',settings,ctx)))
             completed=execute_stage(repo,scene_id(run),'edit',ctx,worker.gateway_factory(settings.provider),worker.cancel_event,
                 lambda text:worker.event(id,'delta',{'stage':'edit','scene_id':scene_id(run),'text':text}),id,run.cursor)
         with worker.condition:

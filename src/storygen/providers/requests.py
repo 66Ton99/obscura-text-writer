@@ -30,6 +30,15 @@ def venice_reasoning(settings):
     return {'reasoning':{'effort':effort}} if effort else {}
 
 
+def streams(stage, settings, context=None):
+    """Whether the stage's request streams: the captured body decides, else the same rule as `generation_request`."""
+    body = getattr(context, 'api_request', None)
+    if body:
+        return body.get('stream', True) is not False
+    from ..generation.broken_text import stage_category
+    return not (settings.provider.provider == 'venice' and stage_category(stage, settings.edit_mode) in (1, 2))
+
+
 def generation_request(stage, settings, system, user, fragments):
     from ..generation.models import StoryBlueprint, WritersBrief
     from ..memory.models import MemorySnapshot

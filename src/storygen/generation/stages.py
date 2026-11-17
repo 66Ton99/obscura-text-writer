@@ -90,8 +90,12 @@ def execute_stage(
     text=''.join(parts)
     from . import broken_text
     guard=broken_text.stage_category(stage,context.settings.edit_mode)
-    known=broken_text.known_words(broken_text.request_source(context.api_request) if context.api_request else
-        (context.system_text or '')+'\n'+(context.user_text or '')) if guard else frozenset()
+    if guard:
+        instructions,document=(broken_text.request_parts(context.api_request) if context.api_request else
+            (context.system_text or '',context.user_text or ''))
+        known=broken_text.known_words(document,instructions)
+    else:
+        known=frozenset()
     broken=broken_text.structured_broken(text,known) if guard==1 else []
     accounting=getattr(gateway,'accounting',None)
     if accounting:
@@ -325,9 +329,11 @@ def execute_stage(
             bad=broken_text.broken_diff_edits(original,proposal,known)
             if bad:
                 proposal=broken_text.drop_diff_edits(original,proposal,bad)
-                if proposal is None:
+                if context.fragments.get('edit_loop_run_id'):
+                    attempt.context['broken_text_warnings']=[broken_text.dropped_warning(len(bad))]
+                elif proposal is None:
                     raise ValueError('Редактор не запропонував змін')
-                text=proposal.candidate_text
+                text=proposal.candidate_text if proposal else original
             if context.fragments.get('edit_loop_run_id'):
                 from .editor_loop import save_pass_result
                 return save_pass_result(repo,attempt,context,original,text)
@@ -348,12 +354,18 @@ def execute_stage(
             attempt.context['editor_warnings']=editor_warnings
             proposal,_=parse_editor_output(text,editor_warnings)
             kept=[edit for edit in proposal.edits if not broken_text.new_broken_words(edit.replacement,known)]
-            if len(kept)!=len(proposal.edits):
-                if not kept:
-                    raise ValueError('Редактор не запропонував змін')
-                editor_warnings.append(broken_text.dropped_warning(len(proposal.edits)-len(kept)))
-                proposal=proposal.model_copy(update={'edits':kept})
             original=repo.read_text(draft_id)
+            if len(kept)!=len(proposal.edits):
+                warning=broken_text.dropped_warning(len(proposal.edits)-len(kept))
+                if context.fragments.get('edit_loop_run_id'):
+                    attempt.context['broken_text_warnings']=[warning]
+                    if not kept:
+                        from .editor_loop import save_pass_result
+                        return save_pass_result(repo,attempt,context,original,original)
+                elif not kept:
+                    raise ValueError('Редактор не запропонував змін')
+                editor_warnings.append(warning)
+                proposal=proposal.model_copy(update={'edits':kept})
             text=apply_copyedits(original,proposal)
             if context.fragments.get('edit_loop_run_id'):
                 from .editor_loop import save_pass_result

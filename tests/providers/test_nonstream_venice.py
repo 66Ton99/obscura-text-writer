@@ -63,6 +63,21 @@ def test_whole_answer_becomes_one_delta_and_a_terminal_with_cost(monkeypatch, ac
     assert sent[0]['stream'] is False
 
 
+def test_the_whole_answer_gets_a_300_second_read_timeout_and_errors_stay_generation_errors(monkeypatch, accounted_call):
+    monkeypatch.setenv('VENICE_API_KEY', 'test')
+    timeouts = []
+    def handler(request):
+        if request.method == 'GET':
+            return httpx.Response(200, json={'data': [model()]})
+        timeouts.append(request.extensions['timeout']['read'])
+        return httpx.Response(503, json={'error': {'message': 'busy'}})
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        events = list(build_generation_gateway(context().settings.provider, client, accounted_call('venice', 'qwen-test'))
+                      .stream(context(), threading.Event()))
+    assert timeouts == [300]
+    assert events[-1].type == 'error' and events[-1].failure['http_status'] == 503
+
+
 def test_cancel_returns_at_once_and_the_late_answer_closes_the_budget_record(monkeypatch, accounted_call):
     monkeypatch.setenv('VENICE_API_KEY', 'test')
     release = threading.Event()

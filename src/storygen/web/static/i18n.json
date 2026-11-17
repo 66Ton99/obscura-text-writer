@@ -2575,7 +2575,10 @@
     "series.status.prequel": "Приквел: пам’ять пізніших книг — майбутнє, якому не можна суперечити.",
     "series.status.prequel_review": "приквел: перегляньте факти пізніших книг",
     "series.msg.created": "Створено нову серію «{p0}»",
-    "series.origin": "точка відліку"
+    "series.origin": "точка відліку",
+    "broken_text.banner": "У тексті пошкоджених символів «�»: {p1}. Виправте слова, де вони стоять.",
+    "broken_text.next": "До наступного",
+    "run.waiting_whole_answer": "Чекаємо на повну відповідь моделі"
   },
   "en": {
     "ui.save": "Save",
@@ -5153,6 +5156,9 @@
     "series.status.prequel": "Prequel: the memory of later books is a future it must not contradict.",
     "series.status.prequel_review": "prequel: review the facts of later books",
     "series.msg.created": "Created a new series «{p0}»",
-    "series.origin": "origin"
+    "series.origin": "origin",
+    "broken_text.banner": "Broken characters «�» in the text: {p1}. Fix the words where they appear.",
+    "broken_text.next": "Next",
+    "run.waiting_whole_answer": "Waiting for the full model answer"
   }
 }

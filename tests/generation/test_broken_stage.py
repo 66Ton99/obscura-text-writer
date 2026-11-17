@@ -1,5 +1,7 @@
 """Spec 2026-11-17-broken-letters-guard: reactions to new U+FFFD by stage category."""
 import json
+
+import pytest
 import threading
 
 from storygen.domain import SceneCreate, StoryCreate
@@ -68,6 +70,7 @@ def test_diff_drops_only_the_broken_edit(tmp_path):
 def test_diff_with_only_broken_edits_has_no_changes(tmp_path):
     repo, scene, attempt = run_output(tmp_path, f'Олена ч{R}{R}кала два тижні. Це не ваші провина.', 'diff')
     assert attempt.state == 'failed'
+    assert attempt.context['editor_failure']['category'] == 'no_changes'
     assert not attempt.context.get('copyedit_proposal')
 
 
@@ -120,3 +123,57 @@ def test_rewrite_drops_broken_edits_and_reports_them(rewrite_case):
     edits = attempt.context['rewrite_proposal']['proposal']['edits']
     assert all(R not in edit['replacement'] for edit in edits) and edits
     assert rewrite_preview(repo, scene.id, attempt.id)['warnings'] == attempt.context['rewrite_warnings']
+
+
+def test_memory_copying_a_broken_one_letter_word_is_saved(tmp_path):
+    repo, scene, context = memory_case(tmp_path, f'A сидів {R}{R} бібліотеці, готуючи знімки.')
+    attempt = run_memory(repo, scene, context, f'A сидить {R}{R} бібліотеці')
+    assert attempt.state == 'completed', attempt.error
+
+
+def test_classifier_with_a_new_broken_word_fails_with_its_own_category(tmp_path):
+    from storygen.generation.copyedit_review import copyedit_preview
+    from storygen.generation.worker import RunCoordinator
+    from storygen.run_models import RunRequest
+    from tests.generation.test_edit_classification import fixture
+    repo, scene, proposal = fixture(tmp_path)
+    preview = copyedit_preview(repo, scene.id, proposal.id)
+    raw = json.dumps({'items': [{'index': 0, 'category': 'grammar', 'note': f'зм{R}{R}на'}]}, ensure_ascii=False)
+    worker = RunCoordinator(repo, gateway_factory=lambda _: Gateway(raw))
+    request = RunRequest(story_id=scene.story_id, scene_id=scene.id, mode='classify', proposal_attempt_id=proposal.id,
+                         proposal_fingerprint=preview['proposal_fingerprint'])
+    run = worker.enqueue(request, 'broken')
+    run.state = 'running'
+    repo.save_run(run)
+    worker._execute(run.id)
+    attempt = repo.list_attempts(scene.story_id, run.id)[0]
+    assert attempt.state == 'failed'
+    assert attempt.context['classification_failure']['category'] == 'broken_output'
+
+
+@pytest.mark.parametrize('mode', ['patches', 'diff'])
+def test_editor_loop_pass_with_only_broken_edits_stops_as_no_changes(tmp_path, mode):
+    from tests.generation.test_editor_loop import SOURCE, patch, seeded
+    broken = patch('йшов', f'й{R}{R}ла') if mode == 'patches' else SOURCE.replace('йшов', f'й{R}{R}ла')
+    repo, scene, draft, worker, run, calls = seeded(tmp_path, [broken], mode=mode)
+    worker._execute(run.id)
+    current = worker.get_run(run.id)
+    assert current.editor_loop['stop_reason'] == 'no_changes' and len(calls) == 1
+
+
+@pytest.mark.parametrize('mode', ['patches', 'diff'])
+def test_editor_loop_summary_reports_dropped_edits(tmp_path, mode):
+    from storygen.generation.copyedit_review import copyedit_preview
+    from tests.generation.test_editor_loop import SOURCE, seeded
+    two = json.dumps({'edits': [dict(fragment_id='f000001', original='йшов', replacement='йшла', category='grammar'),
+                                dict(fragment_id='f000001', original='тихо', replacement=f'ти{R}{R}', category='grammar')]},
+                     ensure_ascii=False)
+    first = two if mode == 'patches' else SOURCE.replace('йшов', 'йшла').replace('тихо', f'ти{R}{R}')
+    done = '{"edits":[]}' if mode == 'patches' else SOURCE.replace('йшов', 'йшла')
+    repo, scene, draft, worker, run, calls = seeded(tmp_path, [first, done], mode=mode)
+    worker._execute(run.id)
+    current = worker.get_run(run.id)
+    assert current.state == 'needs_review', current.error
+    preview = copyedit_preview(repo, scene.id, current.editor_loop['proposal_attempt_id'])
+    assert R not in preview['preview']
+    assert any('«�»' in warning for warning in preview['warnings'])

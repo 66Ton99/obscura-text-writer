@@ -1,5 +1,5 @@
 from storygen.generation.broken_text import (
-    broken_diff_edits, count_broken, drop_diff_edits, known_words, new_broken_words, request_source,
+    broken_diff_edits, count_broken, drop_broken_suggestions, drop_diff_edits, known_words, new_broken_words, request_parts,
     stage_category, structured_broken,
 )
 from storygen.rewrite_diff import apply_rewrite_diff, build_rewrite_diff
@@ -18,8 +18,21 @@ def test_new_word_is_reported_once_in_order():
 
 
 def test_bare_replacement_is_new_even_if_the_prompt_mentions_it():
-    known = known_words('Відновіть слова з символом «�» за контекстом.')
+    known = known_words('Кіт спить.', 'Відновіть слова з символом «�» за контекстом.')
     assert new_broken_words(f'кіт {R} спить', known) == [R]
+
+
+def test_a_broken_one_letter_word_from_the_document_is_known():
+    known = known_words(f'Він {R}{R} вона.', 'Відновіть слова з символом «�».')
+    assert new_broken_words(f'Він {R}{R} вона пішли.', known) == []
+
+
+def test_compact_json_and_escapes_in_the_request_do_not_glue_words():
+    # Compact JSON as the request carries it: a key glued to the first word, an escaped U+FFFD, a literal "\n" escape.
+    source = '{"mutable":[{"id":"c1","text":"ко\\ufffd\\ufffdи сидить у бібл' + R + R + 'отеці\\nба' + R + R + 'ня"}]}'
+    known = known_words(source)
+    assert known == {f'ко{R}{R}и', f'бібл{R}{R}отеці', f'ба{R}{R}ня'}
+    assert new_broken_words(f'ко{R}{R}и у бібл{R}{R}отеці, ба{R}{R}ня', known) == []
 
 
 def test_word_at_line_edges():
@@ -31,10 +44,18 @@ def test_count_broken():
     assert count_broken('чисто') == 0
 
 
-def test_request_source_joins_message_contents():
+def test_request_parts_split_instructions_from_the_document():
     body = {'messages': [{'role': 'system', 'content': 'перший'},
                          {'role': 'user', 'content': [{'type': 'text', 'text': 'другий'}]}]}
-    assert request_source(body) == 'перший\nдругий'
+    assert request_parts(body) == ('перший', 'другий')
+
+
+def test_publication_drops_damaged_fields_and_list_items():
+    kept, dropped = drop_broken_suggestions(
+        {'title': f'Ма{R}{R}к', 'annotation': 'Чиста анотація.', 'genres': ['драма', f'тр{R}{R}лер'], 'keywords': [f'с{R}{R}т']},
+        frozenset())
+    assert kept == {'annotation': 'Чиста анотація.', 'genres': ['драма']}
+    assert dropped == 3
 
 
 def test_structured_checks_decoded_strings():

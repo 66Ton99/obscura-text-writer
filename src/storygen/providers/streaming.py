@@ -261,8 +261,12 @@ class OpenAIGenerationGateway:
                 self.accounting.finish(self.settings,usage,complete=complete,cost=cost,response_id=response_id)
 
     def _complete(self,body):
-        with build_openai_client(self.settings,self.http_client) as client:
+        client=build_openai_client(self.settings,self.http_client)
+        try:
             return client.with_options(timeout=NONSTREAM_TIMEOUT).chat.completions.create(**sdk_arguments(body))
+        finally:
+            if self.http_client is None:
+                client.close()  # An injected client belongs to the caller; closing it would end its other requests.
 
     def _finish_late(self,call):
         """Close the budget reservation of a cancelled non-streamed call with what the provider reported."""

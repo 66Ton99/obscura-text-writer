@@ -26,29 +26,27 @@ def stage_category(stage, edit_mode):
     return None
 
 
-def _keep(ch):
-    return ch.isalnum() or ch == REPLACEMENT
+_WORD = re.compile("[\\w\ufffd]+(?:['’\\-][\\w\ufffd]+)*")
+# JSON escapes inside compact JSON blocks of a request: `\n` must not glue "n" to the next word.
+_ESCAPE = re.compile(r'\\(?:u[0-9a-fA-F]{4}|.)')
 
 
-def _trim(word):
-    start, end = 0, len(word)
-    while start < end and not _keep(word[start]):
-        start += 1
-    while end > start and not _keep(word[end-1]):
-        end -= 1
-    return word[start:end]
+def _unescape(match):
+    return REPLACEMENT if match.group().lower() == '\\ufffd' else ' '
 
 
 def _words(text):
-    for match in re.finditer(r'\S+', text):
-        word = _trim(match.group())
-        if REPLACEMENT in word:
-            yield word, match.start(), match.end()
+    """Words with U+FFFD: runs of letters, digits and U+FFFD joined by apostrophes or hyphens."""
+    for match in _WORD.finditer(_ESCAPE.sub(_unescape, text)):
+        if REPLACEMENT in match.group():
+            yield match.group(), match.start(), match.end()
 
 
-def known_words(source):
-    """Damaged words the model received; a word of U+FFFD alone covers nothing."""
-    return frozenset(word for word, _, _ in _words(source) if word.strip(REPLACEMENT))
+def known_words(document, instructions=''):
+    """Damaged words the model received. A word of U+FFFD alone (a broken one-letter word) is known only from the
+    document: the editor prompt names the character itself and must not cover a bare U+FFFD."""
+    return frozenset([word for word, _, _ in _words(document)]
+                     + [word for word, _, _ in _words(instructions) if word.strip(REPLACEMENT)])
 
 
 def new_broken_words(output, known):
@@ -63,15 +61,16 @@ def count_broken(text):
     return text.count(REPLACEMENT)
 
 
-def request_source(body):
-    parts = []
+def request_parts(body):
+    """(instructions, document): system messages, then every other message of the request."""
+    system, other = [], []
     for message in (body or {}).get('messages') or []:
         content = message.get('content')
+        if isinstance(content, list):
+            content = '\n'.join(item.get('text') or '' for item in content if isinstance(item, dict))
         if isinstance(content, str):
-            parts.append(content)
-        elif isinstance(content, list):
-            parts.extend(item.get('text') or '' for item in content if isinstance(item, dict))
-    return '\n'.join(parts)
+            (system if message.get('role') == 'system' else other).append(content)
+    return '\n'.join(system), '\n'.join(other)
 
 
 def json_strings(value):
