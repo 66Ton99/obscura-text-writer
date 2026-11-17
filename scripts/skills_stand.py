@@ -37,6 +37,7 @@ class Result:
     usage: dict = field(default_factory=dict)
     text: str = ''
     is_error: bool = False
+    errors: list = field(default_factory=list)
 
 
 def write_mcp_config(path, port):
@@ -76,9 +77,47 @@ def tool_calls(lines):
     return calls
 
 
+def tool_errors(lines):
+    """Refused tool calls in order: (tool name without the obscura prefix, error text)."""
+    names, errors = {}, []
+    for event in _events(lines):
+        for item in (event.get('message') or {}).get('content') or []:
+            if not isinstance(item, dict):
+                continue
+            if event.get('type') == 'assistant' and item.get('type') == 'tool_use':
+                names[item.get('id')] = str(item.get('name', '')).removeprefix('mcp__obscura__')
+            elif event.get('type') == 'user' and item.get('type') == 'tool_result' and item.get('is_error'):
+                content = item.get('content')
+                if isinstance(content, list):
+                    content = ''.join(part.get('text', '') for part in content if isinstance(part, dict))
+                errors.append((names.get(item.get('tool_use_id'), '?'), str(content)))
+    return errors
+
+
+def obscura_call(http, name, arguments):
+    """Call one bridge tool in-process against `http` (an httpx client or a base URL); the stand sets up stories this
+    way without a model. Raises RuntimeError on a tool error."""
+    import anyio
+    from mcp import Client
+    from storygen.mcp.bridge import build_client, build_server
+    client = build_client(http) if isinstance(http, str) else http
+
+    async def run():
+        async with Client(build_server(client)) as session:
+            return await session.call_tool(name, arguments)
+    result = anyio.run(run)
+    text = ''.join(getattr(item, 'text', '') for item in result.content)
+    if result.is_error:
+        raise RuntimeError(f'{name}: {text}')
+    data = result.structured_content
+    if isinstance(data, dict) and set(data) == {'result'}:
+        return data['result']
+    return data if data is not None else json.loads(text)
+
+
 def parse_result(lines):
     lines = list(lines)
-    result = Result(tool_calls=tool_calls(lines))
+    result = Result(tool_calls=tool_calls(lines), errors=tool_errors(lines))
     texts = []
     for event in _events(lines):
         if event.get('type') == 'assistant':

@@ -31,7 +31,7 @@ Go through these gates in this order. At each gate, ask only what the author has
 2. **Idea, plan, ending.** The minimum is the idea. If the plan or the ending is missing:
    - show the structure: exposition → inciting incident → rising action → climax → resolution;
    - for each missing part, offer 2–3 concrete options of what could happen, one card per part.
-3. **Length and scenes.** The default is 7000 words in 7 scenes of 1000 words. Offer it on one card with the merge options from the interview reference.
+3. **Length and scenes.** The default is 7000 words in 7 scenes of 1000 words. Offer it on one card with the merge options from the interview reference. Obscura accepts at least 5000 words per story; the reference says what to do for shorter pieces.
 4. **Title.** If there is none, offer a card with 3 titles. The author can type their own.
 5. **Only if not said:** point of view, place and time, content rating, language. Offer the default for each. The content rating is required: Obscura will not generate text without it.
 

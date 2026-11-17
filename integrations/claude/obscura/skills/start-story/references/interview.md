@@ -52,6 +52,11 @@ The two merges can be combined. After a merge, give the freed words to the risin
 
 If the author changes the length, keep scenes at 700–1500 words each, and propose the scene count yourself.
 
+**Obscura's minimum is 5000 words per story** (`create_story` refuses less with a 422). For a shorter piece:
+- create the story with `target_words` 5000;
+- give each scene its own smaller target in the plan;
+- tell the author that the story's total is only a target, not a requirement.
+
 ## 4. Title
 
 The card offers 3 titles that fit the tone: one direct, one intriguing, one playful if the story is light. The author can always type their own.
