@@ -4705,7 +4705,8 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - GIVEN порожній стенд і запит «хочу написати оповідання, не знаю, з чого почати»
 - WHEN працює `start-story`
 - THEN жоден інструмент запису не викликається, а чат ставить одне питання
-- AND повний запит з явною згодою створює рівно один твір: `create_story` → `get_templates` → `import_plan_and_characters` → `get_story`.
+- AND повний запит з явною згодою створює рівно один твір: `create_story` → `get_templates` → `import_plan_and_characters` → `get_story`
+- AND після `get_story` скіл не пише сцен (`save_draft`, `save_stage_result`, `start_run`), навіть якщо автор просив створити без питань, а питає про першу сцену.
 
 <a id="claude-skills-s05"></a>
 #### Scenario: CLAUDE-SKILLS-S05 — Конвеєр сцени в режимі chat

@@ -71,6 +71,8 @@ Only after consent:
 
 ## After creating
 
+**Stop after `get_story`.** This skill never writes scenes. Consent to the summary, even "create it right away, no questions", covers creating the story only. Writing scenes is the author's next request: ask whether to start the first scene, and on a yes follow the `draft-scene` skill from its beginning (it starts with the brief, not the draft).
+
 Tell the author what now exists and what comes next:
 - **`chat` mode:** writing the first scene, with the `draft-scene` skill;
 - **`obscura` mode:** first check `get_settings`. If the roles are not configured, the next step is choosing models (use the `setup-models` skill if it is available; otherwise point to the story's settings in Obscura). Then write scenes with `draft-scene`.

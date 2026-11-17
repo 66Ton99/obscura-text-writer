@@ -38,9 +38,15 @@ def check_s04a(stand, calls, text, ctx):
     return [f'записи до згоди: {writes}'] * bool(writes) + ['немає питання до автора'] * (not asked)
 
 
+def creation_problems(calls):
+    """start-story ends with get_story: any text saved in the same session is writing the author did not ask for."""
+    texts = [n for n in names(calls) if n in ('save_draft', 'save_stage_result', 'start_run')]
+    return [f'після створення записано тексти: {texts}'] * bool(texts)
+
+
 def check_s04b(stand, calls, text, ctx):
     seq = [n for n in names(calls) if n in ('create_story', 'get_templates', 'import_plan_and_characters', 'get_story')]
-    problems = []
+    problems = creation_problems(calls)
     if seq.count('create_story') != 1:
         problems.append(f'create_story викликано {seq.count("create_story")} раз')
     order = [n for n in ('create_story', 'get_templates', 'import_plan_and_characters', 'get_story') if n in seq]
@@ -55,21 +61,26 @@ def check_s04b(stand, calls, text, ctx):
     return problems
 
 
-def check_s05(stand, calls, text, ctx):
+def pipeline_problems(calls, *, state, patches):
     saves = [s for s in pipeline_saves(calls) if s]
     firsts = [saves.index(stage) for stage in PIPELINE_ORDER if stage in saves]
     problems = []
     if firsts != sorted(firsts):
         problems.append(f'порядок етапів: {saves}')
-    state = next(s['state'] for s in obscura_call(stand.base, 'get_story', {'story_id': ctx['story']})['scenes']
-                 if s['id'] == ctx['scene'])
-    if ctx.get('patches'):
+    if patches:
         if 'edit' not in saves:
             problems.append('edit не збережено')
-        if state == 'needs_review' and 'memory' in saves[saves.index('edit'):]:
-            problems.append('пам\'ять після правок, що чекають перегляду автора')
+        elif state == 'needs_review' and 'memory' in saves[saves.index('edit'):]:
+            problems.append("пам'ять після правок, що чекають перегляду автора")
     elif [s for s in PIPELINE_ORDER if s in saves] != PIPELINE_ORDER:
         problems.append(f'не всі етапи збережено: {saves}; стан сцени {state}')
+    return problems
+
+
+def check_s05(stand, calls, text, ctx):
+    state = next(s['state'] for s in obscura_call(stand.base, 'get_story', {'story_id': ctx['story']})['scenes']
+                 if s['id'] == ctx['scene'])
+    problems = pipeline_problems(calls, state=state, patches=bool(ctx.get('patches')))
     refused = [e for e in ctx['errors'] if e[0] == 'save_stage_result']
     if len(refused) >= 3:
         problems.append(f'{len(refused)} відмов save_stage_result')
@@ -88,7 +99,8 @@ def setup_patches(base, story):
     settings = obscura_call(base, 'get_settings', {'story_id': story})
     obscura_call(base, 'update_settings', {'story_id': story, 'section': 'editor',
                                            'expected_fingerprint': settings['roles']['editor']['fingerprint'],
-                                           'fields': {'provider': 'openrouter', 'model': 'test/editor', 'edit_mode': 'patches'}})
+                                           'fields': {'provider': 'openrouter', 'model': 'test/editor', 'edit_mode': 'patches',
+                                                      'context_tokens': 128000}})
 
 
 SCENARIOS = {

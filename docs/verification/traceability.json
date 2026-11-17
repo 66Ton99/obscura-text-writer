@@ -5903,10 +5903,12 @@
     {
       "id": "CLAUDE-SKILLS-S04",
       "requirement": "CLAUDE-SKILLS",
-      "scope": "start-story: розмитий запит без записів, повний запит — рівно один твір. Автоматично перевіряється лише ізоляція стенда. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "start-story: розмитий запит без записів, повний запит — рівно один твір і жодного тексту сцени. Автоматично перевіряються ізоляція стенда й правило перевірки «після створення нічого не пишеться». Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
         "tests/test_skills_stand.py::test_claude_command_is_isolated",
-        "tests/test_skills_stand.py::test_obscura_call_reaches_the_given_server"
+        "tests/test_skills_stand.py::test_obscura_call_reaches_the_given_server",
+        "tests/test_run_scenarios.py::test_creation_alone_has_no_problems",
+        "tests/test_run_scenarios.py::test_writing_scenes_after_creation_is_a_problem"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#claude-skills",
@@ -5916,11 +5918,13 @@
     {
       "id": "CLAUDE-SKILLS-S05",
       "requirement": "CLAUDE-SKILLS",
-      "scope": "draft-scene chat: порядок етапів, прогрес, edit за result_format, зупинка на перегляді правок. Автоматично перевіряється лише ізоляція стенда й розбір stream-json. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "draft-scene chat: порядок етапів, прогрес, edit за result_format, зупинка на перегляді правок. Автоматично перевіряються ізоляція стенда, розбір stream-json і правила перевірки етапів. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
         "tests/test_skills_stand.py::test_claude_command_is_isolated",
         "tests/test_skills_stand.py::test_tool_errors_name_the_refused_tool",
-        "tests/test_skills_stand.py::test_tool_calls_and_cost_from_stream_json"
+        "tests/test_skills_stand.py::test_tool_calls_and_cost_from_stream_json",
+        "tests/test_run_scenarios.py::test_patches_scenario_without_edit_is_a_problem_not_a_crash",
+        "tests/test_run_scenarios.py::test_memory_after_edit_awaiting_review_is_a_problem"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#claude-skills",
