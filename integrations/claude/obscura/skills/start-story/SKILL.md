@@ -75,6 +75,6 @@ Only after consent:
 
 Tell the author what now exists and what comes next:
 - **`chat` mode:** writing the first scene, with the `draft-scene` skill;
-- **`obscura` mode:** first check `get_settings`. If the roles are not configured, the next step is choosing models (use the `setup-models` skill if it is available; otherwise point to the story's settings in Obscura). Then write scenes with `draft-scene`.
+- **`obscura` mode:** first check `get_settings`. If the roles are not configured, the next step is choosing models with the `setup-models` skill. Then write scenes with `draft-scene`.
 
 End with your list of own decisions.

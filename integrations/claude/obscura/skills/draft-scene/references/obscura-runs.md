@@ -5,7 +5,7 @@ In `obscura` mode Obscura's models write the texts, and each run costs the autho
 ## Before the first run
 
 - `get_settings(story_id)`: the four roles (planner, writer, editor, memory) must be configured and their keys present.
-- If a role is not configured or its key is missing, stop. Suggest choosing models: use the `setup-models` skill if it is available, otherwise point to the story's settings in Obscura. Never call `start_run` with `confirm=true` in that state.
+- If a role is not configured or its key is missing, stop. Suggest choosing models: use the `setup-models` skill. Never call `start_run` with `confirm=true` in that state.
 
 ## A scene is four runs
 
