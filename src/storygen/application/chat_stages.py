@@ -23,7 +23,7 @@ def chat_role_settings(repo,story_id: str,stage: str) -> RoleSettings:
 STALE_TASK='Завдання застаріло — візьміть його знову (get_stage_task)'
 ALTERNATIVE='Сцену змінено під час запису; версія збережена в історії непоточною'
 APPROVAL_REQUIRED='Попередня пам’ять потребує вашого підтвердження в Obscura: відкрийте сцену й підтвердьте використання пам’яті'
-WARNING_KEYS=('memory_warnings','planner_warnings','editor_warnings','language_warnings')
+WARNING_KEYS=('memory_warnings','planner_warnings','editor_warnings','language_warnings','broken_text_warnings')
 
 
 class ExternalTextGateway:

@@ -50,7 +50,7 @@ def readiness(repo,request):
     return result
 
 
-def save_rewrite_result(repo,attempt,context,text):
+def save_rewrite_result(repo,attempt,context,text,known=frozenset()):
     from ..rewrite_diff import build_rewrite_diff
     from ..storage.snapshots import compare_snapshot
     from ..authoring.comments import CommentSet,comment_fingerprint
@@ -59,6 +59,11 @@ def save_rewrite_result(repo,attempt,context,text):
     source_id=context.fragments['rewrite_source_id']
     original=repo.read_text(source_id)
     proposal=build_rewrite_diff(original,text)
+    from .broken_text import broken_diff_edits, drop_diff_edits, dropped_warning
+    bad=broken_diff_edits(original,proposal,known)
+    if bad:
+        attempt.context['rewrite_warnings']=[dropped_warning(len(bad))]
+        proposal=drop_diff_edits(original,proposal,bad) or proposal.model_copy(update={'edits':[],'candidate_text':original})
     if not proposal.edits:
         attempt.state='completed';attempt.context['rewrite_no_changes']=True
         return repo.save_attempt(attempt)

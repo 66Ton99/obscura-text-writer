@@ -533,7 +533,7 @@ class RunCoordinator:
                 self.event(
                     id,
                     'stage_started',
-                    {'stage':stage,'scene_id':scene_id,'model':role.provider.model,'provider':role.provider.provider,'estimated_tokens':context.estimated_tokens}
+                    {'stage':stage,'scene_id':scene_id,'model':role.provider.model,'provider':role.provider.provider,'estimated_tokens':context.estimated_tokens,'streaming':(getattr(context,'api_request',None) or {}).get('stream',True)}
                 )
                 attempt=execute_stage(
                     self.repo,
@@ -642,7 +642,7 @@ class RunCoordinator:
             self.event(
                 id,
                 'stage_started',
-                {'stage':stage,'scene_id':scene_id,'model':context.settings.provider.model,'provider':context.settings.provider.provider,'estimated_tokens':context.estimated_tokens}
+                {'stage':stage,'scene_id':scene_id,'model':context.settings.provider.model,'provider':context.settings.provider.provider,'estimated_tokens':context.estimated_tokens,'streaming':(getattr(context,'api_request',None) or {}).get('stream',True)}
             )
             attempt=execute_stage(
                 self.repo,
@@ -657,7 +657,7 @@ class RunCoordinator:
             )
             with self.condition:
                 current=self.get_run(id)
-                warnings=attempt.context.get('memory_warnings',[])+attempt.context.get('editor_warnings',[])+attempt.context.get('planner_warnings',[])
+                warnings=attempt.context.get('memory_warnings',[])+attempt.context.get('editor_warnings',[])+attempt.context.get('planner_warnings',[])+attempt.context.get('broken_text_warnings',[])
                 if warnings:
                     current.warning=merge_warnings(current.warning,warnings)
                     self._save(current)
