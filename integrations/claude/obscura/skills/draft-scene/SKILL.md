@@ -55,4 +55,4 @@ When a scene is done, write one line with what happened in it and what comes nex
 - After the last scene:
   - give a short summary of the book;
   - list your own decisions;
-  - suggest the publication card, cover and export (the `publish` skill, if it is available).
+  - suggest the publication card, cover and export (the `publish` skill).
