@@ -1,0 +1,32 @@
+{
+  "skill_name": "publish",
+  "runner": "integrations/claude/tools/run_scenarios.py",
+  "evals": [
+    {
+      "id": 1,
+      "scenario": "S07-a",
+      "prompt": "Підготуй публікацію «Листа на пристані».",
+      "setup": "story «Лист на пристані», chat mode; scene 1 has prose, the other scenes have none",
+      "expected_output": "Чат питає ім’я автора й не записує автора сам.",
+      "assertions": [
+        "no add_signature and no update_publication with author_ids",
+        "the reply asks a question"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "scenario": "S07-b",
+      "prompt": "Опублікуй «Лист на пристані»: автор — Ірина Коваль, анотацію й жанри вибери сам, обкладинка в палітрі «Ліс», експорт FB2. Питань не став, я погоджуюсь.",
+      "setup": "story «Лист на пристані», chat mode; scene 1 has prose, the other scenes have none",
+      "expected_output": "Картку заповнено з автором Ірина Коваль, обкладинка «Ліс» поставлена в картку, FB2 експортовано з позначкою незавершеного твору.",
+      "assertions": [
+        "generate_cover with palette forest",
+        "update_publication with cover_id after the cover",
+        "export_book with fb2 and allow_incomplete=true",
+        "the reply says the book is unfinished"
+      ],
+      "files": []
+    }
+  ]
+}

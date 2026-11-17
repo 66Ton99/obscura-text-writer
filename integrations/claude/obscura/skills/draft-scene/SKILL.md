@@ -16,7 +16,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/rules.md` first and follow it throughout. It 
 
    `prose`, `impact_current`, `impact_pending` and `impact_changes` are written scenes. `impact_changes` means an earlier edit requires changes to this scene: tell the author and let them decide in Obscura, but do not count it as the next scene to write.
 
-   A `prose` scene may still lack its memory. If the server answers «Спершу оновіть пам’ять попередньої сцени», finish the memory stage of the previous scene first.
+   A `prose` scene may still lack its memory. If the server answers «Спершу оновіть пам’ять попередньої сцени», finish the memory stage of the previous scene first. When no scene is unfinished, check the last scene: if `get_scene_text(scene_id, 'memory')` has no `version_id`, its memory stage is the next step, since no later scene will ask for it.
 
    Confirm the choice in one line, together with how many scenes are left.
 3. `writing_mode` decides the branch:
@@ -55,4 +55,4 @@ When a scene is done, write one line with what happened in it and what comes nex
 - After the last scene:
   - give a short summary of the book;
   - list your own decisions;
-  - suggest the publication card, cover and export (the `publish` skill, if it is available).
+  - suggest the publication card, cover and export (the `publish` skill).
