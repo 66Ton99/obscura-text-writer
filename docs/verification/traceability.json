@@ -5874,6 +5874,81 @@
       ]
     },
     {
+      "id": "CLAUDE-SKILLS-S01",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "Маркетплейс і плагін obscura, відсутність конфігурації MCP, name/description скілів. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_plugin.py::test_marketplace_and_plugin_are_valid",
+        "tests/test_claude_plugin.py::test_real_plugin_has_no_problems"
+      ]
+    },
+    {
+      "id": "CLAUDE-SKILLS-S02",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "Поле frontmatter поза переносним набором і відсутнє посилання на спільні правила. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_plugin.py::test_claude_code_only_field_is_reported",
+        "tests/test_claude_plugin.py::test_real_plugin_has_no_problems"
+      ]
+    },
+    {
+      "id": "CLAUDE-SKILLS-S03",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "Невідома назва інструмента в Markdown плагіна; next_offset не є інструментом. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_plugin.py::test_unknown_tool_name_is_reported",
+        "tests/test_claude_plugin.py::test_unknown_tool_in_call_syntax_is_reported",
+        "tests/test_claude_plugin.py::test_real_plugin_has_no_problems"
+      ]
+    },
+    {
+      "id": "CLAUDE-SKILLS-S04",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "start-story: розмитий запит без записів, повний запит — рівно один твір і жодного тексту сцени. Автоматично перевіряються ізоляція стенда й правило перевірки «після створення нічого не пишеться». Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_skills_stand.py::test_claude_command_is_isolated",
+        "tests/test_skills_stand.py::test_obscura_call_reaches_the_given_server",
+        "tests/test_skills_stand.py::test_stand_server_sees_no_keys_of_the_author",
+        "tests/test_run_scenarios.py::test_creation_alone_has_no_problems",
+        "tests/test_run_scenarios.py::test_writing_scenes_after_creation_is_a_problem"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
+      "id": "CLAUDE-SKILLS-S05",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "draft-scene chat: порядок етапів, прогрес, edit за result_format, зупинка на перегляді правок. Автоматично перевіряються ізоляція стенда, розбір stream-json і правила перевірки етапів. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_skills_stand.py::test_claude_command_is_isolated",
+        "tests/test_skills_stand.py::test_tool_errors_name_the_refused_tool",
+        "tests/test_skills_stand.py::test_tool_calls_and_cost_from_stream_json",
+        "tests/test_run_scenarios.py::test_patches_scenario_without_edit_is_a_problem_not_a_crash",
+        "tests/test_run_scenarios.py::test_memory_after_edit_awaiting_review_is_a_problem",
+        "tests/test_run_scenarios.py::test_attempted_saves_without_finished_prose_are_a_problem",
+        "tests/test_run_scenarios.py::test_failed_claude_session_never_passes",
+        "tests/test_skills_stand.py::test_stream_without_result_event_is_an_error"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
+      "id": "CLAUDE-SKILLS-S06",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "draft-scene obscura без ролей: жодного start_run з confirm=true, порада налаштувати моделі. Автоматично перевіряється лише ізоляція стенда. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_skills_stand.py::test_claude_command_is_isolated"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#claude-skills",
+        "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
+      }
+    },
+    {
       "id": "WRITING-MODE-S01",
       "requirement": "WRITING-MODE",
       "scope": "Режим під час створення з форми й моста, типове значення форми, чинний запис без поля, невідомий режим. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
