@@ -6706,7 +6706,11 @@
         "tests/web/test_codex_connect_routes.py::test_request_cannot_choose_destinations_or_bridge_url",
         "tests/web/test_codex_connect_routes.py::test_bridge_cannot_access_codex_routes",
         "tests/web/test_codex_connect_routes.py::test_foreign_origin_cannot_write"
-      ]
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#codex-connect-ui",
+        "reason": "Playwright виконується окремим браузерним runner, не pytest."
+      }
     },
     {
       "id": "CODEX-SKILLS-S05",
@@ -6714,7 +6718,11 @@
       "scope": "Маршрути Codex у тимчасовому профілі без моделей.",
       "tests": [
         "tests/web/test_codex_connect_routes.py::test_store_skills_are_unsupported_without_touching_sources"
-      ]
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#codex-connect-ui",
+        "reason": "Playwright виконується окремим браузерним runner, не pytest."
+      }
     }
   ]
 }

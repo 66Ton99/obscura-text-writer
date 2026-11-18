@@ -214,3 +214,7 @@ Toolbar має SVG-коментар між I та undo, disabled без прид
 R-22 scroll fix: text area54vh/54dvh з overflow-y:auto та stable scrollbar gutter; toolbar поза scroll area. Довжина тексту не змінює висоту editor surface.
 
 R-20 brief review: компактна accent-soft панель над JSON-завданням зі списком запропонованих змін і явним Accept. Primary action лишається недоступною до рішення; history action збережена як додаткова.
+
+## Інтеграція Codex
+
+Окремий details поруч із Claude повторює чинні border, spacing і focus tokens бібліотеки. Дві незалежні кнопки зберігають MCP і встановлюють скіли; pending блокує обидві, Store/frozen лише другу. Файловий успіх не називається живим підключенням. aria-live містить результат, конкретні шляхи й конфлікти з переносом; команда доступна для копіювання або ручного виділення. UA/EN оновлює також результати. Нейтральний desktop/mobile QA — C:/tmp/obscura-codex-ui-{desktop,mobile}.png.

@@ -437,3 +437,8 @@ python integrations/claude/tools/run_scenarios.py --scenario S04-a --scenario S0
 ## Банер пошкоджених літер у редакторі
 
 BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web/browser/broken-text.spec.mjs` (один case на desktop і mobile: чернетка з двома «�» показує банер «У тексті пошкоджених символів «�»: 2.», «До наступного» виділяє «�», після заміни тексту банер зникає). Запуск: `PYTHONPATH=<тека>/src`, `cd frontend; ./node_modules/.bin/playwright test -c playwright.config.mjs ../tests/web/browser/broken-text.spec.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
+
+<a id="codex-connect-ui"></a>
+## Codex: бібліотека
+
+У frontend виконати npx playwright test codex-connect.spec.mjs claude-connect.spec.mjs із PLAYWRIGHT_BROWSERS_PATH до тестового Chromium. Стенд server.py створює тимчасові HOME/USERPROFILE/CODEX_HOME до create_app (Windows: C:/tmp), synthetic gateways і MemorySecretStore. Перевірки desktop/mobile: незалежні дії, збережено проти підключено, конфлікт/partial з буквальними довгими шляхами, UA/EN попередніх результатів, Store skills disabled/MCP enabled, keyboard details, pending обох кнопок і clipboard fallback. Помилка будь-якого сценарію — провал. Наявність цієї процедури не є виконанням.

@@ -120,8 +120,15 @@ def core_review_fixture(repo,story):
 
 
 def main():
-    with TemporaryDirectory(prefix='obscura-browser-') as directory:
+    import os
+    test_root = Path('C:/tmp') if os.name == 'nt' else None
+    with TemporaryDirectory(prefix='obscura-browser-', dir=test_root) as directory:
         root = Path(directory)
+        profile = root/'home'
+        profile.mkdir()
+        for key in ('HOME', 'USERPROFILE'):
+            os.environ[key] = str(profile)
+        os.environ['CODEX_HOME'] = str(root/'codex')
         port = int(sys.argv[1]) if len(sys.argv)>1 else 8976
         app = create_app(AppSettings(data_dir=root/'data', env_file=root/'absent.env', port=port),
                          gateway_factory=forbidden_gateway, evaluator_factory=forbidden_gateway)
