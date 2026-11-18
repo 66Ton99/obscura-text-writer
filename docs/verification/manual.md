@@ -448,7 +448,7 @@ BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web
 <a id="codex-clients"></a>
 ## Codex: два клієнти без моделей
 
-**Чинне приймання206 після погодженого поділу:** [B1 у окремому локальному Windows-акаунті](codex-checkout-acceptance.md). Потрібні штатна user .agents/skills і CLI/GUI. B1 ще не виконано. B2/B3 (Store runtime/license) передано R-39 PR2 й вони не є критеріями злиття206. Нижче збережено попередню діагностичну процедуру та історичні результати до поділу.
+**Чинне приймання206 після погодженого поділу:** [B1 у окремому локальному Windows-акаунті](codex-checkout-acceptance.md). Потрібні штатна user .agents/skills і CLI/GUI. B1 виконано: PASS, запуск20261118-164659-b6b2f8; докази наведено нижче. B2/B3 (Store runtime/license) передано R-39 PR2 й вони не є критеріями злиття206. Нижче збережено попередню діагностичну процедуру та історичні результати до поділу.
 
 1. Зафіксувати --version CLI та app/resources/codex.exe, для кожного експортувати app-server generate-json-schema --out у C:/tmp.
 2. Створити нові fixture repo, home, CODEX_HOME; file auth, жодного auth.json, API-key/token env або OS keyring. Сервер — scripts.skills_stand.start_stand з порожнім env_file і fail-keyring. Не запускати GUI автора.
@@ -461,3 +461,8 @@ BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web
 Фактичне виконання 18.11.2026: CLI 0.166.0 і app backend 0.169.0-alpha.11.1 — PASS repo-scope (.agents), user-scope (CODEX_HOME/skills), MCP catalog і list_stories; errors=0, моделей=0. Власник окремо дозволив читання справжніх скілів. Артефакти: C:/tmp/obscura-codex-accept-7we6gbos/results.json і schema обох версій. GUI discovery та системна .agents на згенерованих скілах НЕ перевірені.
 
 Store: C:/tmp/obscura-codex-store-20261118, чинний build_store.py --edition store --skip-msix --report-url https://obscurawriter.com/report.html --waitlist-url https://obscurawriter.com/paid.html. PYZ містить tomlkit і routes_codex_connect; окремий чинний license gate також НЕ пройшов: у frozen TOC знаходить pyinstaller/pyinstaller-hooks-contrib і відхиляє GPL-family; diagnostic-notices.txt не створений. Ліцензію самого tomlkit перевірено окремо, це не замінює gate збірки. Збірка НЕ пройшла runtime gate: Windows Application Control блокує новий obscura-mcp.exe, self-check не виконався; BUILD-FAILED.txt лишається. Не обходили політику, не публікували MSIX. Це невиконаний критерій до злиття.
+
+
+### B1 — завершене checkout-приймання18.11.2026
+
+B1 виконано 18.11.2026, запуск 20261118-164659-b6b2f8 (15:46:59–15:49:25 UTC, 16:46–16:49 Europe/Warsaw), checkout027434b. Штатний установник встановив усі п’ять скілів у C:/Users/Test/.agents/skills; MCP configured у Test/.codex/config.toml зі штатною копією. CLI0.166.0 та app backend0.169.0-alpha.11.1 підтвердили ті самі п’ять user-scope шляхів, discovery_errors=0,27tools incl get_guide, list_stories=[] без помилки; model_turns=0. Власник підтвердив у GUI всі п’ять скілів і enabled obscura. Загальний automatic/status=PASS. Доказ: docs/verification/evidence/2026-11-18-codex-b1.json (копія без Windows SID, SHA-256 оригіналу збережено). Це закриває checkout B1, але не доводить Store runtime/license чи літературну якість. Тестову Obscura після перевірки зупинено; її збережений у Test MCP URL належить цьому завершеному тестовому запуску.

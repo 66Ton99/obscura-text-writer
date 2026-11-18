@@ -1,0 +1,189 @@
+{
+  "source_revision": "027434b3406d1d5390ee67550e929015cc17a7dc",
+  "test_profile": "C:\\Users\\Test",
+  "started_at": "2026-11-18T15:46:59.426205+00:00",
+  "model_turns": 0,
+  "status": "PASS",
+  "gui": {
+    "obscura-start-story": true,
+    "obscura-draft-scene": true,
+    "obscura-publish": true,
+    "obscura-series-bible": true,
+    "obscura-setup-models": true,
+    "obscura_mcp": true
+  },
+  "install": {
+    "result": "installed",
+    "installed": [
+      "obscura-start-story",
+      "obscura-draft-scene",
+      "obscura-publish",
+      "obscura-series-bible",
+      "obscura-setup-models"
+    ],
+    "restored": [],
+    "conflicts": [],
+    "backups": [],
+    "errors": [],
+    "names": [
+      "obscura-draft-scene",
+      "obscura-publish",
+      "obscura-series-bible",
+      "obscura-setup-models",
+      "obscura-start-story"
+    ]
+  },
+  "mcp_config": {
+    "result": "configured",
+    "path": "C:\\Users\\Test\\.codex\\config.toml",
+    "backup": "C:\\Users\\Test\\.codex\\config.toml.obscura-backup-d48fccdd48284a06af666d3511350d84",
+    "created": false,
+    "command": "codex mcp add obscura -- 'C:\\tmp\\Obscura-Codex-B1\\venv\\Scripts\\storygen-mcp.exe' '--url' 'http://127.0.0.1:50582'"
+  },
+  "cli": {
+    "version": "codex-cli 0.166.0",
+    "executable": "C:\\tmp\\Obscura-Codex-B1\\clients\\cli\\codex.exe",
+    "codexHome": "C:\\Users\\Test\\.codex",
+    "skills": [
+      {
+        "name": "obscura-draft-scene",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-draft-scene\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-publish",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-publish\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-series-bible",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-series-bible\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-setup-models",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-setup-models\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-start-story",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-start-story\\SKILL.md",
+        "scope": "user"
+      }
+    ],
+    "discovery_errors": 0,
+    "tool_names": [
+      "add_scene",
+      "add_signature",
+      "apply_role_preset",
+      "create_story",
+      "export_book",
+      "generate_cover",
+      "get_guide",
+      "get_publication",
+      "get_run",
+      "get_scene_context",
+      "get_scene_text",
+      "get_settings",
+      "get_stage_task",
+      "get_story",
+      "get_templates",
+      "import_plan_and_characters",
+      "list_stories",
+      "next_steps",
+      "open_ghost_mode",
+      "save_draft",
+      "save_stage_result",
+      "start_run",
+      "update_publication",
+      "update_scene",
+      "update_settings",
+      "update_story",
+      "upload_cover"
+    ],
+    "list_stories": {
+      "content": [],
+      "structuredContent": {
+        "result": []
+      },
+      "isError": false
+    },
+    "model_turns": 0
+  },
+  "app": {
+    "version": "codex-cli 0.169.0-alpha.11.1",
+    "executable": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.2228.0_x64__2p2nqsd0c76g0\\app\\resources\\codex.exe",
+    "codexHome": "C:\\Users\\Test\\.codex",
+    "skills": [
+      {
+        "name": "obscura-draft-scene",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-draft-scene\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-publish",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-publish\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-series-bible",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-series-bible\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-setup-models",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-setup-models\\SKILL.md",
+        "scope": "user"
+      },
+      {
+        "name": "obscura-start-story",
+        "path": "C:\\Users\\Test\\.agents\\skills\\obscura-start-story\\SKILL.md",
+        "scope": "user"
+      }
+    ],
+    "discovery_errors": 0,
+    "tool_names": [
+      "add_scene",
+      "add_signature",
+      "apply_role_preset",
+      "create_story",
+      "export_book",
+      "generate_cover",
+      "get_guide",
+      "get_publication",
+      "get_run",
+      "get_scene_context",
+      "get_scene_text",
+      "get_settings",
+      "get_stage_task",
+      "get_story",
+      "get_templates",
+      "import_plan_and_characters",
+      "list_stories",
+      "next_steps",
+      "open_ghost_mode",
+      "save_draft",
+      "save_stage_result",
+      "start_run",
+      "update_publication",
+      "update_scene",
+      "update_settings",
+      "update_story",
+      "upload_cover"
+    ],
+    "list_stories": {
+      "content": [],
+      "structuredContent": {
+        "result": []
+      },
+      "isError": false
+    },
+    "model_turns": 0
+  },
+  "automatic": "PASS",
+  "finished_at": "2026-11-18T15:49:25.163124+00:00",
+  "original_sha256": "a82b03002fed06088ad85f1054db3e6f982b9110a2fb201de0484eb7b9ec13ae",
+  "original_local_file": "C:\\tmp\\Obscura-Codex-B1\\results\\20261118-164659-b6b2f8\\RESULT.json",
+  "gui_evidence": "Відповіді власника під час ручної перевірки GUI; підтверджено повідомленням у чаті 18.11.2026.",
+  "scope": "Checkout PR206; B2/B3 Store належать R-39 PR2."
+}

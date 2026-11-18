@@ -109,31 +109,34 @@
 
 ### Task 5: M1 — відсутній вхід генератора
 **Files:** web/routes_codex_connect.py; tests/web/test_codex_connect_routes.py; SPEC/traceability/журнал.
-- [ ] RED реальна копія джерела без shared/rules.md або SKILL.md →409 skill_source_invalid, профіль не змінено; FileNotFoundError установника лишається500 skills_io_failed.
-- [ ] Нормалізувати лише FileNotFoundError читання джерел у GenerationError; повторно використати вузький helper у GET/POST без зміни перевіреного установника чи генератора.
-- [ ] Зафіксувати, що MCP-каталог має27 інструментів, clean Codex-пакет не згадує get_guide; це приймання чинної правильної поведінки, не вигаданий RED.
-- [ ] GREEN маршрути/generator/bridge; SPEC і traceability у тому самому коміті, check_docs.
+- [x] RED реальна копія джерела без shared/rules.md або SKILL.md →409 skill_source_invalid, профіль не змінено; FileNotFoundError установника лишається500 skills_io_failed.
+- [x] Нормалізувати лише FileNotFoundError читання джерел у GenerationError; повторно використати вузький helper у GET/POST без зміни перевіреного установника чи генератора.
+- [x] Зафіксувати, що MCP-каталог має27 інструментів, clean Codex-пакет не згадує get_guide; це приймання чинної правильної поведінки, не вигаданий RED.
+- [x] GREEN маршрути/generator/bridge; SPEC і traceability у тому самому коміті, check_docs.
 Expected: нові тести спершу дають500/409 mismatch, потім усі цільові тести зелені; get_guide не зникає з моста.
 
 ### Task 6: M2 — переносний browser fixture
 **Files:** tests/web/browser/server.py; новий tests/web/test_browser_fixture.py; SPEC/traceability/журнал.
-- [ ] RED запуск підготовки стенда з OBSCURA_BROWSER_TEST_ROOT до відсутньої батьківської теки; у callback create_app підтвердити всі профілі й absent.env уже під цим root.
-- [ ] Дозволити явний тестовий root через env, створювати його перед TemporaryDirectory; default Windows C:/tmp, POSIX стандартна tempdir. Дотримати synthetic gateways/MemorySecretStore.
-- [ ] GREEN unit fixture і Codex/Claude browser; не торкатися справжніх профілів.
+- [x] RED запуск підготовки стенда з OBSCURA_BROWSER_TEST_ROOT до відсутньої батьківської теки; у callback create_app підтвердити всі профілі й absent.env уже під цим root.
+- [x] Дозволити явний тестовий root через env, створювати його перед TemporaryDirectory; default Windows C:/tmp, POSIX стандартна tempdir. Дотримати synthetic gateways/MemorySecretStore.
+- [x] GREEN unit fixture і Codex/Claude browser; не торкатися справжніх профілів.
 Expected: missing root створюється; create_app бачить ізольовані HOME/USERPROFILE/CODEX_HOME.
 
 ### Task 7: M3 — один рядок на скіл
 **Files:** static/codex-connect.js, i18n.json; browser/codex-connect.spec.mjs; SPEC/traceability/журнал.
-- [ ] RED кожна назва рівно один раз у first install, unchanged й частковому managed update; changed має Installed, решта Already current; partial/conflict не втрачають installed/restored/conflicts/backups, UA/EN живе.
-- [ ] При успішній дії показати весь names один раз із ознакою з installed; при partial/conflict лишити фактичні групи.
-- [ ] GREEN Codex і незмінені Claude specs desktop/mobile; craft-floor перед UI-правкою, check_docs.
+- [x] RED кожна назва рівно один раз у first install, unchanged й частковому managed update; changed має Installed, решта Already current; partial/conflict не втрачають installed/restored/conflicts/backups, UA/EN живе.
+- [x] При успішній дії показати весь names один раз із ознакою з installed; при partial/conflict лишити фактичні групи.
+- [x] GREEN Codex і незмінені Claude specs desktop/mobile; craft-floor перед UI-правкою, check_docs.
 Expected: дублювання відтворюється до правки, після всі сценарії зелені.
 
 ### Task 8: B1, фінальні gates і доставка checkout
 **Files:** docs/verification/manual.md, SPEC/traceability, STATUS/журнал, paired user docs за потреби; owner procedure.
-- [ ] Підготувати точну покрокову процедуру для окремого локального Windows-акаунта, штатного install і CLI/GUI, версій/шляхів/доказів. Не створювати акаунт і не входити за власника; реальний профіль власника лише читати.
-- [ ] Отримати фактичні докази B1:5user-scope .agents skills, errors0, MCP/list_stories, GUI. Без B1 не ready/merge; інші незалежні роботи продовжувати.
-- [ ] Повний verify.py і browser Codex/Claude на стабільному final main; check_site mcp/check_docs, forbidden diff порожній.
-- [ ] Один свіжий незалежний review поправки (main merge+M1–M3), потім потрібний cross-review й triage; врахувати реальну згоду на зовнішню передачу. Не повторювати review вже перевіреної незміненої основи.
-- [ ] Push/update206 checkout на main; ready і merge тільки після checkout gates, синхронізація основної теки без втрати author files. Якщо B1 очікує власника — доставити код і процедуру в draft, явно назвати невиконаний критерій.
+- [x] Підготувати точну покрокову процедуру для окремого локального Windows-акаунта, штатного install і CLI/GUI, версій/шляхів/доказів. Не створювати акаунт і не входити за власника; реальний профіль власника лише читати.
+- [x] Отримати фактичні докази B1:5user-scope .agents skills, errors0, MCP/list_stories, GUI. Без B1 не ready/merge; інші незалежні роботи продовжувати.
+- [x] Повний verify.py і browser Codex/Claude на стабільному final main; check_site mcp/check_docs, forbidden diff порожній.
+- [x] Один свіжий незалежний review поправки (main merge+M1–M3), потім потрібний cross-review й triage; врахувати реальну згоду на зовнішню передачу. Не повторювати review вже перевіреної незміненої основи.
+- [x] Push/update206 checkout на main; ready і merge тільки після checkout gates, синхронізація основної теки без втрати author files. Якщо B1 очікує власника — доставити код і процедуру в draft, явно назвати невиконаний критерій.
 Expected: Store-файли не змінені; B2/B3 не затримують206; B1 та checkout gates мають реальні докази перед злиттям.
+
+
+Фактичне завершення Tasks5–8:18.11.2026, B1run20261118-164659-b6b2f8 PASS. Докази й межі: docs/verification/evidence/2026-11-18-codex-b1.json та журнал виконання. Доставка — оновлений PR206 на main; merge не виконується без рішення власника.

@@ -2395,3 +2395,10 @@ Cross-review: claude/default @ c85e8b4 (author: codex) — 5 findings: 4 fixed, 
 Повний verify.py після safety fix027434b:3744passed,0failed/errors,2OSsymlinkskip,source_changed=false; artifacts/verification-dv4sjrq6. Допоміжні B1-файли додано пізніше й перевірено окремо, повний звіт не приписано їм. Користувацька документація: оновлена саме ручна процедура; продуктова поведінка та site uk/en після027434b не змінені. B1 залишається відкритим до фактичного запуску в Test.
 
 Допоміжні safety-тести також виконано через verify.py:4passed,0failed/errors/skipped,source_changed=false; artifacts/verification-zjcdghg9. STATUS містить цей частковий прогін та окремий історичний повний027434b. Службовий verify --help не виконав тестів, unconfirmed не зараховано як PASS.
+
+
+### Codex206 — B1 прийнято18.11.2026
+
+B1 виконано 18.11.2026, запуск 20261118-164659-b6b2f8 (15:46:59–15:49:25 UTC, 16:46–16:49 Europe/Warsaw), checkout027434b. Штатний установник встановив усі п’ять скілів у C:/Users/Test/.agents/skills; MCP configured у Test/.codex/config.toml зі штатною копією. CLI0.166.0 та app backend0.169.0-alpha.11.1 підтвердили ті самі п’ять user-scope шляхів, discovery_errors=0,27tools incl get_guide, list_stories=[] без помилки; model_turns=0. Власник підтвердив у GUI всі п’ять скілів і enabled obscura. Загальний automatic/status=PASS. Доказ: docs/verification/evidence/2026-11-18-codex-b1.json (копія без Windows SID, SHA-256 оригіналу збережено). Це закриває checkout B1, але не доводить Store runtime/license чи літературну якість. Тестову Obscura після перевірки зупинено; її збережений у Test MCP URL належить цьому завершеному тестовому запуску.
+
+Tasks5–8 checkout-поправки завершено: M1–M3, main17fbe56, повний3744passed/2skip,24browser, native review, дозволений cross-review і safety fix, B1. Docs/SPEC уточнено за фактичним прийманням, нової продуктової поведінки немає; site uk/en та знімки змін не потребують. Ready for review дозволено після цих gates; merge самостійно не виконуємо. Test kit і worktree збережено. M4/M5, два native Minor та Minor5 cross-review залишаються відкладеними.
