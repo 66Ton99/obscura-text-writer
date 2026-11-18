@@ -6723,6 +6723,15 @@
         "procedure": "docs/verification/manual.md#codex-connect-ui",
         "reason": "Playwright виконується окремим браузерним runner, не pytest."
       }
+    },
+    {
+      "id": "CODEX-SKILLS-S04",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Діагностичне приймання двома встановленими backend без моделей.",
+      "manual": {
+        "procedure": "docs/verification/manual.md#codex-clients",
+        "reason": "Потрібні встановлені Windows CLI/app backend; GUI і Application Control залежать від хоста."
+      }
     }
   ]
 }

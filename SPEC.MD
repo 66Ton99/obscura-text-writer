@@ -6848,6 +6848,13 @@ THEN failure SHALL не лишати source/counts/сцен, legacy counts ли�
 - AND --output пише лише в нову/порожню теку, а --install — у користувацьку .agents/skills, не в CODEX_HOME
 - AND відмова генерації не змінює профіль; stdout містить JSON-результат без traceback/ключів, exit code 0 означає успіх/unchanged, 1 — відмову, 2 — неправильні аргументи.
 
+#### Scenario: CODEX-SKILLS-S04 — Приймання клієнтами без моделей
+- GIVEN нейтральний сервер Obscura, тимчасова конфігурація Codex і згенеровані скіли
+- WHEN CLI та backend застосунку виконують локальні діагностичні RPC без turn/start
+- THEN skills/list виявляє п'ять скілів із правильними шляхами й scope, а MCP-каталог містить list_stories
+- AND mcpServer/tool/call(list_stories) успішно читає лише нейтральний стенд без виклику моделі
+- AND GUI discovery та frozen self-check мають окремі докази; їх не зараховують за файловим configured.
+
 #### Scenario: CODEX-SKILLS-S05 — Межа Store та frozen
 - GIVEN Store або frozen-видання
 - WHEN автор перевіряє стан або просить установити скіли Codex
