@@ -12,7 +12,7 @@
 
 **Основа:** [план основи](2026-11-17-codex-integration-core.md), реалізований до f76a6b8; повний verify.py — 3668 passed, 0 failed/errors, 2 skipped, source_changed=false. Незалежне рев’ю: 10 Important виправлено одним TDD-проходом, 2 Minor відкладено. Перевірені інтерфейси нижче — фактичні, не прогноз.
 
-**Статус:** checkout-поправку власника18.11 виконано в main-інтеграції та M1–M3; B1 чекає участі власника у окремому Windows-акаунті, фінальні gates тривають. B2/B3 — R-39 PR2 й не затримують206. M4/M5 відкладено.
+**Статус:** checkout-поправку власника18.11 виконано: main інтегровано, M1–M3 виправлено;3741pytest/22browser зелені, native review0Important/Critical. B1 чекає власника у окремому Windows-акаунті; зовнішній code cross-review відхилений automatic approval review до окремої згоди. B2/B3 — R-39 PR2 й не затримують206. M4/M5 та2новіMinor відкладено; PR draft.
 
 ## Global Constraints
 
