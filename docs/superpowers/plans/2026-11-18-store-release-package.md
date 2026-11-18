@@ -113,16 +113,17 @@ Expected: «…узгоджені».
 - Modify: `SPEC.MD` (`PACKAGING-001`: Scenario про CI), traceability, `docs/packaging.md`
 
 Вміст робочого процесу (рішення зі спеки 7б):
-- `on: workflow_dispatch` і `pull_request` (гілки `main`) з `paths`: `scripts/build_store.py`, `src/storygen/packaging*.py`, `store_build/**`, `integrations/claude/**`, `pyproject.toml`, `requirements-lock.txt`, `.github/workflows/store-build.yml`.
+- `on: workflow_dispatch` (діє лише після злиття файла в `main`) і `pull_request` (гілки `main`) з `paths`: `scripts/build_store.py`, `src/storygen/packaging*.py`, `store_build/**`, `integrations/claude/**`, `pyproject.toml`, `requirements-lock.txt`, `.github/workflows/store-build.yml`.
 - `permissions: contents: read`; `runs-on: windows-latest`; `timeout-minutes: 45`.
-- Кроки: `actions/checkout@v4`; `actions/setup-python@v5` з `python-version: '3.12'`; `python -m pip install -r requirements-lock.txt`; `python -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"`; `python scripts/build_store.py --out ${{ runner.temp }}/obscura-build --skip-msix`; `actions/upload-artifact@v4` з `if: always()`: `self-check.json`, `BUILD-OK.json`, `BUILD-FAILED.txt`, `pyinstaller*.log`, `Obscura/THIRD-PARTY-NOTICES.txt`, тека `Obscura/` (окремий артефакт, `retention-days: 7`).
-- MSIX у CI не пакується (`--skip-msix`): ідентичності Partner Center ще немає. Ruling у журнал.
+- Кроки: `actions/checkout@v4`; `actions/setup-python@v5` з `python-version: '3.12'`; `python -m pip install -r requirements-lock.txt`; `python -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"`; крок PowerShell знаходить `makeappx.exe` у `${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\` (найновіша версія) і пише шлях у `$GITHUB_ENV` як `MAKEAPPX`; збирання `python scripts/build_store.py --out ${{ runner.temp }}/obscura-build` з тестовою ідентичністю `--identity-name Obscura.CI --publisher "CN=Obscura CI" --publisher-display-name "Obscura CI"`, а якщо `makeappx` не знайдено — з `--skip-msix` і попередженням `::warning::` (спека 7б); `actions/upload-artifact@v4` з `if: always()`: `self-check.json`, `BUILD-OK.json`, `BUILD-FAILED.txt`, `pyinstaller*.log`, `makeappx.log`, `Obscura/THIRD-PARTY-NOTICES.txt`, непідписаний `*.msix`; тека `Obscura/` — окремим артефактом; `retention-days: 7`.
+- Тестова ідентичність не є ідентичністю Partner Center; пакет із CI лише для перевірки складу (маніфест, значки, `claude\`), не для встановлення.
 
-- [ ] **Step 1:** Тест, що падає: YAML (через `yaml`, якщо є; інакше перевірка рядків) містить `permissions: contents: read`, `python-version: '3.12'`, `--skip-msix`, жодного `secrets.`. → FAIL (файла немає).
+- [ ] **Step 1:** Тест, що падає (перевірка тексту файла, без PyYAML: той розбирає `on:` як `True`): є `contents: read`, `python-version: '3.12'`, `windows-latest`, `--identity-name Obscura.CI`, `--skip-msix` (запасний шлях), `actions/upload-artifact`; немає `secrets.` і `contents: write`. → FAIL (файла немає).
 - [ ] **Step 2:** Створити робочий процес.
-- [ ] **Step 3:** Тест → PASS. Справжній запуск — на PR (Task 9): `gh run watch` не опитувати; результат брати з `gh run view` після сповіщення CI.
+- [ ] **Step 3:** Тест → PASS.
 - [ ] **Step 4:** SPEC/traceability (Scenario посилається на тест YAML і на ручну перевірку артефакту), `docs/packaging.md` — розділ «Збирання в CI».
 - [ ] **Step 5: Commit** — `ci(store): build and self-check the Store package on Windows`
+- [ ] **Step 6: Чернетка PR.** Rebase на `origin/main`, push, `gh pr create --draft --base main`. З цього моменту кожен push запускає `store-build`. Перший запуск має пройти ліцензійну перевірку (Task 1) і самоперевірку; `guide: absent` до Task 3 очікуваний. Результат читати `gh run view --log-failed` і артефакти після сповіщення, без опитування в циклі. Червоний запуск — з’ясувати причину до Task 3. Cross-review — перед переведенням PR у ready (Task 9), не при створенні чернетки.
 
 ---
 
