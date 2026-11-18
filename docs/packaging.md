@@ -67,14 +67,17 @@
 
 Пакет MSIX на такому інтерпретаторі збирається лише з `--allow-vendor-runtime`: пакет для публікації слід збирати на офіційному CPython з python.org, бо умови розповсюдження доданого файла не з’ясовано.
 
-Для збирання зручно мати окреме середовище на офіційному Python, не чіпаючи робоче:
+Для збирання тримайте постійне середовище `.venv-store` у корені робочої копії на офіційному CPython 3.12 з python.org, не чіпаючи робоче `.venv`:
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv C:\tmp\obscura-build-venv
-C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
-C:\tmp\obscura-build-venv\Scripts\python.exe scripts/build_store.py --out C:\tmp\obscura-build ...
+& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv .venv-store
+.venv-store\Scripts\python.exe -c "import sys; print(sys.base_prefix)"
+.venv-store\Scripts\python.exe -m pip install -r requirements-lock.txt
+.venv-store\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
+.venv-store\Scripts\python.exe scripts/build_store.py --out C:\tmp\obscura-build ...
 ```
+
+Друга команда має показати теку python.org (`...\Programs\Python\Python312`), а не Python із комплекту іншого застосунку. Extra `build` закріплює перевірені версії PyInstaller (див. «Ліцензії компонентів»). На машині з увімкненим Smart App Control локальна самоперевірка свіжої збірки відмовить; тоді збирайте в CI (розділ нижче).
 
 Так перевірено 11.11.2026 на CPython 3.12.10: попереджень про інтерпретатор немає, додаткові файли не потрібні, пакет збирається без `--allow-vendor-runtime`.
 
@@ -109,7 +112,7 @@ Wheel `tokenizers` не має ліцензійного файла, тому й�
 
 ## Перевірка встановлення
 
-Пакет зі Store підписує Microsoft. Щоб встановити власноруч зібраний пакет, його треба підписати сертифікатом, якому довіряє система; процедура — у [ручних перевірках](verification/manual.md#store-package-install). Це зміна системних налаштувань безпеки, тому її виконує власник машини. На момент написання її не виконано.
+Пакет зі Store підписує Microsoft. Щоб встановити власноруч зібраний пакет, його треба підписати сертифікатом, якому довіряє система, а якщо ввімкнено Smart App Control — перевіряти через приватний тестовий випуск у Partner Center; процедура — у [ручних перевірках](verification/manual.md#store-package-install). Це зміна системних налаштувань безпеки, тому її виконує власник машини. На момент написання її не виконано.
 
 ## Чого тут немає
 

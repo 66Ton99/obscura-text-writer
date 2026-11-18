@@ -6,9 +6,9 @@
 - [Python](https://www.python.org/downloads/) 3.10 or newer.
 - A model API: a local OpenAI-compatible server (for example LM Studio) or an OpenRouter or Venice account.
 
-## Installer
+## Microsoft Store
 
-A Windows installer will come later (#30). Until then, install the application from source with the steps below.
+Obscura is coming soon to the Microsoft Store: it will install from there without Python or a console, with the bridge for chat clients and the Claude skills included. The free Store version has limits (long prose, series, ratings above the edition limit), described in [Chat clients (MCP)](mcp.md#the-microsoft-store-version). Until then, install the application from source with the steps below.
 
 Obscura connects to chat clients (Claude Desktop, Claude Code) with the “Connect to Claude” button in the library; see [Chat clients (MCP)](mcp.md).
 
