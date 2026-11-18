@@ -2,6 +2,8 @@
 const NAME=/^[A-Z][A-Z0-9_]{2,63}$/;
 const CLOUD=new Set(['openrouter','venice']);
 export const validKeyName=name=>NAME.test(name);
+// SECURITY-002: the variable name as it is saved — trimmed and in capitals; an empty field stays empty (the default applies).
+export const keyName=value=>String(value??'').trim().toUpperCase();
 export const needsKey=provider=>CLOUD.has(provider);
 // i18n key of the status line for a state returned by /api/provider-keys/{name}.
 export function keyStatusKey(state){
@@ -25,7 +27,7 @@ export function mountProviderKey(host,{nameField,providerField,i18n,request}){
   // Typing a key or pressing these buttons is not a change of the settings form around it.
   for(const type of ['input','change'])block.addEventListener(type,event=>event.stopPropagation());
   let current=0,state=null,pending=false;
-  const url=()=>'/api/provider-keys/'+encodeURIComponent(nameField.value);
+  const url=()=>'/api/provider-keys/'+encodeURIComponent(keyName(nameField.value));
   const say=render=>uiText(status,'textContent',render);
   function draw(){
     // While a write is on its way nothing may start another one: the older request could land last.
@@ -44,7 +46,7 @@ export function mountProviderKey(host,{nameField,providerField,i18n,request}){
     block.hidden=!needsKey(providerField.value);
     if(block.hidden)return;
     state=null;draw();
-    if(!validKeyName(nameField.value)){say(()=>t('keys.name_hint'));return}
+    if(!validKeyName(keyName(nameField.value))){say(()=>t('keys.name_hint'));return}
     try{
       const next=await request(url());
       if(ticket===current)show(next);

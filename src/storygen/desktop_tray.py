@@ -11,7 +11,29 @@ from .web.localization import translate
 from .win_tray import TrayUnavailable  # noqa: F401 - re-exported for desktop.py
 
 
+UKRAINIAN = 0x22  # primary language identifier of LANG_UKRAINIAN
+
+
+def ui_language(langid: int) -> str:
+    """DESKTOP-001-S04: a Windows UI language identifier -> the tray menu language."""
+    return 'uk' if langid & 0x3FF == UKRAINIAN else 'en'
+
+
+def _windows_ui_langid() -> int | None:
+    if os.name != 'nt':
+        return None
+    try:
+        import ctypes
+        return int(ctypes.windll.kernel32.GetUserDefaultUILanguage())
+    except Exception:
+        return None
+
+
 def system_locale() -> str:
+    """The Windows display language when it is known (a regional format may differ from it), else the C locale."""
+    langid = _windows_ui_langid()
+    if langid:
+        return ui_language(langid)
     try:
         name = (locale.getlocale()[0] or '').lower()
     except Exception:

@@ -136,3 +136,22 @@ test('a second write cannot start while the first one is on its way',async({page
   expect(writes).toEqual(['first-synthetic-key']);
   await expect(input).toBeEnabled();
 });
+
+test('the key variable name is saved trimmed and in capitals',async({page,request})=>{
+  await reset(request,{env:{VENICE_API_KEY:'env-synthetic'}});
+  const {form,status}=await openRole(page,request);
+  await form.locator('[name="provider"]').selectOption('venice');
+  const name=form.locator('[name="key_env"]');
+  await name.evaluate(el=>{el.closest('details').open=true});
+  await name.fill('  venice_api_key ');
+  await expect(status).toHaveText('Ключ задано змінною середовища.');
+  const save=async()=>{
+    const put=page.waitForRequest(r=>r.url().includes('/settings')&&r.method()==='PUT');
+    await page.locator('#settings-save').click();
+    return JSON.stringify((await put).postDataJSON());
+  };
+  await form.locator('[name="model"]').fill('synthetic-model');
+  const first=await save();
+  expect(first).toContain('"key_env":"VENICE_API_KEY"');
+  expect(first).not.toContain('venice_api_key');
+});

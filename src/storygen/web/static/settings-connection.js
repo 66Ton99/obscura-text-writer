@@ -1,12 +1,12 @@
 import {mountModelPicker} from './model-picker.js';
-import {mountProviderKey} from './provider-key.js';
+import {mountProviderKey,keyName} from './provider-key.js';
 import {t,msg,labelEntries,getLocale,uiText,uiAttr,uiHTML,diagnostic} from './i18n.js';
 export const providerEndpoints={local:'http://localhost:1235/v1',openrouter:'https://openrouter.ai/api/v1',venice:'https://api.venice.ai/api/v1',codex_cli:'http://localhost:1235/v1'};
 export function readConnection(original,values,kind='role'){
   const result={...original},evaluator=kind==='evaluator',provider=values.provider;
   Object.assign(result,{provider,model:evaluator&&provider==='codex_cli'&&!values.model?null:values.model,
     base_url:values.base_url||providerEndpoints[provider],response_mode:values.response_mode,
-    [evaluator?'api_key_env':'key_env']:values.key_env||(provider==='venice'?'VENICE_API_KEY':'OPENROUTER_API_KEY'),
+    [evaluator?'api_key_env':'key_env']:keyName(values.key_env)||(provider==='venice'?'VENICE_API_KEY':'OPENROUTER_API_KEY'),
     [evaluator?'timeout_seconds':'timeout']:values.timeout===''?null:Number(values.timeout),
     local_disable_thinking:!!values.local_disable_thinking,venice_include_system_prompt:!!values.venice_include_system_prompt,venice_disable_thinking:!!values.venice_disable_thinking});
   if(!evaluator)result.venice_reasoning_effort=values.venice_disable_thinking?null:values.venice_reasoning_effort||null;
