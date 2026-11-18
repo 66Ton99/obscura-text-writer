@@ -493,3 +493,11 @@ def test_bridge_check_requires_the_guide(monkeypatch, tmp_path):
         build_store.check_bridge(tmp_path)
     answers['--self-check'] = b'storygen-mcp: ok\nguide: ok\n'
     build_store.check_bridge(tmp_path)
+
+
+def test_package_version_of_the_project_is_1_0_0_0():
+    import tomllib
+    project = tomllib.loads((ROOT / 'pyproject.toml').read_text(encoding='utf-8'))['project']
+    plugin = json.loads((ROOT / 'integrations/claude/obscura/.claude-plugin/plugin.json').read_text(encoding='utf-8'))
+    assert package_version(project['version']) == '1.0.0.0'
+    assert plugin['version'] == project['version']

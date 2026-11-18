@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "storygen"
-version = "0.1.0"
+version = "1.0.0"
 description = "Українська проза: генерація та автоматичне оцінювання"
 readme = "README.md"
 license = {file = "LICENSE"}

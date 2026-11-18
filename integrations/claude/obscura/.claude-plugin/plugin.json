@@ -1,5 +1,5 @@
 {
   "name": "obscura",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Skills for writing stories with Claude in Obscura through its MCP server: planning, scenes in chat or Obscura mode, publication."
 }
