@@ -6824,10 +6824,10 @@
     {
       "id": "CODEX-SKILLS-S04",
       "requirement": "CODEX-SKILLS",
-      "scope": "Діагностичне приймання двома встановленими backend без моделей.",
+      "scope": "Checkout: штатна user .agents/skills, CLI й GUI окремого Windows-акаунта, MCP/list_stories без моделей.",
       "manual": {
-        "procedure": "docs/verification/manual.md#codex-clients",
-        "reason": "Потрібні встановлені Windows CLI/app backend; GUI і Application Control залежать від хоста."
+        "procedure": "docs/verification/codex-checkout-acceptance.md",
+        "reason": "Потрібен окремий локальний Windows-акаунт і ручний вхід/GUI власника. Процедура та попередній сумісний CODEX_HOME/skills не є виконанням B1."
       }
     }
   ]

@@ -448,6 +448,8 @@ BROKEN-TEXT-S05. Автоматична частина — Playwright `tests/web
 <a id="codex-clients"></a>
 ## Codex: два клієнти без моделей
 
+**Чинне приймання206 після погодженого поділу:** [B1 у окремому локальному Windows-акаунті](codex-checkout-acceptance.md). Потрібні штатна user .agents/skills і CLI/GUI. B1 ще не виконано. B2/B3 (Store runtime/license) передано R-39 PR2 й вони не є критеріями злиття206. Нижче збережено попередню діагностичну процедуру та історичні результати до поділу.
+
 1. Зафіксувати --version CLI та app/resources/codex.exe, для кожного експортувати app-server generate-json-schema --out у C:/tmp.
 2. Створити нові fixture repo, home, CODEX_HOME; file auth, жодного auth.json, API-key/token env або OS keyring. Сервер — scripts.skills_stand.start_stand з порожнім env_file і fail-keyring. Не запускати GUI автора.
 3. Перевірити джерела home-resolution перед запуском: [Codex 0.166 host roots](https://github.com/openai/codex/blob/rust-v0.166.0/codex-rs/ext/skills/src/host_roots.rs), [app 0.169 alpha host roots](https://github.com/openai/codex/blob/rust-v0.169.0-alpha.11.1/codex-rs/ext/skills/src/host_roots.rs). Обидва використовують dirs6: Windows home — FOLDERID_Profile, HOME/USERPROFILE не ізолюють .agents. Без окремої згоди на читання справжніх скілів потрібен окремий Windows-профіль/VM. Згода на читання не дозволяє встановлення у справжній профіль.
