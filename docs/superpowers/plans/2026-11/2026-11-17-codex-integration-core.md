@@ -1,6 +1,6 @@
 # Інтеграція Codex — план основи
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (- [ ]) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (- [x]) syntax for tracking.
 
 **Goal:** Безпечний запис користувацької MCP-конфігурації Codex, детермінований пакет п’яти скілів із джерел Claude та його встановлення/оновлення без втрати авторських файлів. UI додається наступним планом.
 
@@ -10,7 +10,7 @@
 
 **Spec:** [2026-11-17-codex-integration-design.md](../../specs/2026-11/2026-11-17-codex-integration-design.md), затверджено власником 17.11.2026.
 
-**Статус:** затверджено власником 17.11.2026; виконання нативне.
+**Статус:** затверджено 17.11.2026; усі чотири задачі основи виконано нативно, завершено 18.11.2026.
 
 ## Global Constraints
 
@@ -121,12 +121,12 @@
 - source_root() -> Path повертає корінь checkout самого скрипта; тест генераційної відмови підміняє лише це визначення на fixture, не production-файли.
 - stdout — один JSON-результат із result, names і безпечними шляхами копій; exit 0 для generated/installed/unchanged, 1 для відмов, 2 для неправильних аргументів. Не друкувати вміст конфігурації чи traceback.
 
-- [ ] 1. Написати test_cli_output_is_deterministic, test_cli_requires_one_destination, test_cli_refuses_nonempty_output, test_cli_installs_into_temporary_profile. Запускати дочірнім Python з PYTHONPATH=<поточний checkout>/src, окремими HOME/USERPROFILE/CODEX_HOME та cwd у C:/tmp; перевіряти реальні результати на диску й exit code.
-- [ ] 2. Додати test_cli_uses_its_checkout_from_another_cwd: cwd містить чужу integrations/claude із sentinel; результат має збігатися з джерелом самого скрипта й не містити sentinel. Додати test_cli_generation_failure_does_not_install: зіпсований fixture-джерело тестувати через завантаження скрипта та ін’єкцію визначення checkout, не редагувати справжнє integrations/.
-- [ ] 3. Запустити RED, реалізувати тонкий CLI, без дублювання генератора/установника, глобальної установки пакетів чи shell-викликів Codex. Сайт uk/en отримує точну CLI-команду, п’ять назв, корені, повторну установку, конфлікти й ручне відновлення/видалення. Окремо уточнити storygen-mcp.exe для checkout і obscura-mcp.exe для Store. Чинні пояснення Claude зберегти; Store-скіли лишаються недоступними.
-- [ ] 4. Перевірити весь контракт основи: generate→install→update→conflict, config write→status→unchanged. Джерела Claude і заборонені файли мають порожній diff. Додати CODEX-SKILLS-S06 для CLI (S04/S05 зарезервовані під живі клієнти/Store-UI), traceability на фактичні функції цього файла. Підтвердити пару сторінок check_site.py --rehash mcp.
-- [ ] 5. Запустити check_docs.py та повний verify.py в worktree C:/tmp, прочитати JUnit/pytest.log і docs/STATUS.md. Будь-який failed/error дослідити, skipped не зараховувати до passed. Чинні тести Claude не змінювати для маскування регресій. Зафіксувати комітом feat(codex): expose source-checkout skill installer; зазначити оновлені uk/en інструкції.
-- [ ] 6. Провести незалежне цілісне рев’ю всього механізму за планом і Review Focus. Важливі дефекти виправити RED→GREEN, повторити потрібні перевірки; записати висновки й рішення у журнал. Не оголошувати цим виконаними живі discovery, Store-freeze чи якість роботи моделей.
+- [x] 1. Написати test_cli_output_is_deterministic, test_cli_requires_one_destination, test_cli_refuses_nonempty_output, test_cli_installs_into_temporary_profile. Запускати дочірнім Python з PYTHONPATH=<поточний checkout>/src, окремими HOME/USERPROFILE/CODEX_HOME та cwd у C:/tmp; перевіряти реальні результати на диску й exit code.
+- [x] 2. Додати test_cli_uses_its_checkout_from_another_cwd: cwd містить чужу integrations/claude із sentinel; результат має збігатися з джерелом самого скрипта й не містити sentinel. Додати test_cli_generation_failure_does_not_install: зіпсований fixture-джерело тестувати через завантаження скрипта та ін’єкцію визначення checkout, не редагувати справжнє integrations/.
+- [x] 3. Запустити RED, реалізувати тонкий CLI, без дублювання генератора/установника, глобальної установки пакетів чи shell-викликів Codex. Сайт uk/en отримує точну CLI-команду, п’ять назв, корені, повторну установку, конфлікти й ручне відновлення/видалення. Окремо уточнити storygen-mcp.exe для checkout і obscura-mcp.exe для Store. Чинні пояснення Claude зберегти; Store-скіли лишаються недоступними.
+- [x] 4. Перевірити весь контракт основи: generate→install→update→conflict, config write→status→unchanged. Джерела Claude і заборонені файли мають порожній diff. Додати CODEX-SKILLS-S06 для CLI (S04/S05 зарезервовані під живі клієнти/Store-UI), traceability на фактичні функції цього файла. Підтвердити пару сторінок check_site.py --rehash mcp.
+- [x] 5. Запустити check_docs.py та повний verify.py в worktree C:/tmp, прочитати JUnit/pytest.log і docs/STATUS.md. Будь-який failed/error дослідити, skipped не зараховувати до passed. Чинні тести Claude не змінювати для маскування регресій. Зафіксувати комітом feat(codex): expose source-checkout skill installer; зазначити оновлені uk/en інструкції.
+- [x] 6. Провести незалежне цілісне рев’ю всього механізму за планом і Review Focus. Важливі дефекти виправити RED→GREEN, повторити потрібні перевірки; записати висновки й рішення у журнал. Не оголошувати цим виконаними живі discovery, Store-freeze чи якість роботи моделей.
 
 ## Межа наступного плану
 
@@ -137,4 +137,4 @@
 - Охоплення основи: §3 дизайну — задача 1; §4 — задачі 2–4; §6–§8 — контракт, traceability та звіт кожної задачі. UI §5 і live/Store-критерії відкладені явно, не позначені готовими.
 - Усі типи й результати, які споживає наступна задача, визначені вище; result=failed уточнений у дизайні як невдала установка з повним відновленням.
 - Кожен Review Focus має власний тест у задачі власника. Немає готових тіл production-функцій чи нового незатвердженого продуктового вибору.
-- Реалізація чекає на перегляд цього плану та вибір способу виконання за writing-plans; рекомендований спосіб — нативно в цій сесії, з одним незалежним рев’ю основи наприкінці.
+- Власник затвердив план і нативний спосіб; незалежне рев’ю виконано, 10 Important виправлено одним TDD-проходом, 2 Minor відкладено. Фінальний verify.py: 3668 passed, 0 failed/errors, 2 skipped; докази й рішення в журналі. Кнопка та клієнтське приймання — наступний план периферії.

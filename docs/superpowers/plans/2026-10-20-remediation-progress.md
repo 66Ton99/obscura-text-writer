@@ -2291,3 +2291,35 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Незалежне цілісне рев’ю (gpt-6.2-astra, діапазон 541fac4..35cceba) дало 10 Important, 0 Critical, 2 Minor. Один fix pass: 18 відтворених RED; GREEN — 147 passed, 1 skipped у нових тестах плюс незмінені Claude/packaging. Виправлено ACL до приватного запису; HTTP-only та inline TOML; фази відкату й parent identity/reparse; межі H2, scalar/frontmatter та fragment links; реальні MCP-згадки; переносну ізоляцію тестів; ASCII JSON stdout. Повторний повний verify ще потрібен.
 - Проба конфігуратора зі справжнім Codex CLI 0.166.0 у C:/tmp/obscura-codex-interop-vwq4wafh: mcp get obscura --json підтвердив stdio, command/args/enabled; міст і моделі не запускалися.
 - Відкладені Minor: тест чужого editable install має послаблену чутливість через уже правильний PYTHONPATH; після невдачі --output може лишитися неповний пакет, який треба прибрати/переглянути вручну. Основне --install має перевірений відкат; ці дрібниці не входили у fix pass.
+- Фінальний verify.py на f76a6b8: **3668 passed, 0 failed, 0 errors, 2 skipped**, source_changed=false; artifacts/verification-qd7r5hqm/result.json. Skipped — два тести створення symlink через права Windows. На відміну від першого прогону, task-done запускає через Git Bash, тож 18 POSIX hook-тестів цього разу виконалися, а не skipped.
+- Ще одна жива проба CLI 0.166.0: C:/tmp/obscura-codex-migration-7iaxz_5f, inline/HTTP-helper/oauth_resource/auth → запис stdio, кожен успішно читається mcp get; моделей і моста не запускали.
+- План периферії: [2026-11-18-codex-integration-ui.md](2026-11/2026-11-18-codex-integration-ui.md). Він спирається на реалізовані інтерфейси та рев’ю основи, чекає на перегляд. Нативний спосіб уже обраний. Проба локальної JSON-schema Codex підтвердила skills/list, mcpServerStatus/list, mcpServer/tool/call та ephemeral thread/start; це опис протоколу, не виконана live-перевірка двох клієнтів.
+
+#### Рев’ю основи: рішення за важливими зауваженнями
+
+| № | Виправлення | Доказ RED→GREEN |
+|---|---|---|
+| 1 | ACL до першого приватного запису, збереження ACE й режиму legacy/auto-inherited/protected | test_private_acl_is_applied_before_bytes_and_preserved |
+| 2 | Повний HTTP-only перелік та відмова deprecated bearer_token без витоку значення | test_all_http_only_fields_are_removed_for_stdio, test_deprecated_bearer_token_is_refused_without_exposing_it |
+| 3 | Inline mcp_servers без obscura підтримується | test_inline_parent_can_add_obscura_without_changing_other |
+| 4 | Повторна перевірка батьків, reparse та ідентичності до файлових операцій | test_parent_redirect_during_staging_is_refused |
+| 5 | Відкат зберігає авторське вилучення й початковий конфлікт ще не обробленої цілі | test_rollback_does_not_restore_directory_deleted_after_publication, test_conflict_on_not_yet_touched_target_is_named |
+| 6 | Заміна однієї H2 замість видалення наступних секцій; регістр advisor | test_model_adaptation_preserves_other_sections, test_lowercase_advisor_instruction_is_not_emitted |
+| 7 | Повна перевірка підтримуваного frontmatter і md-посилань із фрагментом | test_entire_frontmatter_is_validated, test_markdown_fragment_does_not_hide_missing_reference |
+| 8 | Ізоляція прив’язана до pytest basetemp, не C:/tmp literal | test_codex_roots_are_temporary і повний прогін |
+| 9 | Контракт тестує реальні короткі MCP-виклики, не порожню множину префіксів | test_unknown_mcp_tool_is_reported — ненульові ключові інструменти та навмисна помилка звичайного виклику |
+| 10 | JSON підтримує Unicode-шлях на legacy stdout | test_cli_emits_json_with_unicode_path_on_legacy_stdout |
+
+Після fix pass весь набір зелений; повторне модельне рев’ю виправлень не запускалося. Пункт 8 і чутливість перевірки 9 — виправлення тестів, а не нові продуктові гілки.
+
+#### Зафіксовані рішення й межі
+
+- Попередній pytest не є чистим baseline, бо pyproject змінився під час прогону; відсутня тестова залежність виправлена явним PYTHONPATH, фінальний стабільний verify зелений. Ціна помилки — регресія мала б зупинити фінальний gate.
+- Фікстура перевіряє pytest basetemp, не конкретний диск; усі прогони цієї сесії лишилися у C:/tmp. Ціна помилки — слабша перевірка ізоляції, тому HOME/USERPROFILE/CODEX_HOME звіряються разом.
+- Legacy DACL копіюється сумісним API, modern — SetNamedSecurityInfoW: сліпе переведення legacy на auto-inheritance додавало батьківські ACE у живій пробі. Ціна помилки — розширення доступу; тести перевіряють реальні ACE і protection до першого запису.
+- Discovery/user-scope/MCP двох клієнтів залишено критерієм периферії; ціна помилки — не можна оголошувати повну клієнтську підтримку.
+- Вебмаршрути/UI/Store-freeze залишено наступному плану; ціна помилки — core draft не є завершеною інтеграцією кнопкою.
+- Якість, ціни й поведінку моделей не вимірювали відповідно до заборони власника; ціна помилки — літературна якість залишається непідтвердженою.
+- Рецензент не підтверджував незавершений full suite; остаточний результат установлено лише фінальним verify. Ціна помилки — хибний green, який заборонено використовувати для готовності.
+
+Відкладені Minor без потайного включення в наступний обсяг: сильніший тест чужої editable-інсталяції та явна обробка залишкового часткового --output. Успішна core-установка не залежить від них; пошкоджені авторські файли не перезаписуються.

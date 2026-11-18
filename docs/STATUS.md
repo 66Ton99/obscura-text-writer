@@ -2,20 +2,20 @@
 
 **ПЕРЕВІРКА ПРОЙШЛА** — свідчення конкретного запуску, не поточного довільного стану.
 
-- Початок (UTC): 2026-11-17T23:03:47.713772+00:00
-- Завершення (UTC): 2026-11-17T23:17:19.301233+00:00
-- Базовий commit: `35cceba78f68ff9a3fa4119a317a481fd045d4e7`
+- Початок (UTC): 2026-11-17T23:29:02.188124+00:00
+- Завершення (UTC): 2026-11-17T23:42:48.731727+00:00
+- Базовий commit: `f76a6b8395a38ea69f211ef6cf7ef414516b7f1f`
 - Незакомічені зміни під час перевірки: `false`
-- SHA-256 вихідного знімка: `fbd569d716858a0af73d272ef70e9837d07f5170c79c96deaeb388431850f9e2`
+- SHA-256 вихідного знімка: `c6a8ec9cf2ffeb827add7835842be5a999392c760dfd82a464041f24ac7fde69`
 - Зміна знімка під час прогону: `false`
 - Exit code: `0`
-- Фактичні testcase результати JUnit: passed: 3630 · failed: 0 · errors: 0 · skipped: 20
-- Тривалість: 811.59 с
+- Фактичні testcase результати JUnit: passed: 3668 · failed: 0 · errors: 0 · skipped: 2
+- Тривалість: 826.53 с
 
 Точний argv (JSON, не shell-команда):
 
 ```json
-["C:\\Projects\\text-generator\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--junitxml=C:\\tmp\\obscura-codex-design\\artifacts\\verification-o0970t6y\\junit.xml", "--basetemp=C:\\tmp\\obscura-codex-design\\artifacts\\verification-o0970t6y\\test-tmp"]
+["C:\\Projects\\text-generator\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--junitxml=C:\\tmp\\obscura-codex-design\\artifacts\\verification-qd7r5hqm\\junit.xml", "--basetemp=C:\\tmp\\obscura-codex-design\\artifacts\\verification-qd7r5hqm\\test-tmp"]
 ```
 
 Результат стосується лише наведеної команди й вихідного знімка. Якщо в argv зазначено окремі файли або фільтри, це часткова перевірка. Збір (collection) не є виконанням; skipped не зараховано до passed. Відсутній або непридатний XML позначається непідтвердженим. Після зміни вихідних файлів звіт історичний. Власний STATUS і artifacts виключено зі знімка; початкова ревізія може мати dirty=true, оскільки звіт створюється до коміту.
