@@ -30,6 +30,13 @@ def test_crates_from_sbom_take_required_registry_crates_only():
     assert tn.path_crates(sbom) == [('tokenizers', '0.23.2', 'Apache-2.0')]
 
 
+def test_sbom_without_crates_is_refused():
+    with pytest.raises(ValueError, match='SBOM'):
+        tn.crates_from_sbom({})
+    with pytest.raises(ValueError, match='SBOM'):
+        tn.crates_from_sbom({'components': [component(REGISTRY + 'cc@1.4.4', 'cc', '1.4.4', scope='excluded')]})
+
+
 def crate_archive(files):
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode='w:gz') as archive:

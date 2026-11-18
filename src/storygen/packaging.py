@@ -157,7 +157,10 @@ def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
         declared += [item for item in classifiers or [] if item.startswith('License ::')]
         declared = frozenset(text for text in declared if text)
         exception = COPYLEFT_EXCEPTIONS.get(_normal(name))
-        if exception is not None and declared == exception[0]:
+        if exception is not None:
+            # A listed distribution passes only with the reviewed declaration; any change needs a new review.
+            if declared != exception[0]:
+                found.append(name)
             continue
         if any('GPL' in text.upper() for text in declared):
             found.append(name)

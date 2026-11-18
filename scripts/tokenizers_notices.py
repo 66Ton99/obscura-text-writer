@@ -82,6 +82,8 @@ def crates_from_sbom(sbom: dict) -> list[Crate]:
         if item.get('scope') == 'required' and item.get('bom-ref', '').startswith(REGISTRY):
             sha = next((h['content'] for h in item.get('hashes', []) if h.get('alg') == 'SHA-256'), '')
             found.append(Crate(item['name'], item['version'], sha, _licence(item)))
+    if not found:
+        raise ValueError('У SBOM немає жодного crate зі scope=required з crates.io: перелік неповний або SBOM пошкоджений')
     return sorted(found)
 
 

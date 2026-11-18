@@ -253,9 +253,18 @@ def _exception_distribution(name, texts):
                                 Classifier=[text for text in texts if text.startswith('License ::')])
 
 
+PYINSTALLER_LICENCES = {'GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute '
+                        'non-free programs (including commercial ones)',
+                        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'}
+HOOKS_LICENCES = {'License :: OSI Approved :: Apache Software License',
+                  'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'}
+
+
 def test_copyleft_exceptions_pass_only_with_the_exact_declared_licence():
-    pyi = packaging.COPYLEFT_EXCEPTIONS['pyinstaller'][0]
-    hooks = packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0]
+    # Literal metadata as reviewed (probe П7), not read back from the table under test.
+    assert packaging.COPYLEFT_EXCEPTIONS['pyinstaller'][0] == PYINSTALLER_LICENCES
+    assert packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0] == HOOKS_LICENCES
+    pyi, hooks = PYINSTALLER_LICENCES, HOOKS_LICENCES
     table = {
         'pyinstaller': _exception_distribution('pyinstaller', pyi),
         'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks),
@@ -268,6 +277,12 @@ def test_copyleft_exception_with_changed_licence_is_refused():
     hooks = set(packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0]) | {'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'}
     table = {'pyinstaller': MetadataDistribution('pyinstaller', License='GPL-3.0-only'),
              'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks)}
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['pyinstaller', 'pyinstaller-hooks-contrib']
+
+
+def test_copyleft_exception_with_a_non_gpl_or_missing_licence_is_refused():
+    table = {'pyinstaller': MetadataDistribution('pyinstaller', License='MIT'),
+             'pyinstaller-hooks-contrib': MetadataDistribution('pyinstaller-hooks-contrib')}
     assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['pyinstaller', 'pyinstaller-hooks-contrib']
 
 
