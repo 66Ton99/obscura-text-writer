@@ -1,152 +1,94 @@
-# B1: приймання Codex206 в окремому Windows-акаунті
-
-Дата: 18.11.2026. Обсяг: checkout PR206. Виконує власник після входу в окремий локальний акаунт Windows. Ця процедура ще не є доказом проходження B1.
+# B1: що зробити в окремому акаунті Windows
 
 <a id="codex-b1-checkout"></a>
-## 1. Підготувати окреме середовище
 
-Створіть окремого локального користувача засобами Windows, увійдіть саме в нього. Установіть для нього офіційний Python3.12, Git, Codex CLI та застосунок Codex. Увійдіть у Codex самостійно. Облікові дані нікому передавати не потрібно.
+Підготовлено 18.11.2026 для цього комп’ютера та акаунта **Test**. Орієнтовно 10–15 хвилин. B1 ще не пройдено: потрібні ваш запуск і перевірка інтерфейсу.
 
-Відкрийте PowerShell у цьому акаунті:
+## Уже зроблено в основному акаунті
 
-~~~powershell
-$B1Profile = [Environment]::GetFolderPath('UserProfile')
-if ($B1Profile -ieq 'C:\Users\yuriy') { throw 'Це основний профіль власника. Зупиніться й увійдіть в окремий акаунт.' }
-if ($env:USERPROFILE -ine $B1Profile) { throw 'USERPROFILE не збігається із системним профілем; не продовжуйте із підміною HOME.' }
-$B1Profile
-whoami
-~~~
+Комплект лежить у **C:\tmp\Obscura-Codex-B1**. У ньому вже є:
+- checkout-знімок перевіреного коду PR206, commit 027434b3406d1d5390ee67550e929015cc17a7dc;
+- окремий Python3.12.10, venv і встановлені залежності web/mcp;
+- підписаний Codex CLI0.166.0; знайдено встановлений Codex26.1111.2228.0, backend0.169.0-alpha.11.1;
+- два готові файли запуску, автоматична перевірка та тека results для результатів.
 
-Якщо CODEX_HOME уже заданий, він має вказувати на теку цього тестового акаунта. За іншого шляху зупиніться й уточніть середовище; не запускайте клієнти з посиланням на конфігурацію основного автора. Не використовуйте основну .venv: її базовий інтерпретатор може лежати в профілі автора.
+Клонувати репозиторій, встановлювати Git/Python/pip, налаштовувати змінні середовища чи вручну збирати JSON не потрібно. Це знімок відстежуваних файлів без .git, приватних нотаток, конфігурації й даних автора. Python не залежить від доступу до профілю yuriy.
 
-Створіть свіжу робочу теку та власний checkout:
+Попередня перевірка комплекту в цьому акаунті вже пройшла: обидва backend знайшли п’ять user-scope скілів через тимчасовий сумісний CODEX_HOME/skills, каталог27 і виконали list_stories на порожній бібліотеці. Файл PREPARATION-CHECK.json явно містить b1_passed=false: це ще не доказ справжньої Test/.agents і GUI.
 
-~~~powershell
-$B1Work = Join-Path $B1Profile ('ObscuraCodex206-' + [Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $B1Work | Out-Null
-git clone --branch codex/obscura-codex-integration --single-branch https://github.com/ysilvestrov/obscura-text-writer.git (Join-Path $B1Work 'checkout')
-Set-Location (Join-Path $B1Work 'checkout')
-git rev-parse HEAD
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[web,mcp]"
-New-Item -ItemType Directory -Path (Join-Path $B1Work 'evidence') | Out-Null
-~~~
+## Крок 1. Увійдіть у Windows як Test
 
-Якщо репозиторій вимагає автентифікації, виконайте її самостійно під цим акаунтом. Запишіть надруковані шлях робочої теки та SHA.
+Збережіть свою роботу. У меню Пуск натисніть аватар → Змінити користувача → **Test**. Увійдіть у цей акаунт. Якщо це перший вхід, дочекайтеся створення робочого столу.
 
-## 2. Установити user-скіли штатним CLI
+Не запускайте процедуру через «Запуск від імені адміністратора». Вона перевіряє справжній Windows SID Test і відмовляється працювати в акаунті yuriy.
 
-~~~powershell
-.\.venv\Scripts\python.exe .\scripts\install_codex_skills.py --install
-Get-ChildItem (Join-Path $B1Profile '.agents\skills') -Directory -Filter 'obscura-*' | Select-Object Name,FullName
-~~~
+## Крок 2. Відкрийте Codex і ввійдіть
 
-Очікується installed або unchanged і рівно п’ять потрібних тек:
-
-- obscura-start-story;
-- obscura-draft-scene;
-- obscura-publish;
-- obscura-series-bible;
-- obscura-setup-models.
-
-Не копіюйте їх у checkout/.agents чи CODEX_HOME/skills: B1 перевіряє саме домашню .agents/skills. За conflict або partial зупиніться, збережіть JSON; не видаляйте чужих файлів і не примушуйте установку.
-
-## 3. Запустити нейтральну Obscura
-
-У цій самій консолі, із теки checkout, перевірте порт і приберіть ключі лише з поточного процесного середовища:
-
-~~~powershell
-if (Get-NetTCPConnection -State Listen -LocalPort 18761 -ErrorAction SilentlyContinue) { throw 'Порт18761 зайнятий; не підключайтеся до невідомого сервера.' }
-Get-ChildItem Env: | Where-Object { $_.Name -like '*_API_KEY' } | ForEach-Object { Remove-Item -LiteralPath ('Env:' + $_.Name) }
-$env:PYTHON_KEYRING_BACKEND = 'keyring.backends.fail.Keyring'
-.\.venv\Scripts\python.exe -m storygen.server --data-dir (Join-Path $B1Work 'data') --env-file (Join-Path $B1Work 'absent.env') --port 18761
-~~~
-
-Консоль лишається зайнятою сервером. У браузері цього акаунта відкрийте http://127.0.0.1:18761. Це нова порожня бібліотека. Не додавайте реальні твори, ключі чи модельні налаштування.
-
-Розгорніть блок Codex і натисніть «Підключити до Codex». Збережіть шлях config.toml, результат і названу копію, якщо її створено. Це перевірка запису файла, а не живого MCP. Відкрийте нову сесію або перезапустіть Codex у тестовому акаунті. Сервер Obscura лишіть запущеним.
-
-## 4. Зафіксувати версії й схеми обох backend
-
-Відкрийте другу PowerShell-консоль цього акаунта; перейдіть у створений checkout, відновіть B1Work зі шляху кроку1. В обох консолях системний профіль має бути тим самим окремим акаунтом.
-
-~~~powershell
-codex --version
-codex mcp get obscura --json
-$B1App = Get-AppxPackage -Name OpenAI.Codex
-if (-not $B1App) { throw 'Застосунок Codex не зареєстровано для цього акаунта; зафіксуйте невиконаний крок.' }
-$B1AppExe = Join-Path $B1App.InstallLocation 'app\resources\codex.exe'
-& $B1AppExe --version
-codex app-server generate-json-schema --out (Join-Path $B1Work 'evidence\cli-schema')
-& $B1AppExe app-server generate-json-schema --out (Join-Path $B1Work 'evidence\app-schema')
-~~~
-
-Якщо Codex установлено іншим способом, використайте фактичний resources/codex.exe того застосунку, а не підміну CLI-файлом. Якщо app-пакета чи RPC нижче немає, запишіть це як невиконане приймання. Не вгадуйте інший RPC і не замінюйте його модельним ходом.
-
-JSON mcp get має вказувати на checkout цього акаунта, stdio міст і URL http://127.0.0.1:18761. Не публікуйте повний config.toml, auth.json чи дані входу. Потрібні лише назва obscura, enabled, команда, argv і версії.
-
-## 5. Діагностичні RPC без моделі — повторити для CLI й app backend
-
-Використано протокол, уже перевірений на CLI0.166.0 та app backend0.169.0-alpha.11.1. Для інших установлених версій спершу звірте exported schema: initialize, skills/list, thread/start(ephemeral), mcpServerStatus/list та mcpServer/tool/call. Не надсилайте turn/start.
-
-Запустіть перший backend інтерактивно:
-
-~~~powershell
-codex app-server
-~~~
-
-Вводьте по одному наведеному JSON-рядку в його stdin; після кожного запиту дочекайтеся відповіді з відповідним id. Збережіть лише потрібні відповіді в evidence/cli-rpc.jsonl. Сповіщення між відповідями можливі. У полях cwd/cwds замініть приклад на справжній checkout окремого акаунта; у JSON Windows-шлях можна записувати зі звичайними прямими слешами.
-
-~~~json
-{"id":1,"method":"initialize","params":{"clientInfo":{"name":"obscura_b1_acceptance","version":"1"}}}
-{"method":"initialized","params":{}}
-{"id":2,"method":"skills/list","params":{"cwds":["C:/Users/TEST_ACCOUNT/ObscuraCodex206-ID/checkout"],"forceReload":true}}
-~~~
-
-У відповіді1 codexHome має належати цьому тестовому профілю. У відповіді2 потрібні всі п’ять obscura-* із scope=user та path під системним профілем/.agents/skills; errors має бути порожнім. У доказ не включайте вміст чи назви інших особистих скілів.
-
-~~~json
-{"id":3,"method":"thread/start","params":{"cwd":"C:/Users/TEST_ACCOUNT/ObscuraCodex206-ID/checkout","ephemeral":true,"approvalPolicy":"never","sandbox":"read-only"}}
-~~~
-
-Візьміть thread.id з відповіді3. Замініть THREAD_ID у двох наступних рядках; це не текст повідомлення моделі:
-
-~~~json
-{"id":4,"method":"mcpServerStatus/list","params":{"threadId":"THREAD_ID","serverName":"obscura","detail":"toolsAndAuthOnly"}}
-{"id":5,"method":"mcpServer/tool/call","params":{"threadId":"THREAD_ID","server":"obscura","tool":"list_stories","arguments":{}}}
-~~~
-
-Очікується obscura із27 інструментами, зокрема get_guide, та успішний list_stories з порожнім списком: isError=false. get_guide є в загальному мосту, але не має згадуватися в установлених Codex-скілах. Не викликайте інші інструменти; не створюйте модельний хід.
-
-Завершіть backend через Ctrl+C. Повторіть ті самі запити для backend застосунку:
-
-~~~powershell
-& $B1AppExe app-server
-~~~
-
-Збережіть потрібні відповіді в evidence/app-rpc.jsonl. Успіх CLI не замінює успіху другого executable.
-
-## 6. Перевірити GUI та повернути результат
-
-У застосунку Codex під тим самим акаунтом після нової сесії/перезапуску перевірте доступність усіх п’яти obscura-* скілів і MCP-сервера obscura. Лише відкрийте відповідні списки/налаштування; не відправляйте промпт, не запускайте codex exec чи модель.
-
-Збережіть нейтральні знімки цих списків у evidence, приховавши адресу облікового запису й будь-які дані входу. Поверніть Codex підсумок:
+Відкрийте Провідник, вставте в адресний рядок:
 
 ~~~text
-B1 checkout SHA:
-Windows test profile:
-Codex CLI version/path:
-Codex app/backend version/path:
-CLI: 5 user skills з <profile>/.agents/skills, errors=0: так/ні
-App backend: те саме: так/ні
-MCP catalog:27 tools, obscura, обидва backend: так/ні
-list_stories: isError=false, result=[], обидва backend: так/ні
-GUI: усі5skills видимі, obscura доступний: так/ні
-Модельні ходи:0
-Шляхи нейтральних доказів:
-Невиконані кроки/помилки:
+C:\tmp\Obscura-Codex-B1
 ~~~
 
-За відсутнього пункту його не зараховувати. Після перевірки закрийте Codex у тестовому акаунті й зупиніть сервер Obscura. Автоматичного видалення скілів, акаунта або робочої теки ця процедура не передбачає.
+Двічі натисніть **1-OPEN-CODEX.cmd**.
 
-Store freeze/license (B2/B3) належать R-39 PR2 і не є частиною цього приймання.
+Якщо Codex ще не зареєстровано для Test, файл спробує зареєструвати вже встановлений підписаний пакет лише для цього користувача. Після відкриття **самостійно ввійдіть у Codex**. Пароль або код входу мені не потрібні. Дочекайтеся головного вікна; нічого в чат не надсилайте.
+
+Якщо відкриття завершується CODEX_REGISTRATION_FAILED або CODEX_PACKAGE_MISSING, відкрийте Microsoft Store в Test, установіть Codex і повторіть цей крок. Не змінюйте політики Windows.
+
+## Крок 3. Запустіть автоматичну частину
+
+У тій самій теці двічі натисніть **2-RUN-B1.cmd**. Залиште консоль відкритою.
+
+Файл сам:
+1. Установить п’ять скілів штатним установником у справжню Test/.agents/skills.
+2. Запустить окрему Obscura з порожніми даними під Test і збереже її MCP-запис у конфігурації Test.
+3. Перевірить Codex CLI та backend застосунку: user-scope п’ять скілів саме з Test/.agents, відсутність discovery errors, каталог27 і порожній list_stories.
+4. Зупиниться для ваших відповідей про GUI.
+
+Автоматична частина зазвичай займає до кількох хвилин. Індикатори 1/4…4/4 показують поступ. Вона не надсилає модельних запитів і не генерує історій.
+
+## Крок 4. Перевірте інтерфейс
+
+Коли консоль покаже **4/4**, залиште її працювати:
+
+1. Повністю закрийте застосунок Codex і знову відкрийте через **1-OPEN-CODEX.cmd**, щоб перечитати конфігурацію.
+2. У боковій панелі Codex відкрийте **Skills / Скіли**.
+3. Знайдіть кожну назву нижче. Консоль по черзі запитає про них; введіть **y** і Enter лише якщо бачите відповідний скіл. Якщо його немає — **n** і Enter:
+   - obscura-start-story
+   - obscura-draft-scene
+   - obscura-publish
+   - obscura-series-bible
+   - obscura-setup-models
+4. У Codex натисніть **Ctrl+,**, відкрийте **MCP servers / Сервери MCP**. Перевірте, що **obscura** присутній і увімкнений. Дайте відповідь y або n на останнє запитання консолі.
+
+Не надсилайте промпт і не запускайте скіл для генерації. Якщо інтерфейс відрізняється або перевірити пункт не вдається, відповідайте n; цей запуск не буде помилково зараховано як успішний.
+
+Навігація відповідає офіційним інструкціям OpenAI: [Skills](https://learn.chatgpt.com/docs/build-skills.md), [налаштування](https://learn.chatgpt.com/docs/reference/settings.md), [MCP](https://learn.chatgpt.com/docs/extend/mcp.md?surface=app).
+
+## Крок 5. Поверніть результат
+
+Дочекайтеся напису **Результат: PASS** або **INCOMPLETE** та шляху до RESULT.json. Натисніть будь-яку клавішу, якщо консоль просить.
+
+Перемкніться назад у **yuriy**, поверніться в цей чат і напишіть надрукований рядок, наприклад:
+
+~~~text
+B1 готово, 20261118-160000-abcdef
+~~~
+
+Я сам прочитаю файл із **C:\tmp\Obscura-Codex-B1\results\<номер запуску>\RESULT.json**. Копіювати весь JSON, надсилати скриншоти або відкривати тестовому акаунту репозиторій не потрібно.
+
+## Якщо щось не працює
+
+- Якщо файл повідомляє про неправильний акаунт — увійдіть саме в Test. Не змінюйте SID або kit-info.json.
+- Якщо є INCOMPLETE чи помилка — поверніть номер запуску й видимий код помилки. Залиште файли на місці; повторне встановлення поверх конфлікту не потрібне.
+- Якщо Windows блокує запуск — запишіть текст блокування й поверніться в цей чат; не обходьте Smart App Control, не вимикайте захист і не змінюйте ExecutionPolicy.
+- Якщо консоль закрили до результату — повідомте це. Незавершений запуск не є PASS.
+
+## Що зміниться в Test
+
+Тільки цей акаунт отримає скіли .agents/skills, MCP-конфігурацію .codex/config.toml із штатними копіями, можливу реєстрацію вже встановленого Codex і вхід у нього. Тимчасові дані Obscura та приватні діагностичні журнали лежать у Test\AppData\Local\ObscuraCodexB1\<номер запуску>. Після завершення скрипт зупиняє свою Obscura й backend-процеси; скіли та конфігурацію залишає для огляду.
+
+У комплекті Test може читати й запускати файли; запис дозволений лише в results. Основний профіль yuriy не змінюється. RESULT.json містить результати, версії та шляхи, без паролів і токенів.
+
+Вихідні файли допоміжної процедури збережені в docs/verification/b1-kit/. Ці файли призначені для підготовленого комплекту поруч із kit-info.json і venv, а не для запуску безпосередньо з репозиторію.
