@@ -515,3 +515,20 @@ def test_package_version_of_the_project_is_1_0_0_0():
     plugin = json.loads((ROOT / 'integrations/claude/obscura/.claude-plugin/plugin.json').read_text(encoding='utf-8'))
     assert package_version(project['version']) == '1.0.0.0'
     assert plugin['version'] == project['version']
+
+
+def test_plugin_files_check_skills_as_they_will_ship(plugin_tree):
+    root, tracked = plugin_tree
+    skill = root / 'obscura/skills/start-story'
+    (skill / 'references').mkdir()
+    (skill / 'references/new.md').write_text('never added to git', encoding='utf-8')
+    (skill / 'SKILL.md').write_text('See ${CLAUDE_PLUGIN_ROOT}/skills/start-story/references/new.md\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='start-story'):
+        packaging.plugin_files(root, tracked)
+    # An untracked draft skill is not shipped, so it cannot refuse the build.
+    (skill / 'references/new.md').unlink()
+    (skill / 'SKILL.md').write_text('See ${CLAUDE_PLUGIN_ROOT}/shared/rules.md\n', encoding='utf-8')
+    draft = root / 'obscura/skills/draft-idea/SKILL.md'
+    draft.parent.mkdir(parents=True)
+    draft.write_text('Use ${CLAUDE_PLUGIN_ROOT}/skills/start-story/SKILL.md\n', encoding='utf-8')
+    assert 'obscura/skills/draft-idea/SKILL.md' not in packaging.plugin_files(root, tracked)

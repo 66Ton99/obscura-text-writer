@@ -4722,7 +4722,8 @@
       "requirement": "DESKTOP-001",
       "scope": "Резервна копія не бере жодного .env на будь-якій глибині; файли з .env лише в частині назви копіюються.",
       "tests": [
-        "tests/storage/test_backup.py::test_backup_skips_env_files_at_any_depth"
+        "tests/storage/test_backup.py::test_backup_skips_env_files_at_any_depth",
+        "tests/storage/test_backup.py::test_backup_skips_env_files_in_any_letter_case"
       ]
     },
     {
@@ -6062,7 +6063,8 @@
         "tests/test_packaging.py::test_plugin_files_refuse_a_plugin_without_manifest",
         "tests/test_packaging.py::test_plugin_files_refuse_a_cross_skill_reference",
         "tests/test_packaging.py::test_repository_plugin_files_hold_every_skill",
-        "tests/test_packaging.py::test_bridge_check_requires_the_guide"
+        "tests/test_packaging.py::test_bridge_check_requires_the_guide",
+        "tests/test_packaging.py::test_plugin_files_check_skills_as_they_will_ship"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#store-package-ci",

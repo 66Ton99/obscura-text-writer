@@ -19,6 +19,7 @@ def test_store_workflow_packs_a_test_identity_or_skips_msix():
     assert '--skip-msix' in text
     assert '::warning::' in text
     assert 'actions/upload-artifact' in text
+    assert 'if ($LASTEXITCODE) { exit $LASTEXITCODE }' in text  # a failed lock install must not fall through
     assert 'retention-days: 7' in text
 
 

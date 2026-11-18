@@ -3777,7 +3777,7 @@ Restore перевіряє complete manifest, точний inventory, кожни
 #### Scenario: DESKTOP-001-S06 — Резервна копія без `.env`
 - GIVEN тека даних, у якій є файл `.env` у корені чи в будь-якій підтеці
 - WHEN створюється резервна копія (вручну, перед міграцією чи командою `backup`)
-- THEN жоден файл із назвою `.env` не потрапляє ні в копію, ні в її маніфест, а решта файлів (зокрема з `.env` лише в частині назви) копіюється як раніше
+- THEN жоден файл із назвою `.env` у будь-якому регістрі (`.ENV` Windows відкриває як `.env`) не потрапляє ні в копію, ні в її маніфест, а решта файлів (зокрема з `.env` лише в частині назви) копіюється як раніше
 - AND відновлення з такої копії не змінюється.
 
 #### Технічний опис і сумісність (DESKTOP-001)
@@ -3858,9 +3858,9 @@ Restore перевіряє complete manifest, точний inventory, кожни
 
 <a id="packaging-001-s07"></a>
 #### Scenario: PACKAGING-001-S07 — Збирання в GitHub Actions
-- GIVEN зміна в `main`, що зачіпає збирання (`scripts/build_store.py`, `src/storygen/packaging*.py`, `store_build/**`, `integrations/claude/**`, `pyproject.toml`, `requirements-lock.txt` чи сам робочий процес), або ручний запуск
+- GIVEN PR у `main`, що зачіпає збирання (`scripts/build_store.py`, `src/storygen/packaging*.py`, `store_build/**`, `integrations/claude/**`, `pyproject.toml`, `requirements-lock.txt` чи сам робочий процес), або ручний запуск (діє після злиття файла в `main`)
 - WHEN виконується `.github/workflows/store-build.yml`
-- THEN на `windows-latest` з офіційним CPython 3.12 ставляться залежності з `requirements-lock.txt` і extra збирання, а `scripts/build_store.py` виконує всі звичайні перевірки (міст, застосунок, повідомлення)
+- THEN на `windows-latest` з офіційним CPython 3.12 ставляться залежності з `requirements-lock.txt` (збій цієї установки зупиняє запуск) і extra збирання, а `scripts/build_store.py` виконує всі звичайні перевірки (міст, застосунок, повідомлення)
 - AND якщо в образі є `makeappx`, збирається непідписаний `.msix` із тестовою ідентичністю `Obscura.CI` / `CN=Obscura CI` лише для перевірки складу; інакше — `--skip-msix` з попередженням
 - AND звіти (`self-check.json`, `BUILD-OK.json` чи `BUILD-FAILED.txt`, журнали, повідомлення, `.msix`) і тека пакета зберігаються артефактами на 7 днів навіть після відмови
 - AND робочий процес має лише `contents: read`, не використовує секретів, не підписує й не публікує.
@@ -4774,7 +4774,7 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - GIVEN збирання пакета Store з робочої копії
 - WHEN скрипт кладе міст поруч з `Obscura.exe`
 - THEN до перевірки моста він копіює в `claude\` поруч з exe лише відстежувані git файли маркетплейсу з `skill_bundles.USER_FILES` (без `evals/` і невідстежуваних чернеток), а `BUILD-OK.json` перелічує їх у `plugin_files`
-- AND плагін без `obscura/.claude-plugin/plugin.json` або скіл, що не стає самодостатнім пакетом (посилання на інший скіл), зупиняє збирання до заморожування
+- AND плагін без `obscura/.claude-plugin/plugin.json` або скіл, що не стає самодостатнім пакетом (посилання на інший скіл чи на невідстежуваний файл), зупиняє збирання до заморожування; скіли перевіряються на копії лише відстежуваних файлів, тож невідстежувана чернетка скіла збирання не зупиняє
 - AND збирання зупиняється, якщо `obscura-mcp.exe --self-check` друкує не `guide: ok` (міст не бачить провідника).
 
 #### Технічний опис і сумісність (STORE-MCP-001)

@@ -176,3 +176,10 @@ def test_backup_skips_env_files_at_any_depth(tmp_path):
     assert 'notes.env.txt' in copied
     manifest = json.loads((backup / 'manifest.json').read_text(encoding='utf-8'))
     assert not [item for item in manifest['files'] if item['path'].rsplit('/', 1)[-1] == '.env']
+
+
+def test_backup_skips_env_files_in_any_letter_case(tmp_path):
+    repo, story, _, _ = sample(tmp_path / 'source')
+    (repo.root / 'stories' / story.id / '.ENV').write_text('VENICE_API_KEY=secret', encoding='utf-8')
+    backup = create_backup(repo.root, tmp_path / 'backup')
+    assert not [path for path in (backup / 'data').rglob('*') if path.name.lower() == '.env']

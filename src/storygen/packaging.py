@@ -200,9 +200,17 @@ def plugin_files(root: Path, tracked) -> list[str]:
     files = sorted({rel for rel in tracked if rel.startswith(skill_bundles.USER_FILES) and (root / rel).is_file()})
     if 'obscura/.claude-plugin/plugin.json' not in files:
         raise ValueError('у плагіні Claude немає obscura/.claude-plugin/plugin.json')
-    plugin = root / 'obscura'
-    for skill in skill_bundles.skill_names(plugin):
-        skill_bundles.bundle_files(plugin, skill)
+    # Check the skills as they will ship: on a copy of the tracked files only, so an untracked reference fails here and an
+    # untracked draft skill does not.
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix='obscura-plugin-') as staging:
+        for rel in files:
+            target = Path(staging) / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(root / rel, target)
+        plugin = Path(staging) / 'obscura'
+        for skill in skill_bundles.skill_names(plugin):
+            skill_bundles.bundle_files(plugin, skill)
     return files
 
 
