@@ -308,7 +308,9 @@ def install_skills(bundle: SkillBundle, userprofile: Path) -> InstallReport:
         return InstallReport('installed',installed=tuple(changed),backups=tuple(backups))
     except (OSError,_Conflict) as error:
         restored, rollback_conflicts = _rollback(actions,expected,staging,guard)
-        initial = (str(error),) if isinstance(error,_Conflict) else ()
+        changed = isinstance(error,_Conflict)
+        initial = (str(error),) if changed and str(error) in _NAMES else ()
+        reasons = (str(error),) if changed and not initial else ()
         conflicts = tuple(dict.fromkeys((*initial,*rollback_conflicts)))
         installed = []
         for action in actions:
@@ -318,10 +320,10 @@ def install_skills(bundle: SkillBundle, userprofile: Path) -> InstallReport:
                     installed.append(action.name)
             except (OSError,_Conflict):
                 pass
-        result = 'partial' if rollback_conflicts else 'conflict' if initial else 'failed'
+        result = 'partial' if rollback_conflicts else 'conflict' if changed else 'failed'
         return InstallReport(result,installed=tuple(installed),restored=restored,conflicts=conflicts,
                              backups=_available_backups(backups,guard),
-                             errors=('install_changed' if initial else 'install_io_failed',))
+                             errors=(('install_changed',) + reasons if changed else ('install_io_failed',)))
     finally:
         try:
             guard.check(agents)

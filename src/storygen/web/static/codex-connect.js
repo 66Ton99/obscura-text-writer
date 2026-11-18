@@ -19,8 +19,9 @@ if(root){
   function report(box,answer){
     const result=answer.result;
     const reasons={install_busy:'codex.install_busy',unsafe_install_root:'codex.unsafe_install_root'};
-    const specific=(answer.errors||[]).map(reason=>reasons[reason]).filter(Boolean);
-    box.replaceChildren(...(specific.length?specific.map(key=>line(key)):[line('codex.'+result)]));
+    for(const reason of ['linked_path','install_parent_changed','not_a_directory','unsafe_install_path','tree_changed','not_a_regular_file'])reasons[reason]='codex.install_path_changed';
+    const specific=[...new Set((answer.errors||[]).map(reason=>reasons[reason]).filter(Boolean))];
+    box.replaceChildren(...(specific.length&&result==='conflict'?[]:[line('codex.'+result)]),...specific.map(key=>line(key)));
     const success=box===skills&&(result==='installed'||result==='unchanged');
     for(const field of ['path','installed','restored','conflicts','backups']){
       if(success&&field==='installed')continue;

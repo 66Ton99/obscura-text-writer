@@ -63,6 +63,8 @@ The chat cannot connect or restart Claude by itself: only you do this, in Obscur
 
 ### Codex buttons in the library
 
+If config.toml is write-protected, check its permissions before trying again. A backup creation error stops the settings write. If the skill installation path changed or became unsuitable, review the folders and named backups; a partial result also requires checking what was actually restored.
+
 Expand “Connect to Codex” and press the button with the same name. Obscura saves the obscura stdio server in CODEX_HOME/config.toml or USERPROFILE/.codex/config.toml. The button can create the file before Codex is installed. It explicitly enables obscura and replaces its HTTP settings with local stdio; other servers and policies are preserved. After “Codex settings saved”, open a new session or restart Codex. This confirms the file; check the live connection in the client itself.
 
 Each change to an existing config.toml creates a unique .obscura-backup-* copy beside it; repeating an unchanged action creates no backup. Repair malformed TOML by hand first. To restore, close Codex, save any later edits and restore the chosen copy. You can copy the PowerShell command for manual setup from the same block.

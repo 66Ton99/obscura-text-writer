@@ -113,7 +113,8 @@ def test_failed_third_rename_restores_original_trees(tmp_path, bundle, monkeypat
         return original(src,dst)
     monkeypatch.setattr(os,'replace',fail_third)
     report = install_skills(update(bundle),tmp_path)
-    assert report.result == 'failed' and not report.installed and report.restored
+    assert report.result == 'failed' and not report.installed
+    assert report.restored == (NAMES[0],) and report.conflicts == ()
     assert tree(root) == before
 
 
@@ -136,7 +137,8 @@ def test_rollback_preserves_concurrent_author_edit(tmp_path, bundle, monkeypatch
         return original(src,dst)
     monkeypatch.setattr(os,'replace',fail_with_edit)
     report = install_skills(update(bundle),tmp_path)
-    assert report.result == 'partial' and report.conflicts
+    assert report.result == 'partial' and report.conflicts == (NAMES[0],)
+    assert report.installed == ()
     assert edited and edited.read_text() == 'author concurrent edit'
     assert report.backups and all(path.exists() for path in report.backups)
 
@@ -200,7 +202,9 @@ def test_parent_redirect_during_staging_is_refused(tmp_path,bundle,monkeypatch,p
         return result
     monkeypatch.setattr(ci,'_write_tree',redirect)
     report=install_skills(update(bundle),tmp_path)
-    assert report.result in {'conflict','failed','partial'}
+    assert report.result == 'conflict'
+    assert report.conflicts == ()
+    assert report.errors == ('install_changed','linked_path')
     assert tree(outside)==before
 
 
@@ -244,8 +248,8 @@ def test_conflict_on_not_yet_touched_target_is_named(tmp_path,bundle,monkeypatch
         return result
     monkeypatch.setattr(ci,'_write_tree',author_change)
     report=install_skills(update(bundle),tmp_path)
-    assert report.result in {'conflict','failed','partial'}
-    assert NAMES[-1] in report.conflicts
+    assert report.result == 'conflict'
+    assert report.conflicts == (NAMES[-1],)
     assert (tmp_path/'.agents/skills'/NAMES[-1]/'SKILL.md').read_text()=='author edit'
 
 

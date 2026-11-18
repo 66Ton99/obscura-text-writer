@@ -130,6 +130,33 @@ def _copy_permissions(source: Path, target: Path) -> None:
             raise ctypes.WinError(status)
 
 
+def _write_backup(path: Path, raw: bytes) -> Path:
+    backup = path.with_name(path.name + '.obscura-backup-' + uuid.uuid4().hex)
+    # Keep the exclusively created write handle: copied read-only permissions must
+    # protect private bytes without preventing that already-open handle from writing.
+    with backup.open('xb') as stream:
+        info = os.fstat(stream.fileno())
+        identity = info.st_dev, info.st_ino
+        try:
+            _copy_permissions(path, backup)
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        except BaseException:
+            stream.close()  # Windows cannot unlink this file while our handle is open.
+            try:
+                current = backup.lstat()
+            except FileNotFoundError:
+                current = None
+            if (current is not None and stat.S_ISREG(current.st_mode)
+                    and not getattr(current, 'st_file_attributes', 0) & 0x400
+                    and (current.st_dev, current.st_ino) == identity):
+                backup.chmod(stat.S_IRUSR | stat.S_IWUSR)
+                backup.unlink()
+            raise
+    return backup
+
+
 def write_config(path: Path, command: list[str]) -> ConfigResult:
     _command(command)
     path = Path(path)
@@ -153,12 +180,7 @@ def write_config(path: Path, command: list[str]) -> ConfigResult:
         path.parent.mkdir(parents=True, exist_ok=True)
         backup = None
         if raw is not None:
-            backup = path.with_name(path.name + '.obscura-backup-' + uuid.uuid4().hex)
-            # Exclusive creation prevents even an improbable UUID collision from overwriting a copy.
-            with backup.open('xb'):
-                pass
-            _copy_permissions(path, backup)
-            backup.write_bytes(raw)
+            backup = _write_backup(path, raw)
         handle, name = tempfile.mkstemp(prefix='.obscura-', suffix='.tmp', dir=path.parent)
         temporary = Path(name)
         try:

@@ -102,13 +102,12 @@ def test_unique_backup_keeps_exact_previous_bytes(tmp_path):
 def test_changed_file_is_not_overwritten(tmp_path, monkeypatch):
     path = tmp_path/'config.toml'
     path.write_text('model = "before"\n')
-    original_write = Path.write_bytes
-    def concurrent(file, data):
-        result = original_write(file, data)
-        if '.obscura-backup' in file.name:
-            original_write(path, b'model = "author"\n')
-        return result
-    monkeypatch.setattr(Path, 'write_bytes', concurrent)
+    original_copy = cc._copy_permissions
+    def concurrent(source, target):
+        original_copy(source, target)
+        if '.obscura-backup' in target.name:
+            path.write_bytes(b'model = "author"\n')
+    monkeypatch.setattr(cc, '_copy_permissions', concurrent)
     with pytest.raises(cc.CodexConfigError, match='changed'):
         cc.write_config(path, COMMAND)
     assert path.read_bytes() == b'model = "author"\n'
@@ -231,8 +230,9 @@ def test_private_acl_is_applied_before_bytes_and_preserved(tmp_path,monkeypatch,
     assert bool(expected[0] & 0x1000)==protected
     fdopen=os.fdopen
     class CheckedWriter:
-        def __init__(self,stream):
+        def __init__(self,stream,target=None):
             self.stream=stream
+            self.target=target
         def __enter__(self):
             return self
         def __exit__(self,*args):
@@ -240,10 +240,64 @@ def test_private_acl_is_applied_before_bytes_and_preserved(tmp_path,monkeypatch,
         def __getattr__(self,name):
             return getattr(self.stream,name)
         def write(self,data):
-            temporary=next(tmp_path.glob('.obscura-*.tmp'))
+            temporary=self.target or next(tmp_path.glob('.obscura-*.tmp'))
             assert rights(temporary)==expected, 'private bytes would be written before ACL'
             return self.stream.write(data)
     monkeypatch.setattr(os,'fdopen',lambda *a,**kw:CheckedWriter(fdopen(*a,**kw)))
+    original_open=Path.open
+    def checked_open(file,*args,**kwargs):
+        opened=original_open(file,*args,**kwargs)
+        if '.obscura-backup-' in file.name and args and args[0]=='xb':
+            return CheckedWriter(opened,file)
+        return opened
+    monkeypatch.setattr(Path,'open',checked_open)
     result=cc.write_config(path,COMMAND)
     assert rights(path)==expected
     assert rights(result.backup)==expected
+
+@pytest.mark.req('STORE-MCP-001')
+def test_read_only_config_never_leaves_an_empty_backup(tmp_path):
+    import stat
+    path=tmp_path/'config.toml'
+    raw=b'model="neutral-read-only"\n'
+    path.write_bytes(raw)
+    path.chmod(stat.S_IREAD)
+    try:
+        try:
+            result=cc.write_config(path,COMMAND)
+        except PermissionError:
+            assert path.read_bytes()==raw
+        else:
+            assert result.result=='configured'
+        backups=list(tmp_path.glob('config.toml.obscura-backup-*'))
+        assert backups and all(backup.read_bytes()==raw for backup in backups)
+    finally:
+        for file in tmp_path.iterdir():
+            file.chmod(stat.S_IREAD|stat.S_IWRITE)
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_failed_backup_permissions_do_not_publish_an_empty_copy(tmp_path,monkeypatch):
+    path=tmp_path/'config.toml'
+    raw=b'model="neutral"\n'
+    path.write_bytes(raw)
+    def denied(source,target):
+        raise PermissionError('injected ACL failure')
+    monkeypatch.setattr(cc,'_copy_permissions',denied)
+    with pytest.raises(PermissionError):
+        cc.write_config(path,COMMAND)
+    assert path.read_bytes()==raw
+    assert list(tmp_path.iterdir())==[path]
+
+@pytest.mark.req('STORE-MCP-001')
+def test_backup_collision_never_deletes_an_existing_file(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    path=tmp_path/'config.toml'
+    path.write_bytes(b'model="neutral"\n')
+    backup=tmp_path/'config.toml.obscura-backup-collision'
+    backup.write_bytes(b'author-owned copy')
+    monkeypatch.setattr(cc.uuid,'uuid4',lambda:SimpleNamespace(hex='collision'))
+    with pytest.raises(FileExistsError):
+        cc.write_config(path,COMMAND)
+    assert backup.read_bytes()==b'author-owned copy'
+    assert path.read_bytes()==b'model="neutral"\n'

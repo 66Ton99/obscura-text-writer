@@ -6716,7 +6716,10 @@
         "tests/test_codex_connect.py::test_inline_parent_can_add_obscura_without_changing_other",
         "tests/test_codex_connect.py::test_all_http_only_fields_are_removed_for_stdio",
         "tests/test_codex_connect.py::test_deprecated_bearer_token_is_refused_without_exposing_it",
-        "tests/test_codex_connect.py::test_private_acl_is_applied_before_bytes_and_preserved"
+        "tests/test_codex_connect.py::test_private_acl_is_applied_before_bytes_and_preserved",
+        "tests/test_codex_connect.py::test_read_only_config_never_leaves_an_empty_backup",
+        "tests/test_codex_connect.py::test_failed_backup_permissions_do_not_publish_an_empty_copy",
+        "tests/test_codex_connect.py::test_backup_collision_never_deletes_an_existing_file"
       ]
     },
     {

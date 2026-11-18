@@ -138,3 +138,22 @@ test('Codex lists each skill once and preserves changed versus current',async({p
   }
   await page.screenshot({path:testInfo.outputPath('codex-skills-once.png'),fullPage:true});
 });
+
+
+test('Codex keeps path failures out of skill names and retains partial state',async({page})=>{
+  let status=409,answer={result:'conflict',installed:[],restored:[],conflicts:[],backups:[],errors:['install_changed','linked_path']};
+  await page.route('**/api/connect/codex/skills',route=>reply(status,answer)(route));
+  const root=await open(page);
+  await root.locator('[data-codex-action="skills"]').click();
+  await expect(root.locator('.codex-skills-result')).toContainText('Шлях встановлення змінився');
+  await expect(root.locator('.codex-skills-result')).not.toContainText('linked_path');
+  await expect(root.locator('.codex-skills-result')).not.toContainText('Конфлікти:');
+  status=500;answer={...answer,result:'partial',conflicts:['obscura-start-story'],restored:['obscura-publish'],backups:['C:/fixture/backup']};
+  await root.locator('[data-codex-action="skills"]').click();
+  await expect(root.locator('.codex-skills-result')).toContainText('Часткове встановлення');
+  await expect(root.locator('.codex-skills-result')).toContainText('Шлях встановлення змінився');
+  await page.locator('[data-ui-locale="en"]').click();
+  await expect(root.locator('.codex-skills-result')).toContainText('Partial installation');
+  await expect(root.locator('.codex-skills-result')).toContainText('The installation path changed');
+  await expect(root.locator('.codex-skills-result')).toContainText('Conflicts: obscura-start-story');
+});
