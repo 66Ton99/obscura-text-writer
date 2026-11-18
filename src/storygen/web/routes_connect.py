@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from .. import claude_connect as cc
+from .. import skill_bundles
 from .localization import diagnostic, request_locale
 
 router = APIRouter()
@@ -17,6 +18,8 @@ CONNECT_OWNER_ONLY = 'Підключення до Claude виконує лише
 NO_DESKTOP_CONFIG = 'Файла налаштувань Claude Desktop немає: запустіть Claude Desktop хоч раз і повторіть'
 UNUSABLE_CONFIG = 'Файл налаштувань Claude Desktop має невідомий формат; Obscura його не змінювала'
 NO_LAUNCHER = 'Не знайдено програму моста MCP поруч з Obscura'
+NO_PLUGIN = 'Скілів Obscura немає поруч із цією збіркою'
+SKILLS_WRITE_FAILED = 'Не вдалося записати скіли в теку творів: перевірте місце на диску й чи не відкрито ZIP-файли'
 
 
 def _roots() -> cc.Roots:
@@ -33,6 +36,11 @@ def _launcher(command: list[str]) -> Path:
     if getattr(sys, 'frozen', False):
         return Path(sys.executable).with_name(cc.ALIAS)
     return Path(command[0])
+
+
+def _marketplace_source() -> Path | None:
+    return skill_bundles.marketplace_source(frozen=getattr(sys, 'frozen', False), executable=Path(sys.executable),
+                                            checkout=Path(__file__).resolve().parents[3])
 
 
 def _refusal(request: Request, text: str, status: int, **extra) -> JSONResponse:
@@ -95,15 +103,45 @@ def desktop_bundle(request: Request):
     return {'path': str(target)}
 
 
+@router.post('/api/connect/claude-desktop/skills')
+def desktop_skills(request: Request):
+    """S16: Claude Desktop has no plugin install from outside, so the author uploads one ZIP per skill."""
+    plugin = skill_bundles.plugin_root(_marketplace_source())
+    if plugin is None:
+        return _refusal(request, NO_PLUGIN, 409)
+    folder = Path(request.app.state.settings.data_dir) / 'claude' / 'skills'
+    try:
+        written = cc.write_desktop_skills(plugin, folder)
+    except (OSError, skill_bundles.BundleError):
+        return _refusal(request, SKILLS_WRITE_FAILED, 500)
+    _open_folder(folder)
+    return {'folder': str(folder), 'files': [path.name for path in written]}
+
+
 @router.post('/api/connect/claude-code')
 def connect_code(request: Request):
     roots = _roots()
     command = cc.claude_code_command(roots, _command(request, roots))
     manual = 'claude mcp add --scope user obscura -- ' + ' '.join(shlex.quote(part) for part in command)
     claude = cc.find_claude_code(roots)
+    target = cc.marketplace_target(Path(request.app.state.settings.data_dir))
+    commands = cc.plugin_commands(target)
     if claude is None:
-        return JSONResponse({'found': False, 'command': manual}, status_code=404)
-    return {'found': True, 'connected': cc.connect_claude_code(claude, command), 'command': manual}
+        return JSONResponse({'found': False, 'command': manual, 'plugin_commands': commands}, status_code=404)
+    answer = {'found': True, 'connected': cc.connect_claude_code(claude, command), 'command': manual,
+              'skills': False, 'plugin_commands': commands}
+    # S15: Claude Code reads the plugin from a stable copy in the stories folder, never from the package folder.
+    from ..build_manifest import project_version
+    source = _marketplace_source()
+    if source is None:
+        return {**answer, 'reason': 'no_plugin'}
+    try:
+        cc.sync_marketplace(source, target, project_version())
+    except cc.MarketplaceConflict as error:
+        return {**answer, 'conflict': str(error.path)}
+    except OSError:
+        return {**answer, 'reason': 'copy_failed'}
+    return {**answer, 'skills': cc.connect_claude_plugin(claude, target)}
 
 
 @router.post('/api/connect/claude-desktop/restart')

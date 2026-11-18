@@ -189,6 +189,18 @@ def main(argv=None, *, opener=webbrowser.open, tray=None, serve=None, alert=None
     return code
 
 
+def _refresh_skills(data_dir: Path) -> None:
+    """STORE-MCP-001 S14: refresh the skills copy Claude Code reads, if the author connected it; never fails the launch."""
+    try:
+        from . import claude_connect, skill_bundles
+        from .build_manifest import project_version
+        source = skill_bundles.marketplace_source(frozen=getattr(sys, 'frozen', False), executable=Path(sys.executable),
+                                                  checkout=Path(__file__).resolve().parents[2])
+        claude_connect.refresh_marketplace(source, claude_connect.marketplace_target(data_dir), project_version())
+    except Exception:  # noqa: BLE001 - a background helper: the log is the only place for it
+        logger.exception('Скіли Claude: оновлення копії не вдалося')
+
+
 def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
     from . import build_edition
     try:
@@ -240,6 +252,7 @@ def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
         url = f'{LOOPBACK}{port}'
         write_server_record(data_dir, url, app.state.instance_id)
         wrote_record = True
+        threading.Thread(target=_refresh_skills, args=(data_dir,), name='obscura-skills', daemon=True).start()
         logger.info('Сервер працює: %s; тека даних: %s', url, data_dir)
         open_page(url)
         if not args.no_tray:

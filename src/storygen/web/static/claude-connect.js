@@ -1,4 +1,4 @@
-// STORE-MCP-001 S08–S11: «Connect to Claude» in the library. Claude Desktop is never called «connected»: Obscura can only
+// STORE-MCP-001 S08–S11, S15–S16: «Connect to Claude» in the library. Claude Desktop is never called «connected»: Obscura can only
 // prove that the entry is in its settings file; Claude reads that file when it starts.
 import {confirmDialog} from './dialogs.js';
 import {t,uiText} from './i18n.js';
@@ -57,13 +57,22 @@ function commandBox(key,command){
 async function code(){
   try{
     const answer=await post('claude-code');
-    if(answer.connected)show(line('connect.code_connected'));else commandBox('connect.code_failed',answer.command);
+    if(!answer.connected)commandBox('connect.code_failed',answer.command);
+    else if(answer.skills)show(line('connect.code_connected_skills'));
+    else if(answer.conflict)show(line('connect.skills_conflict',{p0:answer.conflict}));
+    else if(answer.reason==='no_plugin')show(line('connect.code_connected'));
+    else commandBox('connect.code_skills_failed',(answer.plugin_commands||[]).join('\n'));
   }catch(error){
     if(error.status===404&&error.data?.command)commandBox('connect.code_missing',error.data.command);else notice(error.message,'error');
   }
 }
 
-const actions={desktop,code,other:fallback};
+async function skills(){
+  try{const answer=await post('claude-desktop/skills');show(line('connect.skills_steps',{p0:answer.folder}))}
+  catch(error){notice(error.message,'error')}
+}
+
+const actions={desktop,code,skills,other:fallback};
 root?.addEventListener('click',async event=>{
   const target=event.target.closest('[data-connect]');
   if(!target||target.disabled)return;
