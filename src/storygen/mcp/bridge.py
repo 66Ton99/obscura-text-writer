@@ -1,6 +1,7 @@
-"""MCP-BRIDGE stdio server: twenty-three tools mapped onto the loopback HTTP API of a running Obscura.
+"""MCP-BRIDGE stdio server: twenty-seven tools mapped onto the loopback HTTP API of a running Obscura.
 
-The bridge holds no data, keys or prompts of its own. Every tool is one HTTP request; Obscura's own checks
+The bridge holds no data, keys or prompts of its own. Every tool but get_guide is one HTTP request; get_guide reads
+the Obscura skills shipped next to the bridge (CLAUDE-SKILLS); Obscura's own checks
 (revision, context fingerprint, language lock, import limits) decide, and their messages reach the chat as tool errors.
 """
 import argparse
@@ -20,6 +21,7 @@ import httpx
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
+from .. import skill_bundles
 from ..publication_models import PublicationData
 from .edition import edition_refusal
 from .launch import DEFAULT_URL, Connection, ObscuraUnavailable
@@ -29,7 +31,7 @@ FALLBACK_CLIENT = 'MCP client'
 TOOLS = ('list_stories', 'get_story', 'get_scene_context', 'get_scene_text', 'import_plan_and_characters', 'save_draft', 'next_steps',
          'create_story', 'get_templates', 'update_story', 'add_scene', 'update_scene', 'open_ghost_mode',
          'get_publication', 'update_publication', 'add_signature', 'upload_cover', 'generate_cover', 'export_book',
-         'get_settings', 'update_settings', 'apply_role_preset', 'get_stage_task', 'save_stage_result', 'start_run', 'get_run')
+         'get_settings', 'update_settings', 'apply_role_preset', 'get_stage_task', 'save_stage_result', 'start_run', 'get_run', 'get_guide')
 MATERIALS = ('plan', 'brief', 'draft', 'prose', 'memory')
 STAGES = ('brief', 'edit', 'memory')
 RUN_ACTIONS = ('brief', 'draft', 'edit', 'memory', 'publication_suggest')
@@ -69,7 +71,9 @@ INSTRUCTIONS = ('Obscura — локальний редактор історій.
                 'Режим твору (writing_mode у get_story): «chat» — тексти пише чат; «obscura» — тексти пишуть моделі Obscura, '
                 'і save_draft та етапи з чату відхиляються, а етап чи пропозицію картки запускає start_run (спершу перегляд без confirm, '
                 'запуск — лише після згоди автора; стан — get_run). Режим змінює лише автор у налаштуваннях твору. '
-                'Після сцени чи твору дайте людині посилання з next_steps, щоб читати й правити твір у вікні Obscura.')
+                'Після сцени чи твору дайте людині посилання з next_steps, щоб читати й правити твір у вікні Obscura. '
+                'Якщо скіл Obscura (start-story, draft-scene, publish, series-bible, setup-models) у вас не підключено, спершу '
+                'викличте get_guide з назвою задачі й дотримуйтеся отриманих кроків; якщо підключено — не викликайте.')
 START_STORY = ('Допоможіть людині написати історію з Obscura. Задум: {idea}\n'
                '1. Розпитайте про задум коротко й створіть твір: create_story з writing_mode="chat" (тексти пишете ви).\n'
                '2. Візьміть шаблони плану й персонажів (get_templates), заповніть їх разом із людиною.\n'
@@ -78,6 +82,9 @@ START_STORY = ('Допоможіть людині написати історі�
                'збережіть її через save_draft.\n'
                '5. Після сцени чи всього твору викличте next_steps і запропонуйте людині відкрити посилання: у вікні Obscura '
                'вона читає й править текст. Нову історію можна почати тут же, у чаті.')
+START_STORY_IDEA = 'Задум автора: {idea}\n\n'
+NO_GUIDE = 'Провідник недоступний у цій збірці: скілів Obscura немає поруч із мостом'
+DEFAULT = object()
 
 
 def check_url(url: str) -> str:
@@ -228,16 +235,57 @@ def story_series(data: dict) -> dict | None:
             'resolved_count': len(status.get('resolved') or [])}
 
 
-def build_server(http: httpx.Client | None, client_name: str | None = None, *, connection: Connection | None = None) -> MCPServer:
-    """Exactly one of `http` (a fixed client) and `connection` (STORE-MCP: found or started on demand)."""
+def guide_plugin() -> Path | None:
+    """The Obscura plugin next to the packaged bridge, or in the source checkout."""
+    source = skill_bundles.marketplace_source(frozen=getattr(sys, 'frozen', False), executable=Path(sys.executable),
+                                              checkout=Path(__file__).resolve().parents[3])
+    return skill_bundles.plugin_root(source)
+
+
+def build_server(http: httpx.Client | None, client_name: str | None = None, *, connection: Connection | None = None,
+                 plugin: Path | None | object = DEFAULT) -> MCPServer:
+    """Exactly one of `http` (a fixed client) and `connection` (STORE-MCP: found or started on demand).
+    `plugin` is the Obscura skills folder for get_guide; by default it is looked up next to the bridge."""
     if (http is None) == (connection is None):
         raise ValueError('build_server needs exactly one of http and connection')
+    found: list[Path | None] = [] if plugin is DEFAULT else [plugin]
+
+    def skills() -> Path | None:
+        # Looked up on first use: building the server touches no files.
+        if not found:
+            found.append(guide_plugin())
+        return found[0]
+
     server = MCPServer('Obscura', instructions=INSTRUCTIONS)
 
     @server.prompt(name='start_story', title='Почати історію')
     def start_story(idea: str = '') -> str:
-        """STORE-MCP-001 S06: the path from an idea to the story in the Obscura window."""
-        return START_STORY.format(idea=idea.strip() or 'ще не названо — спитайте людину')
+        """STORE-MCP-001 S06: the author's idea, then the start-story skill (the short path when the skills are absent)."""
+        idea = idea.strip() or 'ще не названо — спитайте людину'
+        plugin = skills()
+        if plugin is not None:
+            try:
+                return START_STORY_IDEA.format(idea=idea) + skill_bundles.guide_text(plugin, 'start-story')
+            except (OSError, skill_bundles.BundleError):
+                pass
+        return START_STORY.format(idea=idea)
+
+    @server.tool()
+    def get_guide(task: str, reference: str | None = None) -> dict[str, Any]:
+        """Кроки Obscura для задачі, якщо скіл Obscura у клієнті не підключено. task: start-story, draft-scene, publish,
+        series-bible або setup-models. Без reference — текст скіла й перелік його довідок; з reference — текст довідки."""
+        plugin = skills()
+        if plugin is None:
+            raise ToolError(NO_GUIDE)
+        try:
+            if reference is None:
+                return {'task': task, 'text': skill_bundles.guide_text(plugin, task),
+                        'references': skill_bundles.guide_references(plugin, task)}
+            return {'task': task, 'reference': reference, 'text': skill_bundles.guide_reference(plugin, task, reference)}
+        except skill_bundles.BundleError as error:
+            raise ToolError(str(error)) from error
+        except OSError as error:
+            raise ToolError(f'{NO_GUIDE} ({type(error).__name__})') from error
 
     def base() -> str:
         # The address of the Obscura serving now: links the chat hands out follow a restart on another port.
@@ -940,7 +988,11 @@ def main(argv: list[str] | None = None) -> None:
     if args.self_check:
         # STORE-MCP: the build runs this next to Obscura.exe; `--help` alone never creates the TLS context httpx needs.
         build_client(DEFAULT_URL).close()
+        plugin = guide_plugin()
+        if plugin is not None:
+            skill_bundles.guide_text(plugin, 'start-story')
         print('storygen-mcp: ok')
+        print(f"guide: {'ok' if plugin is not None else 'absent'}")
         raise SystemExit(0)
     connection = connection_for(args.url, args.data_dir)
     try:
