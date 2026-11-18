@@ -46,23 +46,33 @@ def _error(request, text, reason, status, **fields):
         detail=diagnostic(text, request_locale(request)), detail_original=text)), status_code=status)
 
 
+def _status_error(request, text, reason):
+    return dict(state='error', reason=reason, detail=diagnostic(text, request_locale(request)),
+                detail_original=text)
+
+
 @router.get('/api/connect/codex/status')
 def status(request: Request):
+    roots = _roots()
+    command = _command(request, roots)
     try:
-        roots = _roots()
-        command = _command(request, roots)
         path = config_path(roots.userprofile, os.environ.get('CODEX_HOME'))
-        source = _skill_source()
-        skills = dict(available=False, state='unsupported', present=[], conflicts=[], versions={})
-        if source is not None:
-            skills = dict(asdict(inspect_skills(generate_skills(source), roots.userprofile)), available=True)
-        return dict(mcp=config_status(path, command), skills=skills, command=powershell_command(command))
+        mcp = config_status(path, command)
     except CodexConfigError as error:
-        return _error(request, CONFIG_ERROR, str(error), 422)
-    except GenerationError:
-        return _error(request, SKILLS_ERROR, 'skill_source_invalid', 409)
+        mcp = dict(_status_error(request, CONFIG_ERROR, str(error)), path=None)
     except OSError:
-        return _error(request, CONFIG_ERROR, 'access_failed', 500)
+        mcp = dict(_status_error(request, CONFIG_ERROR, 'config_access_failed'), path=None)
+    skills = dict(available=False, state='unsupported', present=[], conflicts=[], versions={})
+    try:
+        source = _skill_source()
+        if source is not None:
+            skills['available'] = True
+            skills.update(asdict(inspect_skills(generate_skills(source), roots.userprofile)))
+    except GenerationError:
+        skills.update(_status_error(request, SKILLS_ERROR, 'skill_source_invalid'))
+    except (OSError, ValueError):
+        skills.update(_status_error(request, SKILLS_ERROR, 'skills_access_failed'))
+    return dict(mcp=mcp, skills=skills, command=powershell_command(command))
 
 
 @router.post('/api/connect/codex')

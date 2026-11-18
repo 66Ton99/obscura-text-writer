@@ -71,3 +71,46 @@ test('Codex pending disables both actions and clipboard failure offers selection
   await root.getByRole('button',{name:'Копіювати команду'}).click();
   await expect(root).toContainText('Виділіть команду й скопіюйте її вручну');
 });
+
+
+test('Codex status stays lazy until the first expansion',async({page})=>{
+  let calls=0;
+  await page.route('**/api/connect/codex/status',route=>{calls++;return reply(200,initial)(route)});
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  expect(calls).toBe(0);
+  const summary=page.locator('#codex-connect summary');
+  await summary.click();
+  await expect.poll(()=>calls).toBe(1);
+  await summary.click();await summary.click();
+  await page.waitForLoadState('networkidle');
+  expect(calls).toBe(1);
+});
+
+test('Codex status errors preserve the other action and command',async({page})=>{
+  const root=await open(page,{...initial,mcp:{state:'error',path:null,reason:'config_home_must_be_absolute',detail_original:'Не вдалося зберегти налаштування Codex; перевірте файл і повторіть'}});
+  await expect(root.locator('.codex-mcp-result')).toContainText('Не вдалося');
+  await expect(root.locator('[data-codex-action="skills"]')).toBeEnabled();
+  await expect(root.locator('code')).toHaveText(initial.command);
+  await page.unroute('**/api/connect/codex/status');
+  await page.route('**/api/connect/codex/status',reply(200,{...initial,skills:{...initial.skills,state:'error',reason:'skill_source_invalid',detail_original:'Не вдалося встановити всі скіли Codex; перевірте конфлікти та резервні копії'}}));
+  await page.reload();
+  await page.locator('#codex-connect summary').click();
+  await expect(page.locator('.codex-skills-result')).toContainText('Не вдалося');
+  await expect(page.locator('[data-codex-action="mcp"]')).toBeEnabled();
+  await expect(page.locator('#codex-connect code')).toHaveText(initial.command);
+});
+
+test('Codex busy and unsafe roots give specific recovery in both languages',async({page})=>{
+  const root=await open(page);
+  for(const [reason,uk,en] of [['install_busy','Інший установник','Another installer'],['unsafe_install_root','Небезпечний шлях','Unsafe path']]){
+    await page.route('**/api/connect/codex/skills',reply(409,{result:'conflict',errors:[reason],conflicts:[],backups:[]}));
+    await page.locator('[data-ui-locale="uk"]').click();
+    await root.locator('[data-codex-action="skills"]').click();
+    await expect(root.locator('.codex-skills-result')).toContainText(uk);
+    await expect(root.locator('.codex-skills-result')).not.toContainText('авторські файли');
+    await page.locator('[data-ui-locale="en"]').click();
+    await expect(root.locator('.codex-skills-result')).toContainText(en);
+    await page.unroute('**/api/connect/codex/skills');
+  }
+});

@@ -129,3 +129,38 @@ def test_bridge_cannot_access_codex_routes(client, roots, monkeypatch, method, p
 def test_foreign_origin_cannot_write(client, monkeypatch, path):
     monkeypatch.setattr(routes, '_roots', lambda: pytest.fail('action attempted'))
     assert client.post(path, headers={'Origin':'https://evil.test'}).status_code == 403
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_invalid_codex_home_does_not_hide_skills(client, roots, monkeypatch):
+    monkeypatch.setenv('CODEX_HOME', 'relative-home')
+    answer = client.get(PREFIX+'/status')
+    assert answer.status_code == 200
+    assert answer.json()['mcp']['state'] == 'error'
+    assert answer.json()['mcp']['reason'] == 'config_home_must_be_absolute'
+    assert answer.json()['skills']['available'] is True
+    assert answer.json()['command'].startswith('codex mcp add')
+    assert client.post(PREFIX+'/skills').status_code == 200
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_skill_source_error_does_not_hide_mcp(client, monkeypatch):
+    from storygen.codex_skills import GenerationError
+    def broken(*args):
+        raise GenerationError('source_changed')
+    monkeypatch.setattr(routes, 'generate_skills', broken)
+    answer = client.get(PREFIX+'/status')
+    assert answer.status_code == 200
+    assert answer.json()['skills']['state'] == 'error'
+    assert answer.json()['mcp']['state'] == 'missing'
+    assert answer.json()['command'].startswith('codex mcp add')
+    assert client.post(PREFIX).status_code == 200
+
+
+@pytest.mark.req('CODEX-SKILLS')
+def test_busy_lock_report_has_specific_reason(client, roots):
+    lock = roots.userprofile/'.agents/.obscura-install.lock'
+    lock.mkdir(parents=True)
+    answer = client.post(PREFIX+'/skills')
+    assert answer.status_code == 409 and answer.json()['errors'] == ['install_busy']
+    assert answer.json()['conflicts'] == [] and lock.exists()

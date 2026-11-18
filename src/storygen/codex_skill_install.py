@@ -339,6 +339,63 @@ class SkillStatus:
     versions: dict[str, str]
 
 
+def _inspect_managed(path: Path, guard: _Directories):
+    """Reject foreign trees before reading contents; hash declared files incrementally."""
+    info = _info(path)
+    if info is None or not stat.S_ISDIR(info.st_mode):
+        raise _Conflict('not_a_directory')
+    manifest_path = path/MANIFEST
+    info = _info(manifest_path)
+    if info is None or not stat.S_ISREG(info.st_mode) or info.st_size > 1024*1024:
+        raise _Conflict('invalid_manifest')
+    with manifest_path.open('rb') as stream:
+        raw = stream.read(1024*1024+1)
+    if len(raw) > 1024*1024:
+        raise _Conflict('invalid_manifest')
+    try:
+        manifest = json.loads(raw)
+        valid = (isinstance(manifest, dict)
+                 and set(manifest) == {'schema', 'generator_version', 'sources', 'files'}
+                 and manifest['schema'] == 1 and isinstance(manifest['generator_version'], str)
+                 and _source_hashes(manifest['sources']) and isinstance(manifest['files'], dict)
+                 and 'SKILL.md' in manifest['files']
+                 and all(_relative(key) and isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value)
+                         for key, value in manifest['files'].items()))
+    except (ValueError, UnicodeError, TypeError):
+        valid = False
+    if not valid:
+        raise _Conflict('invalid_manifest')
+    files = {}
+    pending = [path]
+    while pending:
+        folder = pending.pop()
+        guard.check(folder)
+        for child in folder.iterdir():
+            info = _info(child)
+            if info is None:
+                raise _Conflict('tree_changed')
+            if stat.S_ISDIR(info.st_mode):
+                pending.append(child)
+            elif stat.S_ISREG(info.st_mode):
+                files[child.relative_to(path).as_posix()] = child
+            else:
+                raise _Conflict('not_a_regular_file')
+    if set(files) != set(manifest['files']) | {MANIFEST}:
+        raise _Conflict('foreign_files')
+    for relative, expected in manifest['files'].items():
+        child = files[relative]
+        guard.check(child.parent)
+        info = _info(child)
+        if info is None or not stat.S_ISREG(info.st_mode):
+            raise _Conflict('tree_changed')
+        with child.open('rb') as stream:
+            actual = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if actual != expected:
+            raise _Conflict('modified_file')
+    guard.check(path)
+    return raw, manifest
+
+
 def inspect_skills(bundle: SkillBundle, userprofile: Path) -> SkillStatus:
     """Inspect managed files without creating directories, locks or backups."""
     expected = _payloads(bundle)
@@ -356,17 +413,14 @@ def inspect_skills(bundle: SkillBundle, userprofile: Path) -> SkillStatus:
     for name in _NAMES:
         try:
             guard.check(skills)
-            files = _tree(skills/name)
-            guard.check(skills)
-            if files is None:
+            target = skills/name
+            if _info(target) is None:
                 current = False
                 continue
             present.append(name)
-            if not _managed(files):
-                conflicts.append(name)
-                continue
-            versions[name] = json.loads(files[MANIFEST])['generator_version']
-            current = current and files == expected[name]
+            raw, manifest = _inspect_managed(target, guard)
+            versions[name] = manifest['generator_version']
+            current = current and raw == expected[name][MANIFEST]
         except _Conflict:
             conflicts.append(name)
     state = 'conflict' if conflicts else 'current' if current else 'outdated' if present else 'missing'

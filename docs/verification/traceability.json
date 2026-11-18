@@ -6677,7 +6677,9 @@
         "tests/test_codex_skill_install.py::test_inspect_current_outdated_and_partial",
         "tests/test_codex_skill_install.py::test_inspect_conflict_does_not_modify_tree",
         "tests/web/test_codex_connect_routes.py::test_skills_install_and_repeat",
-        "tests/web/test_codex_connect_routes.py::test_partial_report_keeps_backups"
+        "tests/web/test_codex_connect_routes.py::test_partial_report_keeps_backups",
+        "tests/web/test_codex_connect_routes.py::test_busy_lock_report_has_specific_reason",
+        "tests/test_codex_skill_install.py::test_inspect_does_not_read_foreign_file_contents"
       ]
     },
     {
@@ -6705,7 +6707,9 @@
         "tests/web/test_codex_connect_routes.py::test_corrupt_config_is_untouched",
         "tests/web/test_codex_connect_routes.py::test_request_cannot_choose_destinations_or_bridge_url",
         "tests/web/test_codex_connect_routes.py::test_bridge_cannot_access_codex_routes",
-        "tests/web/test_codex_connect_routes.py::test_foreign_origin_cannot_write"
+        "tests/web/test_codex_connect_routes.py::test_foreign_origin_cannot_write",
+        "tests/web/test_codex_connect_routes.py::test_invalid_codex_home_does_not_hide_skills",
+        "tests/web/test_codex_connect_routes.py::test_skill_source_error_does_not_hide_mcp"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#codex-connect-ui",

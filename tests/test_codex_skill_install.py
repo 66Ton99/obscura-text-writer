@@ -299,3 +299,24 @@ def test_inspect_conflict_does_not_modify_tree(tmp_path, bundle, mutation):
     assert report.state == 'conflict' and report.conflicts == (NAMES[0],)
     assert 'private' not in repr(report)
     assert tree(tmp_path) == before
+
+
+@pytest.mark.req('CODEX-SKILLS')
+@pytest.mark.parametrize('kind', ['unmanaged', 'extra'])
+def test_inspect_does_not_read_foreign_file_contents(tmp_path, bundle, monkeypatch, kind):
+    from storygen.codex_skill_install import inspect_skills
+    target = tmp_path/'.agents/skills'/NAMES[0]
+    if kind == 'extra':
+        install_skills(bundle, tmp_path)
+    else:
+        target.mkdir(parents=True)
+    foreign = target/'author-attachment.bin'
+    foreign.write_bytes(b'private attachment')
+    original = Path.open
+    def guarded(path, *args, **kwargs):
+        if path == foreign:
+            pytest.fail('inspector opened a foreign file before refusing its tree')
+        return original(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'open', guarded)
+    answer = inspect_skills(bundle, tmp_path)
+    assert answer.state == 'conflict' and NAMES[0] in answer.conflicts

@@ -2614,7 +2614,9 @@
     "codex.skills_missing": "Скіли Codex ще не встановлені",
     "codex.skills_current": "Скіли Codex актуальні",
     "codex.skills_outdated": "Скіли Codex потребують оновлення",
-    "codex.skills_conflict": "У скілах Codex є авторські правки; автоматичне оновлення їх збереже"
+    "codex.skills_conflict": "У скілах Codex є авторські правки; автоматичне оновлення їх збереже",
+    "codex.install_busy": "Інший установник працює або залишив замок після збою. Зачекайте; перед ручним вилученням замка переконайтеся, що установник завершився.",
+    "codex.unsafe_install_root": "Небезпечний шлях встановлення: корінь є посиланням або непридатною текою. Перевірте .agents і skills; Obscura їх не змінювала."
   },
   "en": {
     "ui.save": "Save",
@@ -5231,6 +5233,8 @@
     "codex.skills_missing": "Codex skills are not installed yet",
     "codex.skills_current": "Codex skills are current",
     "codex.skills_outdated": "Codex skills need updating",
-    "codex.skills_conflict": "Codex skills contain author edits; automatic updates will preserve them"
+    "codex.skills_conflict": "Codex skills contain author edits; automatic updates will preserve them",
+    "codex.install_busy": "Another installer is running or left a lock after a crash. Wait; before removing the lock manually, confirm the installer has stopped.",
+    "codex.unsafe_install_root": "Unsafe path: the installation root is a link or an unsuitable folder. Check .agents and skills; Obscura has not changed them."
   }
 }

@@ -18,7 +18,9 @@ if(root){
   function showCommand(value){if(typeof value==='string'){command.textContent=value;copy.hidden=false}}
   function report(box,answer){
     const result=answer.result;
-    box.replaceChildren(line('codex.'+result));
+    const reasons={install_busy:'codex.install_busy',unsafe_install_root:'codex.unsafe_install_root'};
+    const specific=(answer.errors||[]).map(reason=>reasons[reason]).filter(Boolean);
+    box.replaceChildren(...(specific.length?specific.map(key=>line(key)):[line('codex.'+result)]));
     for(const field of ['path','installed','restored','conflicts','backups']){
       const values=Array.isArray(answer[field])?answer[field]:answer[field]?[answer[field]]:[];
       for(const value of values)box.append(line('codex.'+(field==='installed'?'installed_list':field),{p0:value}));
@@ -41,8 +43,10 @@ if(root){
       const answer=await api('/api/connect/codex/status');
       available=answer.skills.available;
       availability.replaceChildren(line(available?'codex.skills_help':'codex.unsupported'));
-      mcp.replaceChildren(line('codex.state_'+answer.mcp.state),line('codex.path',{p0:answer.mcp.path}));
-      if(available)skills.replaceChildren(line('codex.skills_'+answer.skills.state));
+      if(answer.mcp.state==='error')failure(mcp,{data:answer.mcp});
+      else mcp.replaceChildren(line('codex.state_'+answer.mcp.state),line('codex.path',{p0:answer.mcp.path}));
+      if(answer.skills.state==='error')failure(skills,{data:answer.skills});
+      else if(available)skills.replaceChildren(line('codex.skills_'+answer.skills.state));
       showCommand(answer.command);
     }catch(error){failure(mcp,error)}
     finally{pending=false;updateButtons()}
@@ -70,5 +74,9 @@ if(root){
       hint.replaceChildren(line('codex.copy_manual'));
     }
   });
-  load();
+  let loaded=false;
+  root.addEventListener('toggle',()=>{
+    if(root.open&&!loaded){loaded=true;load()}
+  });
+  if(root.open){loaded=true;load()}
 }
