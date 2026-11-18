@@ -1,10 +1,24 @@
 # Store package build (PACKAGING-001-S07): builds and self-checks the frozen app on a clean Windows image
 # with official CPython 3.12. Local builds are blocked by Smart App Control on the owner's machine.
-# No secrets, no signing, no publishing: the unsigned MSIX uses a test identity and only shows the package layout.
+# No secrets, no signing, no publishing. By default the unsigned MSIX uses a test identity and only shows the package
+# layout; a manual run with the three Partner Center identity values (PACKAGING-001-S09) builds the package to upload.
 name: store-build
 
 on:
   workflow_dispatch:
+    inputs:
+      identity_name:
+        description: 'Package/Identity/Name from Partner Center (empty: test identity Obscura.CI)'
+        required: false
+        default: ''
+      publisher:
+        description: 'Package/Identity/Publisher from Partner Center (CN=...)'
+        required: false
+        default: ''
+      publisher_display_name:
+        description: 'Package/Properties/PublisherDisplayName from Partner Center'
+        required: false
+        default: ''
   pull_request:
     branches: [main]
     paths:
@@ -41,10 +55,20 @@ jobs:
           if ($found) { "MAKEAPPX=$($found.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 }
       - name: Build
         shell: pwsh
+        env:
+          STORE_IDENTITY_NAME: ${{ inputs.identity_name }}
+          STORE_PUBLISHER: ${{ inputs.publisher }}
+          STORE_PUBLISHER_DISPLAY_NAME: ${{ inputs.publisher_display_name }}
         run: |
           $out = Join-Path $env:RUNNER_TEMP 'obscura-build'
           $urls = @('--report-url', 'https://obscurawriter.com/report.html', '--waitlist-url', 'https://obscurawriter.com/paid.html')
-          if ($env:MAKEAPPX) {
+          $given = @($env:STORE_IDENTITY_NAME, $env:STORE_PUBLISHER, $env:STORE_PUBLISHER_DISPLAY_NAME) | Where-Object { $_ }
+          if ($given.Count -gt 0) {
+            if ($given.Count -lt 3) { Write-Output "::error::Partner Center identity needs all three inputs"; exit 1 }
+            if ($env:STORE_PUBLISHER -notmatch '^CN=') { Write-Output "::error::publisher must start with CN="; exit 1 }
+            if (-not $env:MAKEAPPX) { Write-Output "::error::makeappx not found; a Partner Center package cannot be built"; exit 1 }
+            python scripts/build_store.py --out $out @urls --makeappx $env:MAKEAPPX --identity-name $env:STORE_IDENTITY_NAME --publisher $env:STORE_PUBLISHER --publisher-display-name $env:STORE_PUBLISHER_DISPLAY_NAME
+          } elseif ($env:MAKEAPPX) {
             python scripts/build_store.py --out $out @urls --makeappx $env:MAKEAPPX --identity-name Obscura.CI --publisher "CN=Obscura CI" --publisher-display-name "Obscura CI"
           } else {
             Write-Output "::warning::makeappx not found in the image; building without MSIX"
