@@ -42,11 +42,12 @@ jobs:
         shell: pwsh
         run: |
           $out = Join-Path $env:RUNNER_TEMP 'obscura-build'
+          $urls = @('--report-url', 'https://obscurawriter.com/report.html', '--waitlist-url', 'https://obscurawriter.com/paid.html')
           if ($env:MAKEAPPX) {
-            python scripts/build_store.py --out $out --makeappx $env:MAKEAPPX --identity-name Obscura.CI --publisher "CN=Obscura CI" --publisher-display-name "Obscura CI"
+            python scripts/build_store.py --out $out @urls --makeappx $env:MAKEAPPX --identity-name Obscura.CI --publisher "CN=Obscura CI" --publisher-display-name "Obscura CI"
           } else {
             Write-Output "::warning::makeappx not found in the image; building without MSIX"
-            python scripts/build_store.py --out $out --skip-msix
+            python scripts/build_store.py --out $out @urls --skip-msix
           }
           exit $LASTEXITCODE
       - name: Upload reports

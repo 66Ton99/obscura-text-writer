@@ -10,6 +10,7 @@ def test_store_workflow_builds_on_windows_with_official_python():
     assert "python-version: '3.12'" in text
     assert 'python scripts/build_store.py' in text
     assert 'workflow_dispatch' in text and 'pull_request' in text
+    assert '--report-url' in text  # a Store edition refuses to build without it
 
 
 def test_store_workflow_packs_a_test_identity_or_skips_msix():
