@@ -112,3 +112,19 @@ def test_unknown_tool_in_call_syntax_is_reported(tmp_path):
     path = copy/'skills/draft-scene/SKILL.md'
     path.write_text(path.read_text(encoding='utf-8') + '\nWatch with `get_runs(run_id)`.\n', encoding='utf-8')
     assert any('get_runs' in p for p in problems(copy))
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_plugin_version_is_project_version():
+    import tomllib
+    project = tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
+    plugin = json.loads((PLUGIN/'.claude-plugin/plugin.json').read_text(encoding='utf-8'))['version']
+    assert plugin == project
+
+
+@pytest.mark.req('CLAUDE-SKILLS')
+def test_skills_never_mention_get_guide():
+    """get_guide is for clients without the skills; a skill that names it would send Claude in circles."""
+    offenders = [str(p.relative_to(PLUGIN)) for p in PLUGIN.rglob('*.md')
+                 if 'evals' not in p.parts and 'get_guide' in p.read_text(encoding='utf-8')]
+    assert offenders == []
