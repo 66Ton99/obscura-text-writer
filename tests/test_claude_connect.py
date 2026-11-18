@@ -420,6 +420,7 @@ def test_crash_between_renames_is_recovered_at_launch(tmp_path):
     cc.sync_marketplace(MARKET, target, '0.1.0')
     target.rename(target.with_name('marketplace.old'))
     (target.parent / '.marketplace-stale').mkdir()
+    (target.parent / '.marketplace-stale' / cc.TEMP_MARK).write_text('', encoding='utf-8')
     cc.refresh_marketplace(MARKET, target, '0.2.0')
     assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
     assert leftover(target) == ['marketplace']
@@ -451,4 +452,37 @@ def test_desktop_skills_failure_leaves_no_temporary_file(tmp_path):
     (folder / 'publish.zip').mkdir(parents=True)
     with pytest.raises(OSError):
         cc.write_desktop_skills(MARKET / 'obscura', folder)
-    assert not list(folder.glob('*.tmp'))
+    assert not list(folder.glob('*tmp'))
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_cleanup_touches_only_obscura_folders(tmp_path):
+    target = tmp_path / 'claude' / 'marketplace'
+    cc.sync_marketplace(MARKET, target, '0.1.0')
+    (target.parent / '.marketplace-notes').mkdir()
+    (target.parent / '.marketplace-notes' / 'mine.txt').write_text('mine', encoding='utf-8')
+    cc.sync_marketplace(MARKET, target, '0.2.0')
+    assert (target.parent / '.marketplace-notes' / 'mine.txt').is_file()
+    backup = target.with_name('marketplace.old')
+    backup.mkdir()
+    (backup / 'mine.txt').write_text('mine', encoding='utf-8')
+    with pytest.raises(cc.MarketplaceConflict) as raised:
+        cc.sync_marketplace(MARKET, target, '0.3.0')
+    assert raised.value.path == backup and (backup / 'mine.txt').is_file()
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_keep_a_foreign_tmp_file(tmp_path):
+    folder = tmp_path / 'skills'
+    folder.mkdir()
+    (folder / 'draft-scene.zip.tmp').write_bytes(b'mine')
+    cc.write_desktop_skills(MARKET / 'obscura', folder)
+    assert (folder / 'draft-scene.zip.tmp').read_bytes() == b'mine'
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_are_read_back(tmp_path, monkeypatch):
+    monkeypatch.setattr(cc, 'desktop_zip', lambda plugin, skill: b'not a zip')
+    with pytest.raises(OSError):
+        cc.write_desktop_skills(MARKET / 'obscura', tmp_path / 'skills')

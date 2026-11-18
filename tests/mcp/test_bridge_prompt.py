@@ -8,7 +8,7 @@ from mcp import Client  # noqa: E402
 
 from pathlib import Path  # noqa: E402
 
-from storygen.mcp.bridge import INSTRUCTIONS, build_server  # noqa: E402
+from storygen.mcp.bridge import INSTRUCTIONS, START_STORY_IDEA, build_server  # noqa: E402
 from storygen.skill_bundles import guide_text  # noqa: E402
 
 PLUGIN = Path(__file__).resolve().parents[2]/'integrations/claude/obscura'
@@ -54,9 +54,7 @@ def test_start_story_without_idea_asks_the_person(idea):
 @pytest.mark.req('STORE-MCP-001')
 def test_start_story_prompt_keeps_the_idea_and_follows_the_skill():
     text = prompt_text(PLUGIN, {'idea': 'маяк на острові'})
-    assert text.index('маяк на острові') < text.index('name: start-story')
-    line = next(line for line in guide_text(PLUGIN, 'start-story').splitlines() if 'get_guide(' in line)
-    assert line in text
+    assert text == START_STORY_IDEA.format(idea='маяк на острові') + guide_text(PLUGIN, 'start-story')
 
 
 @pytest.mark.req('STORE-MCP-001')

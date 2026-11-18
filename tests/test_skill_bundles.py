@@ -61,8 +61,10 @@ def test_unknown_skill_is_an_error(tmp_path):
 def test_desktop_zip_is_one_folder_named_after_skill(tmp_path):
     plugin = make_plugin(tmp_path, {'a': (f'Read `{RULES}`.', {'x': 'X'})})
     data = sb.desktop_zip(plugin, 'a')
-    names = zipfile.ZipFile(io.BytesIO(data)).namelist()
-    assert names and all(name.startswith('a/') for name in names)
+    archive = zipfile.ZipFile(io.BytesIO(data))
+    assert sorted(archive.namelist()) == ['a/SKILL.md', 'a/references/rules.md', 'a/references/x.md']
+    files = sb.bundle_files(plugin, 'a')
+    assert {name: archive.read(name).decode('utf-8') for name in archive.namelist()} == files
     assert sb.desktop_zip(plugin, 'a') == data
 
 

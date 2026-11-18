@@ -32,6 +32,7 @@ CONFIG_NAME = 'claude_desktop_config.json'
 TIMEOUT = 30
 NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
 VERSION_MARKER = 'obscura-version.txt'
+TEMP_MARK = '.obscura-temp'
 MARKETPLACE = 'obscura'
 PLUGIN = 'obscura@obscura'
 logger = logging.getLogger(__name__)
@@ -292,10 +293,14 @@ def _recover(target: Path) -> None:
     if not target.parent.is_dir():
         return
     old = target.with_name(target.name + '.old')
-    if not target.exists() and (old / VERSION_MARKER).is_file():
+    if old.exists() and not (old / VERSION_MARKER).is_file():
+        raise MarketplaceConflict(old)  # not our backup: never removed or renamed
+    if not target.exists() and old.exists():
         _rename(old, target)
     for stale in target.parent.glob('.marketplace-*'):
-        shutil.rmtree(stale, ignore_errors=True)
+        # Only folders this module created: they carry TEMP_MARK until the final rename.
+        if (stale / TEMP_MARK).is_file():
+            shutil.rmtree(stale, ignore_errors=True)
 
 
 def sync_marketplace(source: Path, target: Path, version: str) -> Literal['created', 'updated', 'unchanged']:
@@ -317,10 +322,12 @@ def _sync(source: Path, target: Path, version: str) -> Literal['created', 'updat
     temporary = Path(tempfile.mkdtemp(dir=target.parent, prefix='.marketplace-'))
     old = target.with_name(target.name + '.old')
     try:
+        (temporary / TEMP_MARK).write_text('', encoding='utf-8')
         for name in files:
             (temporary / name).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source / name, temporary / name)
         (temporary / VERSION_MARKER).write_text(version, encoding='utf-8')
+        (temporary / TEMP_MARK).unlink()
         if exists:
             if old.exists():
                 shutil.rmtree(old)
@@ -394,15 +401,28 @@ def connect_claude_plugin(claude: Path, target: Path, run=subprocess.run) -> boo
     return installed is not None and installed.returncode == 0
 
 
+def _check_zip(path: Path, skill: str) -> None:
+    """Read the written archive back: it must open, pass CRC checks and hold the skill's SKILL.md."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            if archive.testzip() is not None or f'{skill}/SKILL.md' not in archive.namelist():
+                raise OSError(f'ZIP скіла {skill} пошкоджено: {path}')
+    except zipfile.BadZipFile as error:
+        raise OSError(f'ZIP скіла {skill} пошкоджено: {path}') from error
+
+
 def write_desktop_skills(plugin: Path, folder: Path) -> list[Path]:
     """S16: one `<skill>.zip` per skill for upload in Claude Desktop; only these files are overwritten."""
     folder.mkdir(parents=True, exist_ok=True)
     written = []
     for skill in skill_names(plugin):
         target = folder / f'{skill}.zip'
-        temporary = target.with_name(target.name + '.tmp')
+        handle, name = tempfile.mkstemp(dir=folder, prefix=f'.{skill}-', suffix='.zip.obscura-tmp')
+        temporary = Path(name)
         try:
-            temporary.write_bytes(desktop_zip(plugin, skill))
+            with os.fdopen(handle, 'wb') as stream:
+                stream.write(desktop_zip(plugin, skill))
+            _check_zip(temporary, skill)
             os.replace(temporary, target)
         finally:
             temporary.unlink(missing_ok=True)
