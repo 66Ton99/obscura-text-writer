@@ -4897,6 +4897,19 @@
       }
     },
     {
+      "id": "PACKAGING-001-S09",
+      "requirement": "PACKAGING-001",
+      "scope": "Ручний запуск store-build з трьома полями ідентичності Partner Center: значення лише через env, неповна ідентичність, publisher без CN= чи відсутній makeappx зупиняють запуск.",
+      "tests": [
+        "tests/test_store_workflow.py::test_manual_run_takes_the_partner_center_identity_through_env",
+        "tests/test_store_workflow.py::test_manual_identity_must_be_complete_and_needs_makeappx"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Сам запуск відбувається в GitHub Actions; тест перевіряє лише текст робочого процесу, а ідентичність у пакеті видно в AppxManifest.xml з артефакту."
+      }
+    },
+    {
       "id": "MEMORY-SELECT-S01",
       "requirement": "MEMORY-SELECT",
       "scope": "Запит без переповнення не змінюється; розкладання проєкції на рядки байтово тотожне попередній реалізації.",
