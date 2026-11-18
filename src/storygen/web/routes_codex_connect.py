@@ -46,6 +46,13 @@ def _error(request, text, reason, status, **fields):
         detail=diagnostic(text, request_locale(request)), detail_original=text)), status_code=status)
 
 
+def _bundle(source: Path):
+    try:
+        return generate_skills(source)
+    except FileNotFoundError:
+        raise GenerationError('missing_source') from None
+
+
 def _status_error(request, text, reason):
     return dict(state='error', reason=reason, detail=diagnostic(text, request_locale(request)),
                 detail_original=text)
@@ -67,7 +74,7 @@ def status(request: Request):
         source = _skill_source()
         if source is not None:
             skills['available'] = True
-            skills.update(asdict(inspect_skills(generate_skills(source), roots.userprofile)))
+            skills.update(asdict(inspect_skills(_bundle(source), roots.userprofile)))
     except GenerationError:
         skills.update(_status_error(request, SKILLS_ERROR, 'skill_source_invalid'))
     except (OSError, ValueError):
@@ -96,7 +103,7 @@ def skills(request: Request):
         source = _skill_source()
         if source is None:
             return _error(request, UNAVAILABLE, 'skills_unsupported', 409)
-        report = install_skills(generate_skills(source), roots.userprofile)
+        report = install_skills(_bundle(source), roots.userprofile)
         fields = dict(asdict(report), names=['obscura-'+name for name in NAMES])
         if report.result in ('installed', 'unchanged'):
             return fields

@@ -161,6 +161,8 @@ claude plugin marketplace remove obscura
 ```
 ## Codex skills from a source checkout
 
+If Obscura reports an incomplete skill source, restore the checkout files and try again. This refusal does not change installed skills.
+
 The Codex package is generated from the same sources as the Claude skills; no manual text copying is needed. It contains `obscura-start-story`, `obscura-series-bible`, `obscura-draft-scene`, `obscura-publish`, and `obscura-setup-models`. Planning and every scene stage use the current Codex session without automatically switching models.
 
 First connect MCP as described above. Then run from the Obscura checkout folder:

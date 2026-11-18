@@ -2356,3 +2356,5 @@ Task 4: оновлено обидві мовні версії mcp-інструк
 ### Codex206 — погоджений поділ18.11.2026
 
 Власник прямо затвердив checkout-обсяг: B1 і M1–M3; B2/B3 передано R-39 PR2, M4/M5 відкладені. main17fbe56 (#207) інтегровано merge1928446:8конфліктів узгоджено зі збереженням Claude Desktop skills і Codex, обох allow-list, uk/en mcp й журналів;96focused passed,1OS symlink skipped, check_docs PASS. Forbidden diff відносно main порожній. Поправки дизайну/SPEC/плану відображають уже надане рішення, не нове погодження. Окремий акаунт/GUI потребує участі власника, запит на готовність середовища подано; решта виконується нативно з RED→GREEN.
+
+M1/Task5: missing shared/rules.md відтворив POST500 (RED); missing SKILL.md уже правильно відмовляв409. Вузький _bundle нормалізує лише FileNotFoundError генератора; FileNotFoundError установника й PermissionError джерела лишаються500. Джерела Claude, генератор і установник не змінені. Додано приймання каталогу27/get_guide та відсутності get_guide у clean Codex-пакеті. Інструкції відновлення неповного checkout додано uk/en, пару rehash виконано.

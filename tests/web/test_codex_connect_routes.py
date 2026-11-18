@@ -164,3 +164,33 @@ def test_busy_lock_report_has_specific_reason(client, roots):
     answer = client.post(PREFIX+'/skills')
     assert answer.status_code == 409 and answer.json()['errors'] == ['install_busy']
     assert answer.json()['conflicts'] == [] and lock.exists()
+
+
+@pytest.mark.req('CODEX-SKILLS')
+@pytest.mark.parametrize('missing', ['shared/rules.md','skills/start-story/SKILL.md'])
+def test_missing_skill_source_is_409_before_profile_write(client, roots, tmp_path, monkeypatch, missing):
+    import shutil
+    source = tmp_path/'fixture-source'
+    shutil.copytree(routes._skill_source(), source)
+    (source/missing).unlink()
+    monkeypatch.setattr(routes, '_skill_source', lambda: source)
+    answer = client.post(PREFIX+'/skills')
+    assert answer.status_code == 409
+    assert answer.json()['reason'] == 'skill_source_invalid'
+    assert not roots.userprofile.exists()
+    status = client.get(PREFIX+'/status').json()
+    assert status['skills']['state'] == 'error'
+    assert status['skills']['reason'] == 'skill_source_invalid'
+    assert status['mcp']['state'] == 'missing'
+
+
+@pytest.mark.req('CODEX-SKILLS')
+@pytest.mark.parametrize('where,error', [('generate_skills',PermissionError),('install_skills',FileNotFoundError)])
+def test_real_skill_io_failure_stays_500(client, roots, monkeypatch, where, error):
+    def failed(*args):
+        raise error('private details')
+    monkeypatch.setattr(routes, where, failed)
+    answer = client.post(PREFIX+'/skills')
+    assert answer.status_code == 500 and answer.json()['reason'] == 'skills_io_failed'
+    assert 'private details' not in answer.text
+    assert not roots.userprofile.exists()
