@@ -78,6 +78,15 @@ C:\tmp\obscura-build-venv\Scripts\python.exe scripts/build_store.py --out C:\tmp
 
 Так перевірено 11.11.2026 на CPython 3.12.10: попереджень про інтерпретатор немає, додаткові файли не потрібні, пакет збирається без `--allow-vendor-runtime`.
 
+## Значки пакета
+
+`store_build/msix/Assets` містить `StoreLogo.png` (50 px), `Square44x44Logo.png` (44 px) і `Square150x150Logo.png` (150 px), намальовані з емблеми вебінтерфейсу `src/storygen/web/static/favicon.svg`. Після зміни емблеми їх перемальовує:
+
+```powershell
+./.venv/Scripts/python.exe -m playwright install chromium
+./.venv/Scripts/python.exe scripts/make_store_assets.py
+```
+
 ## Збирання в CI
 
 Робочий процес `.github/workflows/store-build.yml` збирає пакет на чистому образі `windows-latest` з офіційним CPython 3.12 тими самими командами, що й вище. Він запускається для кожного PR у `main`, що зачіпає збирання, і вручну з вкладки Actions. Якщо в образі є `makeappx`, збирається непідписаний `.msix` з тестовою ідентичністю `Obscura.CI` — лише щоб перевірити склад пакета; інакше збирання йде з `--skip-msix` і попередженням. Звіти, журнали, повідомлення, `.msix` і тека `Obscura` лишаються артефактами запуску на 7 днів. Секретів, підпису й публікації в CI немає.

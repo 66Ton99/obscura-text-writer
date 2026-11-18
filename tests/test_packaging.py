@@ -373,6 +373,8 @@ def test_package_assets_exist_with_the_declared_sizes():
     for name, size in packaging.ASSETS.items():
         with Image.open(ROOT / 'store_build' / 'msix' / 'Assets' / name) as image:
             assert image.size == (size, size) and image.format == 'PNG'
+            colours = image.convert('RGBA').getcolors(maxcolors=size * size)
+            assert len(colours) > 8, f'{name}: placeholder, not the emblem'
 
 
 def test_find_makeappx(tmp_path, monkeypatch):
