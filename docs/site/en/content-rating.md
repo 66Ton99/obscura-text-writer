@@ -18,7 +18,7 @@ Open the story settings, the **Writing** section, choose a level for each axis a
 
 ## Scene rating
 
-In the scene settings the **Scene age rating** form offers **Same as the story** (the default) or **Own rating** for this scene. Press **Save scene rating**.
+In the scene settings the **Scene age rating** form offers **Same as the story** (the default) or **Own rating** for this scene. The **i** button next to “Same as the story” shows the story's rating in a tip. The axis lists appear only when **Own rating** is selected. Press **Save scene rating**.
 
 Lowering the rating on at least one axis marks the scene materials created under the higher limit as outdated: review and accept them or regenerate them. Raising it changes nothing. Text you wrote yourself or explicitly accepted does not become outdated when the rating is lowered.
 

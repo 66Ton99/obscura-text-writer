@@ -79,7 +79,7 @@ if(host){
       const data=await api(url());
       if(force&&epoch===buffer.epoch)buffer.dirty=false;
       if(!buffer.loaded(data,token))return;
-      metadata=data;uiText(status,"textContent",()=>(data.warnings.join(' ')||t("m_32af7a849848")));source.hidden=!data.source;uiText(sourceText,"textContent",()=>(data.source?.text||''));
+      metadata=data;uiText(status,"textContent",()=>(data.warnings.map(diagnostic).join(' ')||t("m_32af7a849848")));source.hidden=!data.source;uiText(sourceText,"textContent",()=>(data.source?.text||''));
       const selected=previewScene.value;previewScene.replaceChildren();
       for(const scene of data.scenes){const opt=document.createElement('option');opt.value=scene.id;uiText(opt,"textContent",()=>(`${scene.position+1}. ${scene.title}`));previewScene.append(opt)}
       if(data.scenes.some(s=>s.id===selected))previewScene.value=selected;else if(data.scenes.some(s=>s.id===initialScene))previewScene.value=initialScene;
@@ -104,7 +104,7 @@ if(host){
       const result=await api(url()+'/preview',json('POST',{cards:structuredClone(buffer.cards),scene_id:request.scene_id}));
       if(!buffer.previewCurrent(request,previewScene.value))return;
       uiText(previewText,"textContent",()=>(result.text||t("m_9eac07c93f30")));
-      uiText(previewInfo,"textContent",()=>(t("m_e2b07cc2445c",{p0:(result.excluded_count)})+result.warnings.join(' ')));
+      uiText(previewInfo,"textContent",()=>(t("m_e2b07cc2445c",{p0:(result.excluded_count)})+result.warnings.map(diagnostic).join(' ')));
     }catch(error){if(buffer.previewCurrent(request,previewScene.value)){uiText(previewInfo,"textContent",()=>(diagnostic(error.message)));notice(error.message,'error')}}
     finally{previewBusy=false;update()}
   }

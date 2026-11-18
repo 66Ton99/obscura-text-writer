@@ -2706,7 +2706,8 @@
         "tests/web/test_localization.py::test_api_diagnostic_preserves_original",
         "tests/web/test_localization.py::test_diagnostics_do_not_translate_author_parameters",
         "tests/generation/test_language_warnings_language.py::test_story_changed_conflicts_are_localized",
-        "tests/authoring/test_language_periphery.py::test_profile_language_warning_is_localized"
+        "tests/authoring/test_language_periphery.py::test_profile_language_warning_is_localized",
+        "tests/web/test_localization.py::test_character_availability_warning_is_translated"
       ]
     },
     {
@@ -4216,7 +4217,7 @@
     {
       "id": "RATING-001-S05",
       "requirement": "RATING-001",
-      "scope": "scene_ratings у GET /api/stories/{id}, запис і скидання перевизначення сцени, конфлікт ревізії. Форму в параметрах сцени перевіряє Playwright-spec tests/web/browser/scene-rating.spec.mjs (чотири сценарії: перевизначення з поверненням до рейтингу твору; твір без рейтингу; запізніла відповідь збереження не повертає вибір на попередню сцену; форма зникає без вибраної сцени); структурна матриця індексує лише pytest, тож фактичний запуск spec фіксується окремо.",
+      "scope": "scene_ratings у GET /api/stories/{id}, запис і скидання перевизначення сцени, конфлікт ревізії. Форму в параметрах сцени перевіряє Playwright-spec tests/web/browser/scene-rating.spec.mjs (перевизначення з поверненням до рейтингу твору, де «Як у творі» ховає списки осей, рейтинг твору стоїть у підказці кнопки «i», а перемикачі — в одному рядку з підписами; твір без рейтингу; запізніла відповідь збереження не повертає вибір на попередню сцену; форма зникає без вибраної сцени); структурна матриця індексує лише pytest, тож фактичний запуск spec фіксується окремо.",
       "tests": [
         "tests/web/test_rating_routes.py::test_put_scene_rating_and_reset",
         "tests/web/test_rating_routes.py::test_scene_rating_wrong_story_rejected",
@@ -5949,7 +5950,7 @@
     {
       "id": "STORE-MCP-S08",
       "requirement": "STORE-MCP-001",
-      "scope": "Команда моста, вибір файлу конфігурації Claude Desktop, запис лише obscura з копією, некоректний файл не змінюється. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Команда моста, вибір файлу конфігурації Claude Desktop, запис лише obscura з копією, некоректний файл не змінюється. Перевірка зазначеного сценарію; не є доказом усієї вимоги. Розташування блоків Claude і Codex поряд (від 768 px) і одне під одним на телефоні перевіряє Playwright tests/web/browser/claude-connect.spec.mjs.",
       "tests": [
         "tests/test_claude_connect.py::test_command_for_package_is_the_alias",
         "tests/test_claude_connect.py::test_command_for_checkout_server_is_the_url",

@@ -23,10 +23,22 @@ test('author overrides the scene rating and returns to the story rating',async({
   const form=page.locator('#scene-rating');
   const [sexual,violence,themes]=axisSelects(form);
   await expect(form.locator('legend')).toHaveText('Віковий рейтинг сцени');
-  await expect(form.getByLabel('Як у твору (сексуальний зміст 1, насильство 0, жорсткі теми 0)')).toBeChecked();
-  for(const select of [sexual,violence,themes])await expect(select).toBeDisabled();
+  const inherit=form.getByLabel('Як у творі',{exact:true}),ownMode=form.getByLabel('Власний рейтинг');
+  await expect(inherit).toBeChecked();
+  // The story rating sits in the help tip next to «Як у творі», not in the label.
+  await expect(form.locator('#scene-rating-story')).toHaveText('Рейтинг твору: сексуальний зміст 1, насильство 0, жорсткі теми 0');
+  await expect(form.locator('.rating-mode .help-tip')).toHaveAttribute('aria-describedby','scene-rating-story');
+  // Inheriting hides the axis lists.
+  for(const select of [sexual,violence,themes])await expect(select).toBeHidden();
+  // Each radio button sits on one row with its label.
+  for(const radio of [inherit,ownMode]){
+    const [input,text]=await Promise.all([radio.boundingBox(),radio.locator('xpath=following-sibling::span').boundingBox()]);
+    expect(Math.abs((input.y+input.height/2)-(text.y+text.height/2))).toBeLessThan(6);
+    expect(text.x).toBeGreaterThan(input.x);
+  }
 
-  await form.getByLabel('Власний рейтинг').check();
+  await ownMode.check();
+  for(const select of [sexual,violence,themes])await expect(select).toBeVisible();
   await expect(sexual).toBeEnabled();
   await sexual.selectOption('0');await violence.selectOption('2');await themes.selectOption('0');
   await form.getByRole('button',{name:'Зберегти рейтинг сцени'}).click();
@@ -40,13 +52,13 @@ test('author overrides the scene rating and returns to the story rating',async({
 
   const bodies=[];
   page.on('request',req=>{if(req.method()==='PUT'&&req.url().endsWith('/content-rating'))bodies.push(req.postDataJSON())});
-  await form.getByLabel(/^Як у твору/).check();
+  await form.getByLabel('Як у творі',{exact:true}).check();
   await form.getByRole('button',{name:'Зберегти рейтинг сцени'}).click();
   await expect(page.locator('#notice')).toContainText('Рейтинг сцени збережено');
   expect(bodies).toHaveLength(1);
   expect(bodies[0].content_rating).toBeNull();
   expect(await source()).toEqual({effective:rating(1,0,0),source:'story'});
-  await expect(form.getByLabel(/^Як у твору/)).toBeChecked();
+  await expect(form.getByLabel('Як у творі',{exact:true})).toBeChecked();
 
   // Stale revision: the rating written outside the page must survive a save from the stale page.
   const scene=(await view(request,story_id)).scenes.find(s=>s.id===scene_id);
@@ -101,7 +113,8 @@ test('scene of an unrated story shows "not set" and can still get its own rating
   await page.goto(`/stories/${story_id}?scene=${scene_id}`);
   await openPanel(page);
   const form=page.locator('#scene-rating');
-  await expect(form.getByLabel('Як у твору (не задано)')).toBeChecked();
+  await expect(form.getByLabel('Як у творі',{exact:true})).toBeChecked();
+  await expect(form.locator('#scene-rating-story')).toHaveText('Рейтинг твору: не задано');
   const [sexual,violence,themes]=axisSelects(form);
   await form.getByLabel('Власний рейтинг').check();
   await sexual.selectOption('1');await violence.selectOption('0');await themes.selectOption('2');
