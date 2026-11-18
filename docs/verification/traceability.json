@@ -6826,7 +6826,7 @@
       "requirement": "CODEX-SKILLS",
       "scope": "Checkout: штатна user .agents/skills, CLI й GUI окремого Windows-акаунта, MCP/list_stories без моделей.",
       "manual": {
-        "procedure": "docs/verification/codex-checkout-acceptance.md",
+        "procedure": "docs/verification/codex-checkout-acceptance.md#codex-b1-checkout",
         "reason": "Потрібен окремий локальний Windows-акаунт і ручний вхід/GUI власника. Процедура та попередній сумісний CODEX_HOME/skills не є виконанням B1."
       }
     }
