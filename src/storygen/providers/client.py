@@ -13,6 +13,6 @@ def build_openai_client(settings: ProviderSettings, http_client: httpx.Client | 
     key_env=getattr(settings,'key_env',None) or getattr(settings,'api_key_env',None)
     key='local-server' if settings.provider=='local' else resolve_key(key_env)
     if not key:
-        raise ProviderConfigurationError('Ключ провайдера відсутній у серверному середовищі')
+        raise ProviderConfigurationError('Ключ провайдера не знайдено: збережіть його в налаштуваннях підключення (сховище ключів) або задайте змінною середовища.')
     timeout=getattr(settings,'timeout',None) or getattr(settings,'timeout_seconds',None) or (3600 if settings.provider=='local' else 180)
     return OpenAI(base_url=settings.base_url,api_key=key,timeout=timeout,max_retries=0,http_client=http_client)

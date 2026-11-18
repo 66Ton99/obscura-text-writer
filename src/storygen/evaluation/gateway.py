@@ -41,7 +41,7 @@ class OpenAICompatibleGateway:
         from ..providers.secrets import resolve_key
         key = resolve_key(config.api_key_env) if config.provider in {"openrouter", 'venice'} else "local-model"
         if not key:
-            raise GatewayFailure("missing_api_key: Не задано ключ провайдера", detail=FailureDetail(category='missing_key', message='Не задано ключ провайдера у серверному середовищі.'))
+            raise GatewayFailure("missing_api_key: Не задано ключ провайдера", detail=FailureDetail(category='missing_key', message='Ключ провайдера не знайдено: збережіть його в налаштуваннях підключення (сховище ключів) або задайте змінною середовища.'))
         self._key = key
         self.client = build_openai_client(config,http_client)
 

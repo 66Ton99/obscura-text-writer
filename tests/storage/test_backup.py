@@ -163,3 +163,23 @@ def test_backup_closes_sqlite_output_before_validation(tmp_path, monkeypatch):
         return original(root)
     monkeypatch.setattr(module, 'require_integrity', verify)
     create_backup(repo.root, tmp_path / 'backup')
+
+
+def test_backup_skips_env_files_at_any_depth(tmp_path):
+    repo, story, _, _ = sample(tmp_path / 'source')
+    (repo.root / '.env').write_text('VENICE_API_KEY=secret', encoding='utf-8')
+    (repo.root / 'stories' / story.id / '.env').write_text('X=1', encoding='utf-8')
+    (repo.root / 'stories' / story.id / 'notes.env.txt').write_text('kept', encoding='utf-8')
+    backup = create_backup(repo.root, tmp_path / 'backup')
+    copied = [path.name for path in (backup / 'data').rglob('*') if path.is_file()]
+    assert '.env' not in copied
+    assert 'notes.env.txt' in copied
+    manifest = json.loads((backup / 'manifest.json').read_text(encoding='utf-8'))
+    assert not [item for item in manifest['files'] if item['path'].rsplit('/', 1)[-1] == '.env']
+
+
+def test_backup_skips_env_files_in_any_letter_case(tmp_path):
+    repo, story, _, _ = sample(tmp_path / 'source')
+    (repo.root / 'stories' / story.id / '.ENV').write_text('VENICE_API_KEY=secret', encoding='utf-8')
+    backup = create_backup(repo.root, tmp_path / 'backup')
+    assert not [path for path in (backup / 'data').rglob('*') if path.name.lower() == '.env']

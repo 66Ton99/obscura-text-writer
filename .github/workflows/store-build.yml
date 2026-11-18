@@ -1,0 +1,75 @@
+# Store package build (PACKAGING-001-S07): builds and self-checks the frozen app on a clean Windows image
+# with official CPython 3.12. Local builds are blocked by Smart App Control on the owner's machine.
+# No secrets, no signing, no publishing: the unsigned MSIX uses a test identity and only shows the package layout.
+name: store-build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/build_store.py'
+      - 'src/storygen/packaging*.py'
+      - 'store_build/**'
+      - 'integrations/claude/**'
+      - 'pyproject.toml'
+      - 'requirements-lock.txt'
+      - '.github/workflows/store-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements-lock.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
+      - name: Find makeappx
+        shell: pwsh
+        run: |
+          $found = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" -ErrorAction SilentlyContinue |
+            Sort-Object { [version]$_.Directory.Parent.Name } -ErrorAction SilentlyContinue | Select-Object -Last 1
+          if ($found) { "MAKEAPPX=$($found.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 }
+      - name: Build
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'obscura-build'
+          $urls = @('--report-url', 'https://obscurawriter.com/report.html', '--waitlist-url', 'https://obscurawriter.com/paid.html')
+          if ($env:MAKEAPPX) {
+            python scripts/build_store.py --out $out @urls --makeappx $env:MAKEAPPX --identity-name Obscura.CI --publisher "CN=Obscura CI" --publisher-display-name "Obscura CI"
+          } else {
+            Write-Output "::warning::makeappx not found in the image; building without MSIX"
+            python scripts/build_store.py --out $out @urls --skip-msix
+          }
+          exit $LASTEXITCODE
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-build-reports
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/obscura-build/self-check.json
+            ${{ runner.temp }}/obscura-build/BUILD-OK.json
+            ${{ runner.temp }}/obscura-build/BUILD-FAILED.txt
+            ${{ runner.temp }}/obscura-build/*.log
+            ${{ runner.temp }}/obscura-build/Obscura/THIRD-PARTY-NOTICES.txt
+            ${{ runner.temp }}/obscura-build/*.msix
+      - name: Upload package folder
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-build-Obscura
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/obscura-build/Obscura/

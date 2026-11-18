@@ -81,7 +81,7 @@ def test_missing_provider_key_is_safe_configuration_failure(monkeypatch,accounte
     with httpx.Client(transport=httpx.MockTransport(lambda r:calls.append(r))) as client:
         event=list(build_generation_gateway(ctx.settings.provider,client,accounted_call('venice','test')).stream(ctx,threading.Event()))[-1]
     assert calls==[] and event.failure['category']=='configuration'
-    assert 'Ключ провайдера відсутній' in event.message
+    assert 'Ключ провайдера не знайдено' in event.message
 
 
 @pytest.mark.parametrize('provider',['venice','openrouter'])

@@ -10,14 +10,28 @@ from importlib.metadata import PackageNotFoundError, distribution, distributions
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
+from . import skill_bundles
 from .build_edition import parse_build_edition
 from .self_check import CHECK_NAMES
 
 EXTRAS = ('web', 'publication', 'local-tokens', 'desktop', 'mcp')
 # Distributions whose wheel carries no licence file: SPDX id and where the text lives. A new one stops the build.
-LICENSE_FALLBACKS = {'tokenizers': ('Apache-2.0', 'https://github.com/huggingface/tokenizers/blob/main/LICENSE')}
+# Licence texts for distributions whose wheel carries none (tokenizers: its own licence and the Rust crates compiled
+# into it), as <normalised name>-<version>.txt relative to the checkout; scripts/tokenizers_notices.py writes them.
+BUNDLED_LICENSES = Path('store_build/licenses')
 # Always named in the notices: the freezer's bootloader is part of the executable.
 ALWAYS_NOTICED = ('pyinstaller',)
+# GPL-family distributions accepted only with exactly these declared licence texts (PACKAGING-001-S06).
+_GPL2_CLASSIFIER = 'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'
+COPYLEFT_EXCEPTIONS: dict[str, tuple[frozenset[str], str]] = {
+    'pyinstaller': (
+        frozenset({'GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute '
+                   'non-free programs (including commercial ones)', _GPL2_CLASSIFIER}),
+        'Bootloader Exception (COPYING.txt): у збірку потрапляють лише загрузчик і пов’язані файли'),
+    'pyinstaller-hooks-contrib': (
+        frozenset({'License :: OSI Approved :: Apache Software License', _GPL2_CLASSIFIER}),
+        'runtime hooks, що потрапляють у збірку, під Apache-2.0 (LICENSE, розділ Runtime hooks)'),
+}
 # Files the standard library of some interpreters reads at run time and the freezer does not collect.
 VENDOR_RUNTIME_FILES = ('codex-rejected-cas.pem',)
 # Not part of the main executable: the MCP bridge (frozen separately, STORE-MCP) and anything only tests use.
@@ -115,30 +129,52 @@ def _license_files(dist) -> list:
     return found
 
 
-def missing_licenses(names, *, lookup=distribution) -> list[str]:
-    return [name for name in names if not _license_files(lookup(name)) and _normal(name) not in LICENSE_FALLBACKS]
+def _bundled_license(name: str, dist, licenses_dir: Path | None) -> Path | None:
+    if licenses_dir is None:
+        return None
+    path = Path(licenses_dir) / f'{_normal(name)}-{dist.version}.txt'
+    return path if path.is_file() else None
+
+
+def missing_licenses(names, *, lookup=distribution, licenses_dir: Path | None = None) -> list[str]:
+    missing = []
+    for name in names:
+        dist = lookup(name)
+        if not _license_files(dist) and _bundled_license(name, dist, licenses_dir) is None:
+            missing.append(name)
+    return missing
 
 
 def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
-    """Distributions under a GPL-family licence (GPL, LGPL, AGPL): the build must not contain them (PACKAGING-001-S03)."""
+    """Distributions under a GPL-family licence (GPL, LGPL, AGPL): the build must not contain them (PACKAGING-001-S03).
+
+    A COPYLEFT_EXCEPTIONS entry passes only while its declared licence texts match exactly."""
     found = []
     for name in names:
         metadata = lookup(name).metadata
         classifiers = metadata.get_all('Classifier') if hasattr(metadata, 'get_all') else metadata.get('Classifier', [])
         declared = [metadata.get('License-Expression') or '', metadata.get('License') or '']
         declared += [item for item in classifiers or [] if item.startswith('License ::')]
+        declared = frozenset(text for text in declared if text)
+        exception = COPYLEFT_EXCEPTIONS.get(_normal(name))
+        if exception is not None:
+            # A listed distribution passes only with the reviewed declaration; any change needs a new review.
+            if declared != exception[0]:
+                found.append(name)
+            continue
         if any('GPL' in text.upper() for text in declared):
             found.append(name)
     return found
 
 
-def third_party_notices(names, *, lookup=distribution, runtime_license: str = '') -> str:
+def third_party_notices(names, *, lookup=distribution, runtime_license: str = '', licenses_dir: Path | None = None) -> str:
+    """A distribution without licence files takes `<licenses_dir>/<name>-<version>.txt`; without that file the build stops."""
     copyleft = copyleft_distributions(names, lookup=lookup)
     if copyleft:
         raise ValueError('Бібліотека з ліцензією родини GPL у збірці: ' + ', '.join(copyleft))
-    missing = missing_licenses(names, lookup=lookup)
+    missing = missing_licenses(names, lookup=lookup, licenses_dir=licenses_dir)
     if missing:
-        raise ValueError('Немає тексту ліцензії для: ' + ', '.join(missing))
+        raise ValueError('Немає тексту ліцензії для: ' + ', '.join(f'{name} {lookup(name).version}' for name in missing))
     parts = ['Obscura Text Writer — third-party notices\n',
              'This build includes the following components. Each is distributed under its own licence, reproduced below.\n']
     if runtime_license:
@@ -146,17 +182,39 @@ def third_party_notices(names, *, lookup=distribution, runtime_license: str = ''
     for name in names:
         dist = lookup(name)
         declared = dist.metadata.get('License-Expression') or ((dist.metadata.get('License') or '').strip().splitlines() or [''])[0]
-        fallback = LICENSE_FALLBACKS.get(_normal(name))
-        header = f"\n{'=' * 78}\n{dist.metadata['Name']} {dist.version}\nLicence: {declared or (fallback[0] if fallback else 'see the text below')}\n"
+        header = f"\n{'=' * 78}\n{dist.metadata['Name']} {dist.version}\nLicence: {declared or 'see the text below'}\n"
         files = _license_files(dist)
         if not files:
-            parts.append(header + f'The distribution carries no licence file. Licence text: {fallback[1]}\n')
+            bundled = _bundled_license(name, dist, licenses_dir)
+            parts.append(header + f"{'-' * 78}\n{bundled.read_text(encoding='utf-8').strip()}\n")
             continue
         parts.append(header)
         for item in files:
             text = Path(dist.locate_file(item)).read_text(encoding='utf-8', errors='replace').strip()
             parts.append(f"{'-' * 78}\n{Path(str(item)).name}\n\n{text}\n")
     return ''.join(parts)
+
+
+def plugin_files(root: Path, tracked) -> list[str]:
+    """STORE-MCP: the Claude plugin files shipped in `claude\\` next to Obscura.exe — tracked files under the user part
+    of the marketplace only (no evals, no stray drafts), as sorted POSIX paths relative to `root` (`integrations/claude`).
+
+    Raises ValueError when the plugin manifest is missing or a skill cannot become a self-contained bundle."""
+    files = sorted({rel for rel in tracked if rel.startswith(skill_bundles.USER_FILES) and (root / rel).is_file()})
+    if 'obscura/.claude-plugin/plugin.json' not in files:
+        raise ValueError('у плагіні Claude немає obscura/.claude-plugin/plugin.json')
+    # Check the skills as they will ship: on a copy of the tracked files only, so an untracked reference fails here and an
+    # untracked draft skill does not.
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix='obscura-plugin-') as staging:
+        for rel in files:
+            target = Path(staging) / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(root / rel, target)
+        plugin = Path(staging) / 'obscura'
+        for skill in skill_bundles.skill_names(plugin):
+            skill_bundles.bundle_files(plugin, skill)
+    return files
 
 
 def vendor_runtime_files(python_lib: Path) -> list[Path]:

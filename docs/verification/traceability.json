@@ -1403,6 +1403,20 @@
       }
     },
     {
+      "id": "SECURITY-002-S07",
+      "requirement": "SECURITY-002",
+      "scope": "Сталий текст про відсутній ключ із перекладом; назва змінної зберігається без пробілів і великими літерами.",
+      "tests": [
+        "tests/providers/test_secret_consumers.py::test_missing_key_message_points_to_the_key_store",
+        "tests/providers/test_generation_diagnostics.py::test_missing_provider_key_is_safe_configuration_failure",
+        "tests/web/test_provider_key_ui.py::test_status_keys_and_name_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#provider-key-store",
+        "reason": "check_docs.py індексує лише pytest; збереження назви великими літерами у формі перевіряє Playwright case provider-key.spec.mjs окремим runner; цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "CONTENT-001-S01",
       "requirement": "CONTENT-001",
       "scope": "Провайдер змінює поведінку. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -4633,6 +4647,14 @@
       ]
     },
     {
+      "id": "BUILD-EDITION-001-S10",
+      "requirement": "BUILD-EDITION-001",
+      "scope": "Твір із сексуальним рівнем 2, записаний поза виданням store, експортується в ньому з позначкою 18+.",
+      "tests": [
+        "tests/web/test_long_prose_guard.py::test_store_exports_a_level_two_story"
+      ]
+    },
+    {
       "id": "DESKTOP-001-S01",
       "requirement": "DESKTOP-001",
       "scope": "Тека даних у профілі користувача (кирилиця в шляху), журнал у файл із ротацією, запуск без stdout/stderr.",
@@ -4696,6 +4718,15 @@
       ]
     },
     {
+      "id": "DESKTOP-001-S06",
+      "requirement": "DESKTOP-001",
+      "scope": "Резервна копія не бере жодного .env на будь-якій глибині; файли з .env лише в частині назви копіюються.",
+      "tests": [
+        "tests/storage/test_backup.py::test_backup_skips_env_files_at_any_depth",
+        "tests/storage/test_backup.py::test_backup_skips_env_files_in_any_letter_case"
+      ]
+    },
+    {
       "id": "DESKTOP-001-S04",
       "requirement": "DESKTOP-001",
       "scope": "Меню трея: порядок, мови, пункт копій, вихід; робота без бібліотеки трея й з --no-tray.",
@@ -4719,7 +4750,8 @@
         "tests/test_win_tray.py::test_real_api_builds_and_frees_an_icon",
         "tests/test_desktop_tray.py::test_launcher_without_a_tray_keeps_running_and_logs_it",
         "tests/test_desktop.py::test_no_tray_mode_runs_until_the_server_stops",
-        "tests/test_desktop.py::test_quit_with_an_open_stream_still_shuts_the_server_down"
+        "tests/test_desktop.py::test_quit_with_an_open_stream_still_shuts_the_server_down",
+        "tests/test_desktop_tray.py::test_tray_language_follows_the_windows_ui_language"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#desktop-launcher",
@@ -4815,6 +4847,53 @@
       "manual": {
         "procedure": "docs/verification/manual.md#store-package-build",
         "reason": "Справжнє збирання триває близько пів хвилини й потребує PyInstaller і makeappx, тому не входить у pytest; тести покривають чисті частини й відмови до заморожування, а саме збирання виконується за процедурою."
+      }
+    },
+    {
+      "id": "PACKAGING-001-S06",
+      "requirement": "PACKAGING-001",
+      "scope": "Таблиця винятків GPL-перевірки: точні заявлені ліцензії PyInstaller і hooks-contrib проходять, змінена ліцензія відмовляє, кожен виняток має причину, встановлені версії збігаються з таблицею.",
+      "tests": [
+        "tests/test_packaging.py::test_copyleft_exceptions_pass_only_with_the_exact_declared_licence",
+        "tests/test_packaging.py::test_copyleft_exception_with_changed_licence_is_refused",
+        "tests/test_packaging.py::test_copyleft_exception_table_names_a_reason_for_each_entry",
+        "tests/test_packaging.py::test_installed_freezer_matches_the_exception_table",
+        "tests/test_packaging.py::test_copyleft_is_found_by_expression_licence_or_classifier",
+        "tests/test_packaging.py::test_copyleft_exception_with_a_non_gpl_or_missing_licence_is_refused"
+      ]
+    },
+    {
+      "id": "PACKAGING-001-S08",
+      "requirement": "PACKAGING-001",
+      "scope": "Ліцензії tokenizers: crate зі SBOM (лише required з crates.io), ліцензійні файли з кореня архіву, звірка SHA-256, MANUAL для crate без файлів, однакові тексти один раз; вкладений файл потрапляє в повідомлення, інша версія зупиняє збирання.",
+      "tests": [
+        "tests/test_tokenizers_notices.py::test_crates_from_sbom_take_required_registry_crates_only",
+        "tests/test_tokenizers_notices.py::test_license_texts_take_root_licence_files_only",
+        "tests/test_tokenizers_notices.py::test_crate_without_licence_files_needs_a_manual_entry",
+        "tests/test_tokenizers_notices.py::test_archive_with_another_hash_is_refused",
+        "tests/test_tokenizers_notices.py::test_render_prints_identical_texts_once",
+        "tests/test_packaging.py::test_notices_carry_name_version_licence_and_text",
+        "tests/test_packaging.py::test_bundled_licence_of_another_version_stops_the_build",
+        "tests/test_packaging.py::test_declared_dependencies_all_have_licence_texts",
+        "tests/test_tokenizers_notices.py::test_sbom_without_crates_is_refused"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Сам файл готується з мережі (crates.io, GitHub) один раз на версію tokenizers; тести покривають розбір і відмови на фікстурах, а готовий файл перевіряє тест повідомлень для встановлених залежностей."
+      }
+    },
+    {
+      "id": "PACKAGING-001-S07",
+      "requirement": "PACKAGING-001",
+      "scope": "Робочий процес store-build: Windows і офіційний CPython 3.12, тестова ідентичність або --skip-msix, артефакти на 7 днів, без секретів і лише contents: read.",
+      "tests": [
+        "tests/test_store_workflow.py::test_store_workflow_builds_on_windows_with_official_python",
+        "tests/test_store_workflow.py::test_store_workflow_packs_a_test_identity_or_skips_msix",
+        "tests/test_store_workflow.py::test_store_workflow_has_no_secrets_and_reads_only"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Сам запуск відбувається в GitHub Actions; тест перевіряє лише текст робочого процесу, а результат збирання видно в артефактах запуску."
       }
     },
     {
@@ -5975,6 +6054,23 @@
       "manual": {
         "procedure": "docs/verification/manual.md#store-mcp-package",
         "reason": "Завантаження ZIP у справжній Claude Desktop (Customize → Skills → Upload a skill) автотест не відтворює; кнопка й кроки — Playwright claude-connect.spec.mjs (manual.md#claude-connect-browser)."
+      }
+    },
+    {
+      "id": "STORE-MCP-S17",
+      "requirement": "STORE-MCP-001",
+      "scope": "Плагін Claude у пакеті: лише відстежувані файли USER_FILES, відмова без plugin.json і на посиланні між скілами, всі п'ять скілів репозиторію, перевірка моста вимагає guide: ok.",
+      "tests": [
+        "tests/test_packaging.py::test_plugin_files_are_tracked_user_files_only",
+        "tests/test_packaging.py::test_plugin_files_refuse_a_plugin_without_manifest",
+        "tests/test_packaging.py::test_plugin_files_refuse_a_cross_skill_reference",
+        "tests/test_packaging.py::test_repository_plugin_files_hold_every_skill",
+        "tests/test_packaging.py::test_bridge_check_requires_the_guide",
+        "tests/test_packaging.py::test_plugin_files_check_skills_as_they_will_ship"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Справжнє збирання з копіюванням теки й запуском моста виконує CI; склад .msix перевіряється за артефактом."
       }
     },
     {

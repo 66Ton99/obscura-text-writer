@@ -27,7 +27,7 @@ def test_client_takes_the_key_from_the_store(secret_store):
 
 
 def test_client_without_any_key_keeps_the_configuration_error(secret_store):
-    with pytest.raises(ProviderConfigurationError, match='Ключ провайдера відсутній'):
+    with pytest.raises(ProviderConfigurationError, match='Ключ провайдера не знайдено'):
         build_openai_client(ProviderSettings(provider='venice', model='m'))
 
 
@@ -85,3 +85,12 @@ def test_no_direct_environment_reads_of_keys_remain():
     offenders = [f'{path.relative_to(root)}:{number}' for path in root.rglob('*.py') if path.name != 'secrets.py'
                  for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1) if pattern.search(line)]
     assert offenders == []
+
+
+def test_missing_key_message_points_to_the_key_store(secret_store):
+    from storygen.web.localization import diagnostic
+    with pytest.raises(ProviderConfigurationError) as raised:
+        build_openai_client(ProviderSettings(provider='venice', model='m'))
+    assert str(raised.value) == 'Ключ провайдера не знайдено: збережіть його в налаштуваннях підключення (сховище ключів) або задайте змінною середовища.'
+    assert diagnostic(str(raised.value), 'en') == ('Provider key not found: save it in the connection settings (key store) '
+                                                   'or set it as an environment variable.')
