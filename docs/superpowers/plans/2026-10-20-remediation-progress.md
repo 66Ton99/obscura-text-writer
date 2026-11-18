@@ -2438,3 +2438,7 @@ Inherited whitespace у ліцензійному тексті tokenizers із ma
 ### UI — рейтинг сцени, блоки підключення, попередження персонажів (рішення власника 18.11.2026)
 
 Пряме рішення власника: «Як у творі» ховає списки осей рейтингу сцени, рейтинг твору — у підказці кнопки «i», перемикачі в рядок із підписами; блоки «Підключити до Codex» і «Підключити до Claude» поряд (від 768 px, на телефоні одне під одним); попередження про неперевірену часову доступність опису на сторінці персонажів перекладається (усунене відхилення: в англійському інтерфейсі лишалося українським). Перевірка: pytest tests/web tests/characters 608 passed; Playwright scene-rating, claude-connect, build-edition, rating-settings 32 passed, characters-page, scene-settings, library-series, workspace-layout, story-language 36 passed; check_docs OK. Знімки сайту перезняті scripts/capture_screenshots.py.
+
+### Типовий режим нового твору у Store (рішення власника 19.11.2026)
+
+Пряме рішення власника під час перевірки застосунку зі Store: твір, створений у формі бібліотеки, типово «Пише Obscura» в усіх виданнях (раніше видання `store` вибирало «Пише чат»). Оновлено STORE-MCP-S07, абзац STORE-MCP-001, traceability, `docs/site/{uk,en}/mcp.md`. Перевірки: `pytest tests/web tests/mcp` — 690 passed; `scripts/check_docs.py` — узгоджено.

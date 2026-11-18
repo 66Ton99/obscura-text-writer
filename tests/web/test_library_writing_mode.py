@@ -1,4 +1,4 @@
-"""STORE-MCP-001 S07: in the Store edition the new-story form chooses «the chat writes»."""
+"""STORE-MCP-001 S07: the new-story form chooses «Obscura writes» in every edition."""
 import re
 
 import pytest
@@ -16,8 +16,8 @@ def selected_mode(tmp_path) -> str:
 
 
 @pytest.mark.req('STORE-MCP-001')
-def test_store_library_preselects_chat(tmp_path, store_edition):
-    assert selected_mode(tmp_path) == 'chat'
+def test_store_library_preselects_obscura(tmp_path, store_edition):
+    assert selected_mode(tmp_path) == 'obscura'
 
 
 @pytest.mark.req('STORE-MCP-001')
