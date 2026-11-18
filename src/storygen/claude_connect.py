@@ -15,6 +15,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import zipfile
 from dataclasses import dataclass
@@ -283,8 +284,28 @@ def _rename(source: Path, target: Path, attempts: int = 10) -> None:
             time.sleep(0.2)
 
 
+_SYNC_LOCK = threading.Lock()
+
+
+def _recover(target: Path) -> None:
+    """Undo a swap that stopped halfway (crash, power loss, failed rollback): put our old copy back, drop temp folders."""
+    if not target.parent.is_dir():
+        return
+    old = target.with_name(target.name + '.old')
+    if not target.exists() and (old / VERSION_MARKER).is_file():
+        _rename(old, target)
+    for stale in target.parent.glob('.marketplace-*'):
+        shutil.rmtree(stale, ignore_errors=True)
+
+
 def sync_marketplace(source: Path, target: Path, version: str) -> Literal['created', 'updated', 'unchanged']:
     """Copy the user files of the marketplace to `target` as a whole; the old copy survives any failure."""
+    with _SYNC_LOCK:
+        _recover(target)
+        return _sync(source, target, version)
+
+
+def _sync(source: Path, target: Path, version: str) -> Literal['created', 'updated', 'unchanged']:
     marker = target / VERSION_MARKER
     exists = target.exists()
     if exists and not marker.is_file():
@@ -308,7 +329,11 @@ def sync_marketplace(source: Path, target: Path, version: str) -> Literal['creat
             _rename(temporary, target)
         except OSError:
             if exists:
-                _rename(old, target)
+                try:
+                    _rename(old, target)
+                except OSError:
+                    # The original error matters more; the next sync puts `old` back (_recover).
+                    logger.warning('Скіли Claude: стару копію не повернуто, її відновить наступна синхронізація: %s', old)
             raise
     except BaseException:
         shutil.rmtree(temporary, ignore_errors=True)
@@ -320,10 +345,14 @@ def sync_marketplace(source: Path, target: Path, version: str) -> Literal['creat
 
 def refresh_marketplace(source: Path | None, target: Path, version: str, log: logging.Logger = logger) -> None:
     """At launch: refresh a copy the author already connected; never create one, never call `claude`."""
-    if source is None or not target.exists():
+    if source is None:
         return
     try:
-        result = sync_marketplace(source, target, version)
+        with _SYNC_LOCK:
+            _recover(target)
+            if not target.exists():
+                return
+            result = _sync(source, target, version)
     except MarketplaceConflict as error:
         log.warning('Скіли Claude: тека marketplace без позначки Obscura, не змінено: %s', error.path)
     except OSError as error:
@@ -372,8 +401,11 @@ def write_desktop_skills(plugin: Path, folder: Path) -> list[Path]:
     for skill in skill_names(plugin):
         target = folder / f'{skill}.zip'
         temporary = target.with_name(target.name + '.tmp')
-        temporary.write_bytes(desktop_zip(plugin, skill))
-        os.replace(temporary, target)
+        try:
+            temporary.write_bytes(desktop_zip(plugin, skill))
+            os.replace(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
         written.append(target)
     return written
 

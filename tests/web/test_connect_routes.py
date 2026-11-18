@@ -185,6 +185,15 @@ def test_desktop_skills_without_plugin(client, roots, monkeypatch, tmp_path):
 
 
 @pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_write_failure_is_a_refusal(client, roots, monkeypatch):
+    def failing(plugin, folder):
+        raise OSError('disk full')
+    monkeypatch.setattr(cc, 'write_desktop_skills', failing)
+    answer = client.post('/api/connect/claude-desktop/skills')
+    assert answer.status_code == 500 and answer.json()['detail_original'] == routes_connect.SKILLS_WRITE_FAILED
+
+
+@pytest.mark.req('STORE-MCP-001')
 def test_bridge_cannot_use_connect_routes(client, roots, monkeypatch):
     store_config(roots)
     touched = []

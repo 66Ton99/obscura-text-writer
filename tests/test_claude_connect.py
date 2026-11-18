@@ -407,3 +407,48 @@ def test_sync_retries_a_briefly_locked_rename(tmp_path, monkeypatch):
     target = tmp_path / 'claude' / 'marketplace'
     assert cc.sync_marketplace(MARKET, target, '0.1.0') == 'created'
     assert len(failures) == 2 and (target / cc.VERSION_MARKER).is_file()
+
+
+def leftover(target):
+    return sorted(p.name for p in target.parent.iterdir())
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_crash_between_renames_is_recovered_at_launch(tmp_path):
+    """Killed after `marketplace` became `marketplace.old` but before the new copy took its place."""
+    target = tmp_path / 'claude' / 'marketplace'
+    cc.sync_marketplace(MARKET, target, '0.1.0')
+    target.rename(target.with_name('marketplace.old'))
+    (target.parent / '.marketplace-stale').mkdir()
+    cc.refresh_marketplace(MARKET, target, '0.2.0')
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
+    assert leftover(target) == ['marketplace']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_failed_rollback_keeps_the_original_error_and_the_next_sync_repairs(tmp_path, monkeypatch):
+    target = tmp_path / 'claude' / 'marketplace'
+    cc.sync_marketplace(MARKET, target, '0.1.0')
+    real = cc._rename
+
+    def broken(source, destination, attempts=10):
+        if Path(source).name.startswith('.marketplace-'):
+            raise OSError('disk')
+        if Path(source).name == 'marketplace.old':
+            raise PermissionError(5, 'locked')
+        return real(source, destination, attempts)
+    monkeypatch.setattr(cc, '_rename', broken)
+    with pytest.raises(OSError, match='disk'):
+        cc.sync_marketplace(MARKET, target, '0.2.0')
+    monkeypatch.setattr(cc, '_rename', real)
+    assert cc.sync_marketplace(MARKET, target, '0.2.0') == 'updated'
+    assert leftover(target) == ['marketplace']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_failure_leaves_no_temporary_file(tmp_path):
+    folder = tmp_path / 'skills'
+    (folder / 'publish.zip').mkdir(parents=True)
+    with pytest.raises(OSError):
+        cc.write_desktop_skills(MARKET / 'obscura', folder)
+    assert not list(folder.glob('*.tmp'))

@@ -19,6 +19,7 @@ NO_DESKTOP_CONFIG = 'Файла налаштувань Claude Desktop немає
 UNUSABLE_CONFIG = 'Файл налаштувань Claude Desktop має невідомий формат; Obscura його не змінювала'
 NO_LAUNCHER = 'Не знайдено програму моста MCP поруч з Obscura'
 NO_PLUGIN = 'Скілів Obscura немає поруч із цією збіркою'
+SKILLS_WRITE_FAILED = 'Не вдалося записати скіли в теку творів: перевірте місце на диску й чи не відкрито ZIP-файли'
 
 
 def _roots() -> cc.Roots:
@@ -109,7 +110,10 @@ def desktop_skills(request: Request):
     if plugin is None:
         return _refusal(request, NO_PLUGIN, 409)
     folder = Path(request.app.state.settings.data_dir) / 'claude' / 'skills'
-    written = cc.write_desktop_skills(plugin, folder)
+    try:
+        written = cc.write_desktop_skills(plugin, folder)
+    except (OSError, skill_bundles.BundleError):
+        return _refusal(request, SKILLS_WRITE_FAILED, 500)
     _open_folder(folder)
     return {'folder': str(folder), 'files': [path.name for path in written]}
 
