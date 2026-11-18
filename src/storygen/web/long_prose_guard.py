@@ -37,6 +37,7 @@ ALLOWED = {
     ('POST', '/api/connect/claude-desktop'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/connect/claude-desktop/bundle'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/connect/claude-desktop/restart'): 'підключення Claude стосується застосунку, не твору',
+    ('POST', '/api/connect/claude-desktop/skills'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/connect/claude-code'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/publication-signatures'): 'підписи автора спільні для всіх творів',
     ('PATCH', '/api/publication-signatures/{id}'): 'підписи автора спільні для всіх творів',

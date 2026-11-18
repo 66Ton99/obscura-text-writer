@@ -374,3 +374,36 @@ def test_plugin_commands_to_copy(tmp_path):
     target = tmp_path / 'my folder' / 'marketplace'
     assert cc.plugin_commands(target) == [f'claude plugin marketplace add "{target}" --scope user',
                                           'claude plugin install obscura@obscura --scope user']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_written_and_foreign_kept(tmp_path):
+    from storygen.skill_bundles import skill_names
+    plugin = MARKET / 'obscura'
+    folder = tmp_path / 'claude' / 'skills'
+    folder.mkdir(parents=True)
+    (folder / 'custom.zip').write_bytes(b'mine')
+    written = cc.write_desktop_skills(plugin, folder)
+    names = skill_names(plugin)
+    assert [path.name for path in written] == [f'{name}.zip' for name in names]
+    assert sorted(p.name for p in folder.iterdir()) == sorted([f'{name}.zip' for name in names] + ['custom.zip'])
+    assert (folder / 'custom.zip').read_bytes() == b'mine'
+    for name in names:
+        assert f'{name}/SKILL.md' in zipfile.ZipFile(folder / f'{name}.zip').namelist()
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_sync_retries_a_briefly_locked_rename(tmp_path, monkeypatch):
+    """Windows: an antivirus or the indexer may hold freshly written files for a moment, so the folder rename is retried."""
+    real, failures = cc.os.replace, []
+
+    def locked_twice(src, dst):
+        if Path(src).name.startswith('.marketplace-') and len(failures) < 2:
+            failures.append(src)
+            raise PermissionError(5, 'Access is denied')
+        return real(src, dst)
+    monkeypatch.setattr(cc.os, 'replace', locked_twice)
+    monkeypatch.setattr(cc.time, 'sleep', lambda seconds: None)
+    target = tmp_path / 'claude' / 'marketplace'
+    assert cc.sync_marketplace(MARKET, target, '0.1.0') == 'created'
+    assert len(failures) == 2 and (target / cc.VERSION_MARKER).is_file()

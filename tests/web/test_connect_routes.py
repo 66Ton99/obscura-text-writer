@@ -166,13 +166,32 @@ def test_claude_code_unconfirmed_keeps_the_command(client, roots, monkeypatch):
 
 
 @pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_route(client, roots, monkeypatch, tmp_path):
+    opened = []
+    monkeypatch.setattr(routes_connect, '_open_folder', opened.append)
+    answer = client.post('/api/connect/claude-desktop/skills')
+    folder = tmp_path / 'data' / 'claude' / 'skills'
+    body = answer.json()
+    assert answer.status_code == 200 and body['folder'] == str(folder) and opened == [folder]
+    assert len(body['files']) == 5 and all((folder / name).is_file() for name in body['files'])
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_desktop_skills_without_plugin(client, roots, monkeypatch, tmp_path):
+    monkeypatch.setattr(routes_connect, '_marketplace_source', lambda: None)
+    answer = client.post('/api/connect/claude-desktop/skills')
+    assert answer.status_code == 409 and answer.json()['detail_original'] == routes_connect.NO_PLUGIN
+    assert not (tmp_path / 'data' / 'claude' / 'skills').exists()
+
+
+@pytest.mark.req('STORE-MCP-001')
 def test_bridge_cannot_use_connect_routes(client, roots, monkeypatch):
     store_config(roots)
     touched = []
     for name in ('write_desktop_entry', 'build_mcpb', 'connect_claude_code', 'restart_desktop', 'sync_marketplace',
-                 'connect_claude_plugin'):
+                 'connect_claude_plugin', 'write_desktop_skills'):
         monkeypatch.setattr(cc, name, lambda *args, _name=name, **kwargs: touched.append(_name))
-    for path in ('claude-desktop', 'claude-desktop/bundle', 'claude-code', 'claude-desktop/restart'):
+    for path in ('claude-desktop', 'claude-desktop/bundle', 'claude-code', 'claude-desktop/restart', 'claude-desktop/skills'):
         answer = client.post(f'/api/connect/{path}', headers={'X-Obscura-Client': 'mcp'})
         assert answer.status_code == 403 and 'лише автор' in answer.json()['detail']
     assert touched == []

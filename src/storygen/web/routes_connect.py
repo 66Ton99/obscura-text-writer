@@ -18,6 +18,7 @@ CONNECT_OWNER_ONLY = 'Підключення до Claude виконує лише
 NO_DESKTOP_CONFIG = 'Файла налаштувань Claude Desktop немає: запустіть Claude Desktop хоч раз і повторіть'
 UNUSABLE_CONFIG = 'Файл налаштувань Claude Desktop має невідомий формат; Obscura його не змінювала'
 NO_LAUNCHER = 'Не знайдено програму моста MCP поруч з Obscura'
+NO_PLUGIN = 'Скілів Obscura немає поруч із цією збіркою'
 
 
 def _roots() -> cc.Roots:
@@ -99,6 +100,18 @@ def desktop_bundle(request: Request):
                            project_version())
     _open_folder(target.parent)
     return {'path': str(target)}
+
+
+@router.post('/api/connect/claude-desktop/skills')
+def desktop_skills(request: Request):
+    """S16: Claude Desktop has no plugin install from outside, so the author uploads one ZIP per skill."""
+    plugin = skill_bundles.plugin_root(_marketplace_source())
+    if plugin is None:
+        return _refusal(request, NO_PLUGIN, 409)
+    folder = Path(request.app.state.settings.data_dir) / 'claude' / 'skills'
+    written = cc.write_desktop_skills(plugin, folder)
+    _open_folder(folder)
+    return {'folder': str(folder), 'files': [path.name for path in written]}
 
 
 @router.post('/api/connect/claude-code')

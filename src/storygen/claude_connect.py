@@ -271,6 +271,18 @@ def marketplace_target(data_dir: Path) -> Path:
     return Path(data_dir) / 'claude' / 'marketplace'
 
 
+def _rename(source: Path, target: Path, attempts: int = 10) -> None:
+    # Windows: an antivirus, the indexer or a reading Claude Code may hold the files for a moment.
+    for attempt in range(attempts):
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.2)
+
+
 def sync_marketplace(source: Path, target: Path, version: str) -> Literal['created', 'updated', 'unchanged']:
     """Copy the user files of the marketplace to `target` as a whole; the old copy survives any failure."""
     marker = target / VERSION_MARKER
@@ -291,12 +303,12 @@ def sync_marketplace(source: Path, target: Path, version: str) -> Literal['creat
         if exists:
             if old.exists():
                 shutil.rmtree(old)
-            os.replace(target, old)
+            _rename(target, old)
         try:
-            os.replace(temporary, target)
+            _rename(temporary, target)
         except OSError:
             if exists:
-                os.replace(old, target)
+                _rename(old, target)
             raise
     except BaseException:
         shutil.rmtree(temporary, ignore_errors=True)
@@ -351,6 +363,19 @@ def connect_claude_plugin(claude: Path, target: Path, run=subprocess.run) -> boo
             return False
     installed = _run(run, base + ['install', PLUGIN, '--scope', 'user'])
     return installed is not None and installed.returncode == 0
+
+
+def write_desktop_skills(plugin: Path, folder: Path) -> list[Path]:
+    """S16: one `<skill>.zip` per skill for upload in Claude Desktop; only these files are overwritten."""
+    folder.mkdir(parents=True, exist_ok=True)
+    written = []
+    for skill in skill_names(plugin):
+        target = folder / f'{skill}.zip'
+        temporary = target.with_name(target.name + '.tmp')
+        temporary.write_bytes(desktop_zip(plugin, skill))
+        os.replace(temporary, target)
+        written.append(target)
+    return written
 
 
 def plugin_commands(target: Path) -> list[str]:
