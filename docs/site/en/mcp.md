@@ -67,7 +67,7 @@ Expand “Connect to Codex” and press the button with the same name. Obscura s
 
 Each change to an existing config.toml creates a unique .obscura-backup-* copy beside it; repeating an unchanged action creates no backup. Repair malformed TOML by hand first. To restore, close Codex, save any later edits and restore the chosen copy. You can copy the PowerShell command for manual setup from the same block.
 
-“Install Codex skills” is a separate checkout action that installs five obscura-* skills and lists their names. MCP success does not confirm skill installation. For conflict, review the named author edits; for partial, also review installed and restored folders and backups before removing anything. Update and recovery details are in the skills section below. The skills button is disabled in Store/frozen builds; MCP configuration remains available.
+“Install Codex skills” is a separate checkout action that installs five obscura-* skills and lists their names. MCP success does not confirm skill installation. For conflict, review the named author edits; for partial, also review installed and restored folders and backups before removing anything. Update and recovery details are in the skills section below. The skills button is disabled in Store/frozen builds. In this update, the Codex buttons target Obscura installed from source; acceptance of the Microsoft Store version is separate.
 
 ### By hand
 
