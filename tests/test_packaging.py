@@ -90,10 +90,13 @@ def test_notices_carry_name_version_licence_and_text(tmp_path):
         'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/LICENSE.BSD', 'BSD 3-CLAUSE LICENSE')], 'BSD-3-Clause'),
         'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], ''),
     }
-    text = third_party_notices(['alpha', 'tray', 'tokenizers'], lookup=table.__getitem__, runtime_license='PYTHON SOFTWARE FOUNDATION LICENSE')
+    licences = tmp_path / 'licences'
+    write(licences, 'tokenizers-1.0.txt', 'Apache License Version 2.0\n\nahash 0.8.12\nMIT text')
+    text = third_party_notices(['alpha', 'tray', 'tokenizers'], lookup=table.__getitem__, runtime_license='PYTHON SOFTWARE FOUNDATION LICENSE',
+                               licenses_dir=licences)
     assert 'Alpha 1.0\nLicence: MIT' in text and 'Permission is hereby granted' in text and 'vendored notice' in text
     assert 'Tray 1.0\nLicence: BSD-3-Clause' in text and 'BSD 3-CLAUSE LICENSE' in text
-    assert 'tokenizers 1.0\nLicence: Apache-2.0' in text and 'github.com/huggingface/tokenizers' in text
+    assert 'tokenizers 1.0\n' in text and 'Apache License Version 2.0' in text and 'ahash 0.8.12\nMIT text' in text
     assert 'Python runtime and the libraries distributed with it' in text and 'PYTHON SOFTWARE FOUNDATION LICENSE' in text
 
 
@@ -113,12 +116,21 @@ def test_distribution_without_a_licence_text_stops_the_build(tmp_path):
         third_party_notices(['mystery'], lookup=table.__getitem__)
 
 
+def test_bundled_licence_of_another_version_stops_the_build(tmp_path):
+    table = {'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], '')}
+    write(tmp_path / 'licences', 'tokenizers-0.9.txt', 'old text')
+    assert missing_licenses(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences') == ['tokenizers']
+    with pytest.raises(ValueError, match='Немає тексту ліцензії для: tokenizers 1.0'):
+        third_party_notices(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences')
+
+
 def test_declared_dependencies_all_have_licence_texts():
     for module in ('keyring', 'reportlab', 'tokenizers'):
         pytest.importorskip(module)
     names = dependency_closure(root_requirements(ROOT / 'pyproject.toml'))
-    assert missing_licenses(names) == []
-    assert len(third_party_notices(names)) > 20000
+    licences = ROOT / packaging.BUNDLED_LICENSES
+    assert missing_licenses(names, licenses_dir=licences) == []
+    assert len(third_party_notices(names, licenses_dir=licences)) > 20000
 
 
 def test_bundled_distributions_come_from_the_freezer_records(tmp_path):

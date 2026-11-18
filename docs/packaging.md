@@ -97,6 +97,14 @@ C:\tmp\obscura-build-venv\Scripts\python.exe scripts/build_store.py --out C:\tmp
 
 `THIRD-PARTY-NOTICES.txt` складається за фактичним вмістом збірки: скрипт читає записи PyInstaller про всі зібрані файли й бере ліцензійні тексти дистрибутивів, яким вони належать, а також ліцензію самого інтерпретатора й PyInstaller. Компонент без тексту ліцензії зупиняє збирання.
 
+Wheel `tokenizers` не має ліцензійного файла, тому його текст разом із ліцензіями 121 бібліотеки Rust, вкомпільованої в нього, лежить у `store_build/licenses/tokenizers-<версія>.txt`. Після оновлення `tokenizers` збирання зупиниться («Немає тексту ліцензії для: tokenizers <версія>»), доки файл не перегенерувати:
+
+```powershell
+./.venv/Scripts/python.exe -I scripts/tokenizers_notices.py --out store_build/licenses/tokenizers-<версія>.txt
+```
+
+Скрипт бере перелік crate зі SBOM встановленого wheel, завантажує архіви з static.crates.io (звіряючи SHA-256 зі SBOM) і текст Apache-2.0 з GitHub. Crate без ліцензійних файлів зупиняє скрипт, доки його не додано в таблицю `MANUAL` із текстом і причиною; старий файл видаліть.
+
 Значок у треї — власний код на Windows API (`storygen/win_tray.py`), сторонньої бібліотеки трея в збірці немає. Якщо в збірку потрапить бібліотека з ліцензією родини GPL (GPL, LGPL, AGPL), збирання зупиняється з її назвою (`copyleft_distributions`), і рішення ухвалює власник. Винятки — лише PyInstaller і `pyinstaller-hooks-contrib` (`COPYLEFT_EXCEPTIONS`): загрузчик PyInstaller має Bootloader Exception, а runtime hooks, що потрапляють у збірку, — під Apache-2.0. Виняток діє, лише поки заявлена ліцензія точно збігається з записаною; тому extra `build` закріплює перевірені версії, а оновлення PyInstaller потребує звірки таблиці.
 
 ## Перевірка встановлення

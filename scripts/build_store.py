@@ -192,7 +192,8 @@ def build(args, out: Path) -> dict:
         runtime = Path(sys.base_prefix) / 'LICENSE.txt'
         if not runtime.is_file():
             raise Refused(f'немає ліцензії інтерпретатора: {runtime}')
-        notices = packaging.third_party_notices(names, runtime_license=runtime.read_text(encoding='utf-8', errors='replace'))
+        notices = packaging.third_party_notices(names, runtime_license=runtime.read_text(encoding='utf-8', errors='replace'),
+                                               licenses_dir=ROOT / packaging.BUNDLED_LICENSES)
     except ValueError as error:
         raise Refused(str(error)) from None
     (target / NOTICES).write_text(notices, encoding='utf-8')

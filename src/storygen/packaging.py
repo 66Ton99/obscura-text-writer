@@ -16,7 +16,9 @@ from .self_check import CHECK_NAMES
 
 EXTRAS = ('web', 'publication', 'local-tokens', 'desktop', 'mcp')
 # Distributions whose wheel carries no licence file: SPDX id and where the text lives. A new one stops the build.
-LICENSE_FALLBACKS = {'tokenizers': ('Apache-2.0', 'https://github.com/huggingface/tokenizers/blob/main/LICENSE')}
+# Licence texts for distributions whose wheel carries none (tokenizers: its own licence and the Rust crates compiled
+# into it), as <normalised name>-<version>.txt relative to the checkout; scripts/tokenizers_notices.py writes them.
+BUNDLED_LICENSES = Path('store_build/licenses')
 # Always named in the notices: the freezer's bootloader is part of the executable.
 ALWAYS_NOTICED = ('pyinstaller',)
 # GPL-family distributions accepted only with exactly these declared licence texts (PACKAGING-001-S06).
@@ -127,8 +129,20 @@ def _license_files(dist) -> list:
     return found
 
 
-def missing_licenses(names, *, lookup=distribution) -> list[str]:
-    return [name for name in names if not _license_files(lookup(name)) and _normal(name) not in LICENSE_FALLBACKS]
+def _bundled_license(name: str, dist, licenses_dir: Path | None) -> Path | None:
+    if licenses_dir is None:
+        return None
+    path = Path(licenses_dir) / f'{_normal(name)}-{dist.version}.txt'
+    return path if path.is_file() else None
+
+
+def missing_licenses(names, *, lookup=distribution, licenses_dir: Path | None = None) -> list[str]:
+    missing = []
+    for name in names:
+        dist = lookup(name)
+        if not _license_files(dist) and _bundled_license(name, dist, licenses_dir) is None:
+            missing.append(name)
+    return missing
 
 
 def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
@@ -150,13 +164,14 @@ def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
     return found
 
 
-def third_party_notices(names, *, lookup=distribution, runtime_license: str = '') -> str:
+def third_party_notices(names, *, lookup=distribution, runtime_license: str = '', licenses_dir: Path | None = None) -> str:
+    """A distribution without licence files takes `<licenses_dir>/<name>-<version>.txt`; without that file the build stops."""
     copyleft = copyleft_distributions(names, lookup=lookup)
     if copyleft:
         raise ValueError('Бібліотека з ліцензією родини GPL у збірці: ' + ', '.join(copyleft))
-    missing = missing_licenses(names, lookup=lookup)
+    missing = missing_licenses(names, lookup=lookup, licenses_dir=licenses_dir)
     if missing:
-        raise ValueError('Немає тексту ліцензії для: ' + ', '.join(missing))
+        raise ValueError('Немає тексту ліцензії для: ' + ', '.join(f'{name} {lookup(name).version}' for name in missing))
     parts = ['Obscura Text Writer — third-party notices\n',
              'This build includes the following components. Each is distributed under its own licence, reproduced below.\n']
     if runtime_license:
@@ -164,11 +179,11 @@ def third_party_notices(names, *, lookup=distribution, runtime_license: str = ''
     for name in names:
         dist = lookup(name)
         declared = dist.metadata.get('License-Expression') or ((dist.metadata.get('License') or '').strip().splitlines() or [''])[0]
-        fallback = LICENSE_FALLBACKS.get(_normal(name))
-        header = f"\n{'=' * 78}\n{dist.metadata['Name']} {dist.version}\nLicence: {declared or (fallback[0] if fallback else 'see the text below')}\n"
+        header = f"\n{'=' * 78}\n{dist.metadata['Name']} {dist.version}\nLicence: {declared or 'see the text below'}\n"
         files = _license_files(dist)
         if not files:
-            parts.append(header + f'The distribution carries no licence file. Licence text: {fallback[1]}\n')
+            bundled = _bundled_license(name, dist, licenses_dir)
+            parts.append(header + f"{'-' * 78}\n{bundled.read_text(encoding='utf-8').strip()}\n")
             continue
         parts.append(header)
         for item in files:

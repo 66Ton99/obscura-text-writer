@@ -4830,6 +4830,25 @@
       ]
     },
     {
+      "id": "PACKAGING-001-S08",
+      "requirement": "PACKAGING-001",
+      "scope": "Ліцензії tokenizers: crate зі SBOM (лише required з crates.io), ліцензійні файли з кореня архіву, звірка SHA-256, MANUAL для crate без файлів, однакові тексти один раз; вкладений файл потрапляє в повідомлення, інша версія зупиняє збирання.",
+      "tests": [
+        "tests/test_tokenizers_notices.py::test_crates_from_sbom_take_required_registry_crates_only",
+        "tests/test_tokenizers_notices.py::test_license_texts_take_root_licence_files_only",
+        "tests/test_tokenizers_notices.py::test_crate_without_licence_files_needs_a_manual_entry",
+        "tests/test_tokenizers_notices.py::test_archive_with_another_hash_is_refused",
+        "tests/test_tokenizers_notices.py::test_render_prints_identical_texts_once",
+        "tests/test_packaging.py::test_notices_carry_name_version_licence_and_text",
+        "tests/test_packaging.py::test_bundled_licence_of_another_version_stops_the_build",
+        "tests/test_packaging.py::test_declared_dependencies_all_have_licence_texts"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Сам файл готується з мережі (crates.io, GitHub) один раз на версію tokenizers; тести покривають розбір і відмови на фікстурах, а готовий файл перевіряє тест повідомлень для встановлених залежностей."
+      }
+    },
+    {
       "id": "PACKAGING-001-S07",
       "requirement": "PACKAGING-001",
       "scope": "Робочий процес store-build: Windows і офіційний CPython 3.12, тестова ідентичність або --skip-msix, артефакти на 7 днів, без секретів і лише contents: read.",

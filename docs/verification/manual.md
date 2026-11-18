@@ -337,7 +337,7 @@ PACKAGING-001-S02, PACKAGING-001-S03, PACKAGING-001-S05. Встановити з
 <a id="store-package-ci"></a>
 ## Збирання пакета в GitHub Actions
 
-PACKAGING-001-S07. Відкрити запуск `store-build` для PR (або запустити вручну з вкладки Actions після злиття файла в `main`). Запуск зелений; в артефакті `store-build-reports` є `BUILD-OK.json` і `self-check.json` з `ok=true`, `frozen=true`, `edition=store` і версією з `pyproject.toml`; `THIRD-PARTY-NOTICES.txt` містить PyInstaller і `pyinstaller-hooks-contrib`. Якщо в журналі немає попередження про `makeappx`, у тому ж артефакті є `Obscura-<версія>.msix`: відкрити його як ZIP і перевірити `AppxManifest.xml` (ідентичність `Obscura.CI`), три значки в `Assets/`, `obscura-mcp.exe` і теку `claude/`. Після відмови в артефакті є `BUILD-FAILED.txt` із причиною. Пакет із CI не підписаний і не встановлюється.
+PACKAGING-001-S07. Відкрити запуск `store-build` для PR (або запустити вручну з вкладки Actions після злиття файла в `main`). Запуск зелений; в артефакті `store-build-reports` є `BUILD-OK.json` і `self-check.json` з `ok=true`, `frozen=true`, `edition=store` і версією з `pyproject.toml`; `THIRD-PARTY-NOTICES.txt` містить PyInstaller, `pyinstaller-hooks-contrib` і розділ `tokenizers` з повним текстом Apache-2.0 та ліцензіями crate Rust. Якщо в журналі немає попередження про `makeappx`, у тому ж артефакті є `Obscura-<версія>.msix`: відкрити його як ZIP і перевірити `AppxManifest.xml` (ідентичність `Obscura.CI`), три значки в `Assets/`, `obscura-mcp.exe` і теку `claude/`. Після відмови в артефакті є `BUILD-FAILED.txt` із причиною. Пакет із CI не підписаний і не встановлюється.
 
 <a id="store-package-install"></a>
 ## Встановлення зібраного пакета (виконує власник машини)
