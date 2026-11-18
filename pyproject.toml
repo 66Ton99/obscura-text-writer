@@ -20,7 +20,7 @@ browser = ["playwright>=1.40,<2", "httpx2>=2,<3"]
 mcp = ["mcp==2.3.0"]
 keys = ["keyring>=25,<26"]
 desktop = ["Pillow>=11,<13", "keyring>=25,<26"]
-build = ["pyinstaller>=6,<7", "packaging>=24"]
+build = ["pyinstaller==6.22.3", "pyinstaller-hooks-contrib==2026.10", "packaging>=24"]
 
 [project.scripts]
 storygen-local-tokens = "storygen.token_budget.local_cli:main"

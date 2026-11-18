@@ -235,6 +235,40 @@ def test_copyleft_is_found_by_expression_licence_or_classifier():
     assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['gpl', 'lgpl-text', 'lgpl-classifier']
 
 
+def _exception_distribution(name, texts):
+    licence = [text for text in texts if not text.startswith('License ::')]
+    return MetadataDistribution(name, License=licence[0] if licence else None,
+                                Classifier=[text for text in texts if text.startswith('License ::')])
+
+
+def test_copyleft_exceptions_pass_only_with_the_exact_declared_licence():
+    pyi = packaging.COPYLEFT_EXCEPTIONS['pyinstaller'][0]
+    hooks = packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0]
+    table = {
+        'pyinstaller': _exception_distribution('pyinstaller', pyi),
+        'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks),
+        'PyInstaller_Hooks.Contrib': _exception_distribution('PyInstaller_Hooks.Contrib', hooks),
+    }
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == []
+
+
+def test_copyleft_exception_with_changed_licence_is_refused():
+    hooks = set(packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0]) | {'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'}
+    table = {'pyinstaller': MetadataDistribution('pyinstaller', License='GPL-3.0-only'),
+             'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks)}
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['pyinstaller', 'pyinstaller-hooks-contrib']
+
+
+def test_copyleft_exception_table_names_a_reason_for_each_entry():
+    assert set(packaging.COPYLEFT_EXCEPTIONS) == {'pyinstaller', 'pyinstaller-hooks-contrib'}
+    assert all(reason.strip() for _, reason in packaging.COPYLEFT_EXCEPTIONS.values())
+
+
+def test_installed_freezer_matches_the_exception_table():
+    pytest.importorskip('PyInstaller')
+    assert copyleft_distributions(['pyinstaller', 'pyinstaller-hooks-contrib']) == []
+
+
 def test_copyleft_distribution_stops_the_notices(tmp_path):
     table = {'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/COPYING', 'text')], 'LGPL-3.0-only')}
     with pytest.raises(ValueError, match='родини GPL.*tray'):

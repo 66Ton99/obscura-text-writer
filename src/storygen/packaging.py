@@ -18,6 +18,17 @@ EXTRAS = ('web', 'publication', 'local-tokens', 'desktop', 'mcp')
 LICENSE_FALLBACKS = {'tokenizers': ('Apache-2.0', 'https://github.com/huggingface/tokenizers/blob/main/LICENSE')}
 # Always named in the notices: the freezer's bootloader is part of the executable.
 ALWAYS_NOTICED = ('pyinstaller',)
+# GPL-family distributions accepted only with exactly these declared licence texts (PACKAGING-001-S06).
+_GPL2_CLASSIFIER = 'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'
+COPYLEFT_EXCEPTIONS: dict[str, tuple[frozenset[str], str]] = {
+    'pyinstaller': (
+        frozenset({'GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute '
+                   'non-free programs (including commercial ones)', _GPL2_CLASSIFIER}),
+        'Bootloader Exception (COPYING.txt): у збірку потрапляють лише загрузчик і пов’язані файли'),
+    'pyinstaller-hooks-contrib': (
+        frozenset({'License :: OSI Approved :: Apache Software License', _GPL2_CLASSIFIER}),
+        'runtime hooks, що потрапляють у збірку, під Apache-2.0 (LICENSE, розділ Runtime hooks)'),
+}
 # Files the standard library of some interpreters reads at run time and the freezer does not collect.
 VENDOR_RUNTIME_FILES = ('codex-rejected-cas.pem',)
 # Not part of the main executable: the MCP bridge (frozen separately, STORE-MCP) and anything only tests use.
@@ -120,13 +131,19 @@ def missing_licenses(names, *, lookup=distribution) -> list[str]:
 
 
 def copyleft_distributions(names, *, lookup=distribution) -> list[str]:
-    """Distributions under a GPL-family licence (GPL, LGPL, AGPL): the build must not contain them (PACKAGING-001-S03)."""
+    """Distributions under a GPL-family licence (GPL, LGPL, AGPL): the build must not contain them (PACKAGING-001-S03).
+
+    A COPYLEFT_EXCEPTIONS entry passes only while its declared licence texts match exactly."""
     found = []
     for name in names:
         metadata = lookup(name).metadata
         classifiers = metadata.get_all('Classifier') if hasattr(metadata, 'get_all') else metadata.get('Classifier', [])
         declared = [metadata.get('License-Expression') or '', metadata.get('License') or '']
         declared += [item for item in classifiers or [] if item.startswith('License ::')]
+        declared = frozenset(text for text in declared if text)
+        exception = COPYLEFT_EXCEPTIONS.get(_normal(name))
+        if exception is not None and declared == exception[0]:
+            continue
         if any('GPL' in text.upper() for text in declared):
             found.append(name)
     return found

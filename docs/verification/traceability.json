@@ -4818,6 +4818,18 @@
       }
     },
     {
+      "id": "PACKAGING-001-S06",
+      "requirement": "PACKAGING-001",
+      "scope": "Таблиця винятків GPL-перевірки: точні заявлені ліцензії PyInstaller і hooks-contrib проходять, змінена ліцензія відмовляє, кожен виняток має причину, встановлені версії збігаються з таблицею.",
+      "tests": [
+        "tests/test_packaging.py::test_copyleft_exceptions_pass_only_with_the_exact_declared_licence",
+        "tests/test_packaging.py::test_copyleft_exception_with_changed_licence_is_refused",
+        "tests/test_packaging.py::test_copyleft_exception_table_names_a_reason_for_each_entry",
+        "tests/test_packaging.py::test_installed_freezer_matches_the_exception_table",
+        "tests/test_packaging.py::test_copyleft_is_found_by_expression_licence_or_classifier"
+      ]
+    },
+    {
       "id": "MEMORY-SELECT-S01",
       "requirement": "MEMORY-SELECT",
       "scope": "Запит без переповнення не змінюється; розкладання проєкції на рядки байтово тотожне попередній реалізації.",

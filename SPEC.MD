@@ -3800,7 +3800,7 @@ Restore перевіряє complete manifest, точний inventory, кожни
 - THEN для кожного встановленого дистрибутива, якому належить хоч один зібраний файл, і для самого PyInstaller є назва, версія, заявлена ліцензія й текст його ліцензійних файлів із `*.dist-info`, а також ліцензія інтерпретатора з бібліотеками, що постачаються з ним
 - AND дистрибутив без ліцензійного файла й без запису в переліку відомих винятків зупиняє збирання з його назвою
 - AND вихідний файл пакета з назвою на кшталт `license.py` текстом ліцензії не вважається
-- AND дистрибутив з ліцензією родини GPL (GPL, LGPL, AGPL у `License-Expression`, `License` чи класифікаторах) зупиняє збирання з його назвою.
+- AND дистрибутив з ліцензією родини GPL (GPL, LGPL, AGPL у `License-Expression`, `License` чи класифікаторах) зупиняє збирання з його назвою, крім винятків PACKAGING-001-S06.
 
 <a id="packaging-001-s04"></a>
 #### Scenario: PACKAGING-001-S04 — Маніфест і версія пакета
@@ -3819,12 +3819,20 @@ Restore перевіряє complete manifest, точний inventory, кожни
 - AND на інтерпретаторі без таких файлів перелік порожній, а збирання не змінюється
 - AND без цього файла самоперевірка зібраного застосунку повідомляє невдачу `tls_context`.
 
+<a id="packaging-001-s06"></a>
+#### Scenario: PACKAGING-001-S06 — Винятки GPL-перевірки за точною ліцензією
+- GIVEN таблиця `COPYLEFT_EXCEPTIONS` з двома записами — `pyinstaller` (Bootloader Exception у `COPYING.txt`: у збірку потрапляють лише загрузчик і пов’язані файли) і `pyinstaller-hooks-contrib` (runtime hooks, що потрапляють у збірку, під Apache-2.0) — з точним набором заявлених текстів ліцензії й причиною для кожного
+- WHEN перевіряється дистрибутив із цією назвою (у будь-якому написанні за нормалізацією назв)
+- THEN він проходить лише тоді, коли набір його непорожніх `License-Expression`, `License` і класифікаторів `License ::` точно дорівнює очікуваному
+- AND та сама назва з іншою чи доповненою заявленою ліцензією зупиняє збирання з її назвою, як і будь-яка інша GPL-бібліотека
+- AND тексти ліцензій обох пакетів лишаються в `THIRD-PARTY-NOTICES.txt`, а extra `build` закріплює саме перевірені версії (`pyinstaller==6.22.3`, `pyinstaller-hooks-contrib==2026.10`).
+
 #### Технічний опис і сумісність (PACKAGING-001)
 
 - **Модулі.** `storygen/self_check.py` (`run_checks`, `CHECK_NAMES`, `CheckFailed`); `storygen/build_manifest.py` (`load`, `project_version`: версія з маніфесту збірки, інакше з метаданих встановлення); `storygen/packaging.py` (`edition_marker`, `root_requirements`, `dependency_closure`, `toc_sources`, `bundled_distributions`, `missing_licenses`, `copyleft_distributions`, `third_party_notices`, `vendor_runtime_files`, `package_data_manifest`, `stray_data_files`, `pyinstaller_args`, `check_report`, `package_version`, `appx_manifest`, `find_makeappx`); `scripts/build_store.py`; `store_build/msix/Assets` (значки-заглушки). `desktop.main` приймає `--self-check <файл>`; `GET /api/app-info` бере версію з `project_version`.
 - **Порядок збирання.** Тека результату й аргументи → позначка (у пам’яті), версія пакета, `makeappx`, маніфест збірки з `git ls-files src/storygen` (усе, що може відмовити, — до заморожування) → перевірка, що `storygen` у середовищі з `PYTHONPATH=<робоча копія>/src` береться з робочої копії → PyInstaller (`--noupx`, без `--copy-metadata`, виключені `storygen.mcp`, `mcp`, `pytest`, `_pytest`) → перевірка на чужі метадані й невідстежувані файли → позначка й маніфест у `_internal/storygen/`, файли `vendor_runtime_files` у `_internal/` → міст MCP ([STORE-MCP-001](#store-mcp-001)): окремий консольний PyInstaller `obscura-mcp` (`--contents-directory _mcp`, виключені лише `pytest`, `_pytest`), `obscura-mcp.exe` і `_mcp/` поруч з `Obscura.exe`, файли `vendor_runtime_files` і в `_mcp/`, перевірка `obscura-mcp.exe --help` і `--self-check` → повідомлення за записами `*.toc` обох заморожувань → `Obscura.exe --self-check` (тайм-аут 120 с) → `check_report` → розкладка з маніфестом і значками → `makeappx pack` → `BUILD-OK.json`.
 - **Пастка PyInstaller.** Виклик `importlib.resources.files('<назва дистрибутива>')` з буквальною назвою PyInstaller сприймає як `importlib.metadata.files` і копіює в збірку метадані встановленого дистрибутива. Тому в `build_edition.py`, `build_manifest.py` і `self_check.py` пакет названо через `__package__`, а версія читається через `version(DISTRIBUTION)`.
-- **Залежності збирання.** Extra `build` (`pyinstaller`, `packaging`); `makeappx` із Windows SDK або пакета `Microsoft.Windows.SDK.BuildTools`.
+- **Залежності збирання.** Extra `build` (`pyinstaller==6.22.3`, `pyinstaller-hooks-contrib==2026.10`, `packaging`); нова версія PyInstaller потребує перегляду `COPYLEFT_EXCEPTIONS` — тест `test_installed_freezer_matches_the_exception_table` падає, якщо метадані змінилися. З 15.11.2026 (`a552ddf`) до цієї зміни GPL-перевірка відхиляла будь-яку збірку, бо шукала підрядок «GPL» і в самому PyInstaller (усунене відхилення); `makeappx` із Windows SDK або пакета `Microsoft.Windows.SDK.BuildTools`.
 - **Проби й фактичні збирання (11.11.2026).** `makeappx` 10.0.28000.2957 з чинним підписом Microsoft. Після правок рев’ю: без MSIX — 30 с, 337 файлів, 78,9 МБ, 198 файлів даних звірено, повідомлення для 52 компонентів, сім перевірок пройдено; з MSIX — 32 с, `Obscura-0.1.0.0.msix` 42,1 МБ. Зворотні проби: змінений файл міграції у збірці — код 5 з назвою файла; без файла сертифікатів і позначки — код 5 з обома причинами; MSIX без `--allow-vendor-runtime` — відмова. До правок збірка брала дані й метадані зі встановленої копії пакета, а не з робочої. На офіційному CPython 3.12.10 (окреме середовище): 37 с, 335 файлів, 75,2 МБ, MSIX 41,6 МБ, перелік додаткових файлів інтерпретатора порожній, сім перевірок пройдено, зібраний застосунок стартує.
 - **Сумісність.** Формат даних і API не змінюються, крім джерела версії в `/api/app-info`. Сторінки сайту для користувачів не змінюються до публікації пакета; посібник для того, хто збирає, — `docs/packaging.md`.
 
