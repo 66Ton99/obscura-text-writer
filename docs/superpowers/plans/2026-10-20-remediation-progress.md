@@ -2421,3 +2421,10 @@ Tasks5–8 checkout-поправки завершено: M1–M3, main17fbe56, �
 ### Codex206 — конкурентне оновлення main після B1
 
 Під час запису B1 main оновився до d12c8a7 (#208 Store PR2). Інтегровано без власних змін Claude/Store-файлів;4docs-конфлікти: SPEC зберігає Codex-конфігуратор та новий опис packaging, журнал містить обидві історії, sync mcp перераховано, STATUS буде замінено свіжим verify. Автоматично злиті uk/en mcp зберігають обидва набори інструкцій; pyproject бере версію1.0.0 та pinned MCP2.3.0, зберігаючи tomlkit extra web. B1 доказ для027434b чинний для незмінених Codex-компонентів і джерел скілів; full/browser gate оновленого main запускається окремо.
+
+
+### Codex206 — фінальна перевірка main208
+
+Після інтеграції main d12c8a7 (#208), merge67fdc0b: повний verify.py3753passed,0failed/errors,20skip (18POSIX sh unavailable,2Windows symlink permissions),source_changed=false; artifacts/verification-eor0jsy6. 24browser Codex+Claude desktop/mobile PASS. CI store-build44341453142 і site44341453297 SUCCESS. Захищені Claude/Store-файли відносно нового main не змінені. Codex core/routes/installer/generator та джерела SKILL.md/references/shared не змінилися від027434b; B1 докази залишаються для цієї поведінки. B1 PASS — штатна Test/.agents/skills, обидва backend,27tools,list_stories=[],model_turns0, GUI підтвердив власник. Злиття PR206 не виконано.
+
+Inherited whitespace у ліцензійному тексті tokenizers із main не редагували; власні конфліктні docs перевірено diff --check. Повторного model cross-review після вже виконаного safety pass немає (once per PR); автоматично злитий main208 мав власне review. User docs uk/en mcp збережені та rehash; ця фінальна зміна — записи приймання без продуктових змін.
