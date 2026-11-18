@@ -29,6 +29,6 @@
 
 Через Git Bash: python -X utf8 scripts/verify.py tests/test_pre_push_hook.py -q.
 Ревізія та snapshot збігаються з повним прогоном вище: 1fbca9e; source_changed_during_run=false.
-18 passed, 0 failed/errors/skipped. [Результат](../artifacts/verification-9g_cdcdu/result.json), [JUnit](../artifacts/verification-9g_cdcdu/junit.xml).
+18 passed, 0 failed/errors/skipped. Результат: artifacts/verification-9g_cdcdu/result.json; JUnit: artifacts/verification-9g_cdcdu/junit.xml (локальні артефакти verify.py, не відстежуються git).
 Це саме 18 перевірок, пропущених повним PowerShell-прогоном через відсутній sh у PATH.
 Разом виконано 3691 унікальний тест; два symlink-тести лишаються skipped через дозволи Windows. Звіт не підтверджує GUI або Store runtime.
