@@ -422,3 +422,74 @@ def test_build_script_refuses_bad_arguments_before_freezing(tmp_path, arguments,
     result = run_script('--out', str(out), *arguments)
     assert result.returncode == 1 and needle in result.stderr
     assert not out.exists() or sorted(p.name for p in out.iterdir()) == ['BUILD-FAILED.txt']
+
+
+def _load_build_store():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('build_store_under_test', ROOT / 'scripts' / 'build_store.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def plugin_tree(tmp_path):
+    root = tmp_path / 'integrations' / 'claude'
+    files = {
+        '.claude-plugin/marketplace.json': '{}',
+        'obscura/.claude-plugin/plugin.json': '{"name": "obscura"}',
+        'obscura/shared/rules.md': 'rules',
+        'obscura/skills/start-story/SKILL.md': '---\nname: start-story\n---\nSee ${CLAUDE_PLUGIN_ROOT}/shared/rules.md\n',
+        'obscura/evals/x.json': '{}',
+    }
+    for rel, text in files.items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(text, encoding='utf-8')
+    return root, sorted(files)
+
+
+def test_plugin_files_are_tracked_user_files_only(plugin_tree):
+    root, tracked = plugin_tree
+    (root / 'obscura/skills/start-story/draft.tmp').write_text('stray', encoding='utf-8')
+    assert packaging.plugin_files(root, tracked) == ['.claude-plugin/marketplace.json', 'obscura/.claude-plugin/plugin.json',
+                                                     'obscura/shared/rules.md', 'obscura/skills/start-story/SKILL.md']
+
+
+def test_plugin_files_refuse_a_plugin_without_manifest(plugin_tree):
+    root, tracked = plugin_tree
+    (root / 'obscura/.claude-plugin/plugin.json').unlink()
+    with pytest.raises(ValueError, match='plugin.json'):
+        packaging.plugin_files(root, [rel for rel in tracked if not rel.endswith('plugin.json')])
+
+
+def test_plugin_files_refuse_a_cross_skill_reference(plugin_tree):
+    root, tracked = plugin_tree
+    skill = root / 'obscura/skills/draft-scene/SKILL.md'
+    skill.parent.mkdir(parents=True)
+    skill.write_text('Use ${CLAUDE_PLUGIN_ROOT}/skills/start-story/SKILL.md\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='draft-scene'):
+        packaging.plugin_files(root, tracked + ['obscura/skills/draft-scene/SKILL.md'])
+
+
+def test_repository_plugin_files_hold_every_skill():
+    listed = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z', 'integrations/claude'], capture_output=True, check=True)
+    prefix = 'integrations/claude/'
+    tracked = [item[len(prefix):] for item in listed.stdout.decode('utf-8').split('\0') if item]
+    files = packaging.plugin_files(ROOT / 'integrations' / 'claude', tracked)
+    for skill in ('start-story', 'draft-scene', 'publish', 'series-bible', 'setup-models'):
+        assert f'obscura/skills/{skill}/SKILL.md' in files
+    assert not [rel for rel in files if rel.startswith('obscura/evals/')]
+
+
+def test_bridge_check_requires_the_guide(monkeypatch, tmp_path):
+    build_store = _load_build_store()
+    answers = {'--help': b'storygen-mcp\n', '--self-check': b'storygen-mcp: ok\nguide: absent\n'}
+
+    def fake(arguments, **kwargs):
+        return subprocess.CompletedProcess(arguments, 0, stdout=answers[arguments[1]], stderr=b'')
+
+    monkeypatch.setattr(build_store.subprocess, 'run', fake)
+    with pytest.raises(build_store.Refused, match='провідник'):
+        build_store.check_bridge(tmp_path)
+    answers['--self-check'] = b'storygen-mcp: ok\nguide: ok\n'
+    build_store.check_bridge(tmp_path)

@@ -52,11 +52,24 @@ def parse(argv):
     return parser.parse_args(argv)
 
 
-def tracked_package_files() -> list[str]:
-    listed = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z', packaging.PACKAGE_DIR], capture_output=True, timeout=60)
+PLUGIN_DIR = 'integrations/claude'
+
+
+def tracked_files(path: str) -> list[str]:
+    listed = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z', path], capture_output=True, timeout=60)
     if listed.returncode:
         raise Refused('не вдалося отримати перелік відстежуваних файлів (git ls-files)')
     return [item for item in listed.stdout.decode('utf-8').split('\0') if item]
+
+
+def tracked_package_files() -> list[str]:
+    return tracked_files(packaging.PACKAGE_DIR)
+
+
+def tracked_plugin_files() -> list[str]:
+    """STORE-MCP: the Claude plugin files to ship in claude\\, relative to integrations/claude."""
+    prefix = PLUGIN_DIR + '/'
+    return packaging.plugin_files(ROOT / PLUGIN_DIR, [item[len(prefix):] for item in tracked_files(PLUGIN_DIR)])
 
 
 def freeze_bridge(work: Path, bridge_work: Path, bridge_dist: Path, environment: dict) -> None:
@@ -88,6 +101,8 @@ def check_bridge(target: Path) -> None:
             raise Refused(f'міст MCP не запустився: {type(error).__name__}') from None
         if answered.returncode or expected not in answered.stdout:
             raise Refused(f'міст MCP не пройшов перевірку {flag} (код виходу {answered.returncode})')
+        if flag == '--self-check' and b'guide: ok' not in answered.stdout:
+            raise Refused('міст MCP не бачить провідника (тека claude\\ поруч з exe)')
 
 
 def build(args, out: Path) -> dict:
@@ -102,6 +117,7 @@ def build(args, out: Path) -> dict:
                 raise Refused('для пакета MSIX потрібні --' + ', --'.join(flag.replace('_', '-') for flag in missing))
             makeappx = packaging.find_makeappx(args.makeappx)
         manifest = packaging.package_data_manifest(ROOT, project['version'], tracked_package_files())
+        plugin = tracked_plugin_files()
     except ValueError as error:
         raise Refused(str(error)) from None
     vendor_files = packaging.vendor_runtime_files(Path(shutil.__file__).parent)
@@ -164,6 +180,11 @@ def build(args, out: Path) -> dict:
     for extra in vendor_files:
         # The bridge has its own runtime folder: without these files a vendor interpreter cannot create a TLS context.
         shutil.copyfile(extra, target / packaging.BRIDGE_CONTENTS / extra.name)
+    for rel in plugin:
+        # STORE-MCP: the bridge and the app find the Claude plugin in claude\ next to the executable.
+        destination = target / 'claude' / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / PLUGIN_DIR / rel, destination)
     check_bridge(target)
     try:
         bundled = packaging.bundled_distributions(packaging.toc_sources(pyinstaller_work) + packaging.toc_sources(bridge_work))
@@ -195,8 +216,9 @@ def build(args, out: Path) -> dict:
     summary = {'edition': args.edition, 'version': project['version'], 'package_version': version, 'files': len(files),
                'megabytes': round(sum(path.stat().st_size for path in files) / 1e6, 1), 'data_files': len(manifest['files']),
                'bridge_megabytes': round(sum(path.stat().st_size for path in (target / packaging.BRIDGE_CONTENTS).rglob('*') if path.is_file()) / 1e6, 1),
-               'components_with_notices': names, 'vendor_runtime_files': [path.name for path in vendor_files], 'msix': None}
+               'components_with_notices': names, 'plugin_files': plugin, 'vendor_runtime_files': [path.name for path in vendor_files], 'msix': None}
     print(f"Збірка: {target} ({summary['files']} файлів, {summary['megabytes']} МБ), видання {args.edition}, версія {project['version']}")
+    print(f"Плагін Claude у claude\\: {len(plugin)} файлів")
     if args.skip_msix:
         return summary
 

@@ -10,6 +10,7 @@ from importlib.metadata import PackageNotFoundError, distribution, distributions
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
+from . import skill_bundles
 from .build_edition import parse_build_edition
 from .self_check import CHECK_NAMES
 
@@ -174,6 +175,20 @@ def third_party_notices(names, *, lookup=distribution, runtime_license: str = ''
             text = Path(dist.locate_file(item)).read_text(encoding='utf-8', errors='replace').strip()
             parts.append(f"{'-' * 78}\n{Path(str(item)).name}\n\n{text}\n")
     return ''.join(parts)
+
+
+def plugin_files(root: Path, tracked) -> list[str]:
+    """STORE-MCP: the Claude plugin files shipped in `claude\\` next to Obscura.exe — tracked files under the user part
+    of the marketplace only (no evals, no stray drafts), as sorted POSIX paths relative to `root` (`integrations/claude`).
+
+    Raises ValueError when the plugin manifest is missing or a skill cannot become a self-contained bundle."""
+    files = sorted({rel for rel in tracked if rel.startswith(skill_bundles.USER_FILES) and (root / rel).is_file()})
+    if 'obscura/.claude-plugin/plugin.json' not in files:
+        raise ValueError('у плагіні Claude немає obscura/.claude-plugin/plugin.json')
+    plugin = root / 'obscura'
+    for skill in skill_bundles.skill_names(plugin):
+        skill_bundles.bundle_files(plugin, skill)
+    return files
 
 
 def vendor_runtime_files(python_lib: Path) -> list[Path]:
