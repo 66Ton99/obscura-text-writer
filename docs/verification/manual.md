@@ -368,13 +368,14 @@ STORE-MCP-S04 наживо. Не виконано: потребує підпис
    - у файлі змінився лише запис `obscura` з командою псевдоніма `…\WindowsApps\obscura-mcp.exe`.
 2. **Перезапуск.** «Перезапустити Claude зараз» → підтвердити. Claude Desktop закривається й відкривається знову, а сесії Claude Code працюють далі.
 3. **Перевірка в Claude Desktop.** Попросити список творів.
-4. **Claude Code.** «Підключити Claude Code» → «Claude Code підключено»; у новій сесії Claude Code попросити список творів.
+4. **Claude Code.** «Підключити Claude Code» → «Claude Code підключено разом зі скілами Obscura»; у `%USERPROFILE%\Obscura\claude\marketplace` є `obscura-version.txt` з версією пакета. У новій сесії Claude Code `claude plugin list` показує `obscura@obscura`; попросити «почни нову історію» — працює скіл `start-story` (питання по одному), і список творів відкривається (STORE-MCP-S15).
+4a. **Скіли для Claude Desktop.** «Скіли для Claude Desktop» → відкривається `…\Obscura\claude\skills` з п’ятьма ZIP. У Claude Desktop: Settings → Capabilities → Code execution and file creation; Customize → Skills → «+» → Create skill → Upload a skill, завантажити `start-story.zip`. Скіл з’являється в списку; у новій розмові «почни нову історію» веде інтерв’ю за скілом (STORE-MCP-S16).
 5. **Автозапуск і значок.** Значок Obscura є у треї: лівий клік відкриває сторінку, правий — меню біля значка. Вийти через «Вийти» в меню й попросити Claude продовжити історію: Obscura запускається сама у треї.
 6. **Запасний шлях.** «Інший спосіб» → «Підготувати файл розширення», відкривається тека з `obscura.mcpb`. Перетягнути файл у Claude → Settings → Desktop app → Extensions → Install.
 7. **Межа видання.** Попросити чат створити серію чи книгу з частинами: відповідь пояснює платну версію й дає посилання на запис.
 
 Наприкінці:
-- прибрати записи `obscura` (у Claude Desktop — з копії, у Claude Code — `claude mcp remove --scope user obscura`) і розширення;
+- прибрати записи `obscura` (у Claude Desktop — з копії, у Claude Code — `claude mcp remove --scope user obscura`), розширення, плагін (`claude plugin uninstall obscura@obscura`, `claude plugin marketplace remove obscura`) і завантажені скіли Claude Desktop;
 - прибрати сертифікат із довірених.
 
 Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
@@ -388,7 +389,8 @@ STORE-MCP-S08–S10. Автоматична частина — Playwright `tests
 - «Перезапустити Claude зараз» питає підтвердження про відкриту розмову й показує «Claude Desktop перезапускається»;
 - без файлу налаштувань «Підготувати файл розширення» показує кроки Settings → Desktop app → Extensions;
 - без Claude Code блок показує команду й «Копіювати»;
-- англійська локаль перекладає блок.
+- англійська локаль перекладає блок;
+- «Скіли для Claude Desktop» показує теку й кроки Upload a skill; Claude Code зі скілами — «разом зі скілами Obscura», без скілів — команди `claude plugin` для копіювання (STORE-MCP-S15, S16).
 
 Запуск із кодом робочої теки: `PYTHONPATH=<тека>/src` і `cd frontend; npx playwright test claude-connect`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
 

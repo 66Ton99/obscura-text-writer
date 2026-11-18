@@ -5295,9 +5295,9 @@
     {
       "id": "MCP-BRIDGE-S06",
       "requirement": "MCP-BRIDGE",
-      "scope": "Рівно двадцять шість інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Рівно двадцять сім інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
-        "tests/mcp/test_bridge.py::test_tool_list_is_exactly_the_twenty_six_tools",
+        "tests/mcp/test_bridge.py::test_tool_list_is_exactly_the_twenty_seven_tools",
         "tests/mcp/test_bridge.py::test_get_story_reports_scene_states_with_the_ui_vocabulary",
         "tests/mcp/test_bridge.py::test_next_steps_points_to_the_scene_in_obscura",
         "tests/mcp/test_bridge.py::test_identifiers_cannot_reach_other_endpoints",
@@ -5834,11 +5834,12 @@
     {
       "id": "STORE-MCP-S06",
       "requirement": "STORE-MCP-001",
-      "scope": "Prompt start_story і посилання next_steps в INSTRUCTIONS. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Prompt start_story: задум автора і скіл start-story з плагіна, короткий шлях без плагіна, посилання next_steps в INSTRUCTIONS. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
         "tests/mcp/test_bridge_prompt.py::test_start_story_prompt_walks_from_idea_to_the_obscura_window",
         "tests/mcp/test_bridge_prompt.py::test_instructions_offer_the_obscura_link",
-        "tests/mcp/test_bridge_prompt.py::test_start_story_without_idea_asks_the_person"
+        "tests/mcp/test_bridge_prompt.py::test_start_story_without_idea_asks_the_person",
+        "tests/mcp/test_bridge_prompt.py::test_start_story_prompt_keeps_the_idea_and_follows_the_skill"
       ]
     },
     {
@@ -5924,6 +5925,59 @@
       }
     },
     {
+      "id": "STORE-MCP-S14",
+      "requirement": "STORE-MCP-001",
+      "scope": "Стала копія маркетплейсу: лише файли для користувача й позначка, незмінна версія, повна заміна, відмова над чужою текою, ціла стара копія при збої, повтор заблокованого перейменування, оновлення на старті лише наявної копії у фоні. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_sync_creates_copy_with_marker",
+        "tests/test_claude_connect.py::test_sync_refuses_foreign_folder",
+        "tests/test_claude_connect.py::test_sync_failure_keeps_old_copy",
+        "tests/test_claude_connect.py::test_sync_retries_a_briefly_locked_rename",
+        "tests/test_claude_connect.py::test_refresh_only_when_copy_exists",
+        "tests/test_desktop.py::test_launch_refreshes_the_skills_copy_in_the_background",
+        "tests/test_claude_connect.py::test_crash_between_renames_is_recovered_at_launch",
+        "tests/test_claude_connect.py::test_failed_rollback_keeps_the_original_error_and_the_next_sync_repairs",
+        "tests/test_claude_connect.py::test_cleanup_touches_only_obscura_folders"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S15",
+      "requirement": "STORE-MCP-001",
+      "scope": "Claude Code зі скілами: послідовності claude plugin для нового, іншого й того самого шляху, збої й тайм-аут як skills:false, команди для копіювання, відповідь маршруту, конфлікт і відсутній плагін, текст інтерфейсу. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_plugin_sequence_new",
+        "tests/test_claude_connect.py::test_plugin_sequence_other_path",
+        "tests/test_claude_connect.py::test_plugin_sequence_same_path",
+        "tests/test_claude_connect.py::test_plugin_failures",
+        "tests/test_claude_connect.py::test_plugin_commands_to_copy",
+        "tests/web/test_connect_routes.py::test_code_route_reports_mcp_and_skills",
+        "tests/web/test_connect_routes.py::test_code_route_conflict",
+        "tests/web/test_connect_routes.py::test_code_route_without_plugin"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-mcp-package",
+        "reason": "Справжній Claude Code автотести не чіпають (tests/conftest.py::isolated_claude); що нова сесія бачить скіли, перевіряється вручну; інтерфейс — Playwright claude-connect.spec.mjs (manual.md#claude-connect-browser)."
+      }
+    },
+    {
+      "id": "STORE-MCP-S16",
+      "requirement": "STORE-MCP-001",
+      "scope": "ZIP-и скілів для Claude Desktop: по одному на скіл, чужі файли лишаються, маршрут відкриває теку, 409 без плагіна. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_connect.py::test_desktop_skills_written_and_foreign_kept",
+        "tests/web/test_connect_routes.py::test_desktop_skills_route",
+        "tests/web/test_connect_routes.py::test_desktop_skills_without_plugin",
+        "tests/test_claude_connect.py::test_desktop_skills_failure_leaves_no_temporary_file",
+        "tests/web/test_connect_routes.py::test_desktop_skills_write_failure_is_a_refusal",
+        "tests/test_claude_connect.py::test_desktop_skills_keep_a_foreign_tmp_file",
+        "tests/test_claude_connect.py::test_desktop_skills_are_read_back"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-mcp-package",
+        "reason": "Завантаження ZIP у справжній Claude Desktop (Customize → Skills → Upload a skill) автотест не відтворює; кнопка й кроки — Playwright claude-connect.spec.mjs (manual.md#claude-connect-browser)."
+      }
+    },
+    {
       "id": "MCP-BRIDGE-S52",
       "requirement": "MCP-BRIDGE",
       "scope": "generate_cover: обкладинка зі збереженої картки без її зміни, прив'язка через update_publication, невідома палітра без запиту, набір палітр збігається з малюванням. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
@@ -5931,6 +5985,18 @@
         "tests/mcp/test_bridge_publication.py::test_generate_cover_from_the_saved_card_and_bound_through_it",
         "tests/mcp/test_bridge_publication.py::test_generate_cover_refuses_unknown_palette_without_request",
         "tests/mcp/test_bridge_publication.py::test_bridge_palettes_match_the_renderer"
+      ]
+    },
+    {
+      "id": "MCP-BRIDGE-S53",
+      "requirement": "MCP-BRIDGE",
+      "scope": "get_guide: текст скіла з переліком довідок, текст довідки, відмова з переліком на невідомі й шляхові назви, помилка без плагіна, згадка в INSTRUCTIONS. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/mcp/test_bridge_guide.py::test_get_guide_returns_skill_and_reference_names",
+        "tests/mcp/test_bridge_guide.py::test_get_guide_reference",
+        "tests/mcp/test_bridge_guide.py::test_get_guide_refuses_unknown",
+        "tests/mcp/test_bridge_guide.py::test_get_guide_without_plugin",
+        "tests/mcp/test_bridge_guide.py::test_instructions_name_get_guide"
       ]
     },
     {
@@ -6061,6 +6127,30 @@
         "procedure": "docs/verification/manual.md#claude-skills",
         "reason": "Поведінка моделі недетермінована: перевіряється прогонами claude -p на ізольованому стенді, а не одним pytest-тестом."
       }
+    },
+    {
+      "id": "CLAUDE-SKILLS-S10",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "Генерація ZIP і провідника з плагіна: заміна ${CLAUDE_PLUGIN_ROOT}, вкладені правила, заборона чужих посилань і невідомих назв, детермінований ZIP, джерела маркетплейсу. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_skill_bundles.py::test_bundle_rewrites_plugin_root",
+        "tests/test_skill_bundles.py::test_reference_to_another_skill_is_an_error",
+        "tests/test_skill_bundles.py::test_unknown_skill_is_an_error",
+        "tests/test_skill_bundles.py::test_desktop_zip_is_one_folder_named_after_skill",
+        "tests/test_skill_bundles.py::test_every_real_skill_bundles",
+        "tests/test_skill_bundles.py::test_guide_points_to_get_guide",
+        "tests/test_skill_bundles.py::test_sources",
+        "tests/test_skill_bundles.py::test_user_files_skip_tools_and_evals"
+      ]
+    },
+    {
+      "id": "CLAUDE-SKILLS-S11",
+      "requirement": "CLAUDE-SKILLS",
+      "scope": "Версія plugin.json дорівнює версії проєкту; скіли не згадують get_guide. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "tests": [
+        "tests/test_claude_plugin.py::test_plugin_version_is_project_version",
+        "tests/test_claude_plugin.py::test_skills_never_mention_get_guide"
+      ]
     },
     {
       "id": "WRITING-MODE-S01",

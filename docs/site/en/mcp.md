@@ -6,7 +6,7 @@ The link is `storygen-mcp`, a small program the chat client starts by itself. It
 
 ## What the chat can do
 
-The chat gets twenty-six tools:
+The chat gets twenty-seven tools:
 
 - **story list** and **story overview**: scenes, their order and their state, in the same words as the scene list, plus the story's rating, target length and characters;
 - **new story**: a title, a language, a target length, the story mode and, optionally, an age rating;
@@ -31,7 +31,8 @@ The chat gets twenty-six tools:
 - **stage task**: the instructions and material for the scene brief, editing or memory — the same as an Obscura model would get;
 - **stage result**: the chat's answer to a stage task, which Obscura checks the same way as its own model's answer;
 - **run**: in an "Obscura writes" story, a preview and, with your consent in the chat, an Obscura model run of one scene stage or a publication card suggestion;
-- **run status**: what is happening with a run now, its result, and cancelling a run the chat started.
+- **run status**: what is happening with a run now, its result, and cancelling a run the chat started;
+- **guide**: the steps of the Obscura skills for chat clients that do not have the skills installed (see [Obscura skills](#obscura-skills)).
 
 The chat cannot delete stories or scenes, move them to the trash, reorder scenes, run generation, synopsis suggestions or the evaluator, or change prompts, the evaluator, the budget and keys.
 
@@ -55,7 +56,8 @@ The easiest way to connect is from the Obscura library: expand the “Connect to
 - **Connect Claude Desktop** adds only the `obscura` entry to the Claude Desktop settings. The other settings stay, and a copy of the file before the change appears next to it (`claude_desktop_config.json.obscura-backup`). Obscura shows which file it wrote to and offers to restart Claude: it reads its settings only when it starts.
 - **Restart Claude now** closes Claude Desktop together with the open conversation, including unsent text, and opens it again. **I will restart it myself** explains how to do it by hand: a closed window leaves Claude running, so quit from the Claude icon next to the clock (“Quit”) and open it again.
 - **Another way** is the fallback when there is no settings file yet (Claude Desktop has never been started) or it has an unknown format. Obscura prepares the extension file `obscura.mcpb` in the stories folder and opens the folder. In Claude Desktop, open Settings → Desktop app → Extensions, drag the file into the window and click Install. Claude shows its standard warning about extensions outside its directory.
-- **Connect Claude Code** runs `claude mcp add --scope user obscura` and checks the entry. If Claude Code is not found, Obscura shows the command with a “Copy” button.
+- **Connect Claude Code** runs `claude mcp add --scope user obscura` and checks the entry. The [Obscura skills](#obscura-skills) are installed together with the bridge. If Claude Code is not found or the skills were not installed, Obscura shows the commands with a “Copy” button.
+- **Skills for Claude Desktop** puts the skill ZIP files into the stories folder and opens it (see [Obscura skills](#obscura-skills)).
 
 The chat cannot connect or restart Claude by itself: only you do this, in Obscura.
 
@@ -118,9 +120,9 @@ Alternatively, add a `[mcp_servers.obscura]` entry with `command` and optional `
 
 Browser chat clients (claude.ai, chatgpt.com) do not support local servers.
 
-## Skills for Claude Code
+## Obscura skills
 
-Skills are ready-made instructions for Claude Code that lead the conversation step by step: one question at a time, with a summary and your consent before every write. The chat works with Obscura without them too, but then you explain every step yourself. The `obscura` set has five skills:
+Skills are ready-made instructions for Claude that lead the conversation step by step: one question at a time, with a summary and your consent before every write. The chat works with Obscura without them too, but then you explain every step yourself. The `obscura` set has five skills:
 
 - `start-story` — from an idea to a story with a plan and character cards;
 - `series-bible` — a world bible for a cycle of books: articles on magic, organisations, geography, chronology;
@@ -128,7 +130,9 @@ Skills are ready-made instructions for Claude Code that lead the conversation st
 - `publish` — the publication card, a text cover and export to FB2, EPUB or PDF;
 - `setup-models` — models for the four roles by genre and budget, checked against the provider's list.
 
-**Installation.** First connect Obscura to Claude Code (see [Connecting](#connecting)). The skills come with the source version; the Microsoft Store version does not include them yet. Then, in a terminal, replacing `C:\Obscura` with the folder where Obscura lives:
+**Claude Code.** The “Connect Claude Code” button in the library installs the skills together with the bridge (see [The button in the library](#the-button-in-the-library)). Obscura copies them into the stories folder, under `claude\marketplace`, so an Obscura update does not break them. Do not put your own files in that folder: a folder without Obscura's marker is left unchanged, and Obscura shows its path.
+
+By hand, in the source version, after connecting the bridge, run in a terminal, replacing `C:\Obscura` with the folder where Obscura lives:
 
 ```powershell
 claude plugin marketplace add "C:\Obscura\integrations\claude"
@@ -138,16 +142,23 @@ claude plugin marketplace add "C:\Obscura\integrations\claude"
 claude plugin install obscura@obscura
 ```
 
+**Claude Desktop.** Click “Skills for Claude Desktop”: Obscura puts one ZIP file per skill into the stories folder, under `claude\skills`, and opens that folder. In Claude, first turn on Settings → Capabilities → Code execution and file creation. Then, for each file: Customize → Skills → “+” → Create skill → Upload a skill. Obscura does not touch other files in the `claude\skills` folder.
+
+**Other chat clients.** Codex and other MCP clients without the skills get the same steps through the guide tool: the chat calls it at the start of a task and then follows the steps it gets.
+
 **Using them.** Just ask the chat, for example "I want to write a story about a lighthouse" or "set up models for my story", and Claude picks the right skill itself. You can also name a skill: `/obscura:start-story`, `/obscura:publish` and so on.
 
 The skills do not accept API keys in the chat. If you send a key to the chat, the skill changes nothing and asks you to enter the key in Obscura's settings; it is better to revoke that key at the provider.
 
-**Updating and removing.** A new version of Obscura updates the skills too: Claude Code takes them from the Obscura folder in the next session. To remove the set:
+**Updating and removing.** A new version of Obscura updates the skills too. At launch it refreshes their copy in the stories folder, and Claude Code takes the new skills in the next session. After an Obscura update, prepare and upload the Claude Desktop ZIP files again. To remove the set from Claude Code:
 
 ```powershell
 claude plugin uninstall obscura@obscura
 ```
 
+```powershell
+claude plugin marketplace remove obscura
+```
 ## Codex skills from a source checkout
 
 The Codex package is generated from the same sources as the Claude skills; no manual text copying is needed. It contains `obscura-start-story`, `obscura-series-bible`, `obscura-draft-scene`, `obscura-publish`, and `obscura-setup-models`. Planning and every scene stage use the current Codex session without automatically switching models.
@@ -254,7 +265,7 @@ The chat can go through every stage of a scene itself: write the scene brief, wr
 
 ## Start a story with one request
 
-The chat client sees the “Start a story” prompt (`start_story`). It leads the chat from an idea to a story: create the story in the “chat writes” mode, fill in the plan and the characters, write the scenes and finally give a link to read and edit the story in the Obscura window.
+The chat client sees the “Start a story” prompt (`start_story`). It leads the chat from an idea to a story: create the story in the “chat writes” mode, fill in the plan and the characters, write the scenes and finally give a link to read and edit the story in the Obscura window. The prompt first repeats your idea and then follows the same steps as the `start-story` skill: one question at a time, with a summary and your consent.
 
 ## The Microsoft Store version
 

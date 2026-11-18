@@ -432,3 +432,20 @@ def test_default_env_file_is_in_the_data_folder(tmp_path, monkeypatch):
     with Launch(data, '--no-browser'):
         assert os.environ.get('SYNTHETIC_LAUNCHER_KEY') == 'from-data-folder'
     monkeypatch.delenv('SYNTHETIC_LAUNCHER_KEY', raising=False)
+
+
+def test_launch_refreshes_the_skills_copy_in_the_background(tmp_path, monkeypatch):
+    """STORE-MCP-001 S14: after server.json, in its own thread; a failure there never changes the launch."""
+    from storygen import claude_connect
+    seen, done = [], threading.Event()
+
+    def refresh(source, target, version, **kwargs):
+        seen.append((target, (tmp_path / 'data' / 'server.json').is_file(), threading.current_thread().name))
+        done.set()
+        raise RuntimeError('boom')
+    monkeypatch.setattr(claude_connect, 'refresh_marketplace', refresh)
+    with Launch(tmp_path / 'data', '--no-browser') as launch:
+        assert done.wait(30)
+    assert launch.code == 0
+    target, record_written, thread = seen[0]
+    assert target == tmp_path / 'data' / 'claude' / 'marketplace' and record_written and thread == 'obscura-skills'

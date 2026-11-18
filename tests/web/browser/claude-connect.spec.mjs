@@ -47,3 +47,23 @@ test('Claude Code command to copy and the English block',async({page})=>{
   await expect(block.getByRole('button',{name:'Connect Claude Desktop'})).toBeVisible();
   await expect(block.locator('.connect-result')).toContainText('Claude Code was not found');
 });
+
+test('Claude Desktop skills as ZIP files and Claude Code with the skills',async({page})=>{
+  await page.route('**/api/connect/claude-desktop/skills',reply(200,{folder:'C:/Users/u/Obscura/claude/skills',files:['publish.zip']}));
+  await page.route('**/api/connect/claude-code',reply(200,{found:true,connected:true,skills:true,command:'claude mcp add --scope user obscura -- obscura-mcp.exe',plugin_commands:[]}));
+  await page.goto('/');
+  const block=page.locator('#claude-connect');
+  if(!await block.evaluate(node=>node.open))await block.locator('summary').click();
+  await block.locator('[data-connect="skills"]').click();
+  await expect(block.locator('.connect-result')).toContainText('C:/Users/u/Obscura/claude/skills');
+  await expect(block.locator('.connect-result')).toContainText('Upload a skill');
+  await block.getByRole('button',{name:'Підключити Claude Code'}).click();
+  await expect(block.locator('.connect-result')).toContainText('разом зі скілами Obscura');
+
+  await page.unroute('**/api/connect/claude-code');
+  const commands=['claude plugin marketplace add "C:/Users/u/Obscura/claude/marketplace" --scope user','claude plugin install obscura@obscura --scope user'];
+  await page.route('**/api/connect/claude-code',reply(200,{found:true,connected:true,skills:false,command:'x',plugin_commands:commands}));
+  await block.getByRole('button',{name:'Підключити Claude Code'}).click();
+  await expect(block.locator('.connect-result')).toContainText('Міст підключено, а скіли — ні');
+  await expect(block.locator('code')).toHaveText(commands.join('\n'));
+});
