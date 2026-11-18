@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from .. import claude_connect as cc
+from .. import skill_bundles
 from .localization import diagnostic, request_locale
 
 router = APIRouter()
@@ -33,6 +34,11 @@ def _launcher(command: list[str]) -> Path:
     if getattr(sys, 'frozen', False):
         return Path(sys.executable).with_name(cc.ALIAS)
     return Path(command[0])
+
+
+def _marketplace_source() -> Path | None:
+    return skill_bundles.marketplace_source(frozen=getattr(sys, 'frozen', False), executable=Path(sys.executable),
+                                            checkout=Path(__file__).resolve().parents[3])
 
 
 def _refusal(request: Request, text: str, status: int, **extra) -> JSONResponse:
@@ -101,9 +107,24 @@ def connect_code(request: Request):
     command = cc.claude_code_command(roots, _command(request, roots))
     manual = 'claude mcp add --scope user obscura -- ' + ' '.join(shlex.quote(part) for part in command)
     claude = cc.find_claude_code(roots)
+    target = cc.marketplace_target(Path(request.app.state.settings.data_dir))
+    commands = cc.plugin_commands(target)
     if claude is None:
-        return JSONResponse({'found': False, 'command': manual}, status_code=404)
-    return {'found': True, 'connected': cc.connect_claude_code(claude, command), 'command': manual}
+        return JSONResponse({'found': False, 'command': manual, 'plugin_commands': commands}, status_code=404)
+    answer = {'found': True, 'connected': cc.connect_claude_code(claude, command), 'command': manual,
+              'skills': False, 'plugin_commands': commands}
+    # S15: Claude Code reads the plugin from a stable copy in the stories folder, never from the package folder.
+    from ..build_manifest import project_version
+    source = _marketplace_source()
+    if source is None:
+        return {**answer, 'reason': 'no_plugin'}
+    try:
+        cc.sync_marketplace(source, target, project_version())
+    except cc.MarketplaceConflict as error:
+        return {**answer, 'conflict': str(error.path)}
+    except OSError:
+        return {**answer, 'reason': 'copy_failed'}
+    return {**answer, 'skills': cc.connect_claude_plugin(claude, target)}
 
 
 @router.post('/api/connect/claude-desktop/restart')

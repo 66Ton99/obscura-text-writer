@@ -87,8 +87,47 @@ def test_claude_code_connected_or_command_to_copy(client, roots, monkeypatch):
     calls = []
     monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
     monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: calls.append(command) or True)
+    monkeypatch.setattr(cc, 'connect_claude_plugin', lambda claude, target: True)
     answer = client.post('/api/connect/claude-code')
     assert answer.status_code == 200 and answer.json()['connected'] is True and calls[0][0].endswith('storygen-mcp.exe')
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_code_route_reports_mcp_and_skills(client, roots, monkeypatch, tmp_path):
+    plugin_calls = []
+    monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
+    monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: True)
+    monkeypatch.setattr(cc, 'connect_claude_plugin', lambda claude, target: plugin_calls.append(target) or True)
+    answer = client.post('/api/connect/claude-code')
+    target = tmp_path / 'data' / 'claude' / 'marketplace'
+    body = answer.json()
+    assert answer.status_code == 200 and {'found', 'connected', 'skills', 'command', 'plugin_commands'} <= set(body)
+    assert body['skills'] is True and plugin_calls == [target]
+    assert (target / cc.VERSION_MARKER).is_file() and (target / 'obscura' / 'skills' / 'publish' / 'SKILL.md').is_file()
+    assert body['plugin_commands'] == cc.plugin_commands(target)
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_code_route_conflict(client, roots, monkeypatch, tmp_path):
+    target = tmp_path / 'data' / 'claude' / 'marketplace'
+    target.mkdir(parents=True)
+    (target / 'notes.txt').write_text('mine', encoding='utf-8')
+    monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
+    monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: True)
+    monkeypatch.setattr(cc, 'connect_claude_plugin', lambda claude, target: pytest.fail('plugin over a foreign folder'))
+    body = client.post('/api/connect/claude-code').json()
+    assert body['connected'] is True and body['skills'] is False and body['conflict'] == str(target)
+    assert sorted(p.name for p in target.iterdir()) == ['notes.txt']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_code_route_without_plugin(client, roots, monkeypatch):
+    monkeypatch.setattr(routes_connect, '_marketplace_source', lambda: None)
+    monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
+    monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: True)
+    monkeypatch.setattr(cc, 'connect_claude_plugin', lambda claude, target: pytest.fail('no plugin to install'))
+    body = client.post('/api/connect/claude-code').json()
+    assert body['connected'] is True and body['skills'] is False and body['reason'] == 'no_plugin'
 
 
 @pytest.mark.req('STORE-MCP-001')
@@ -120,6 +159,7 @@ def test_restart_without_config_does_nothing(client, roots, monkeypatch):
 def test_claude_code_unconfirmed_keeps_the_command(client, roots, monkeypatch):
     monkeypatch.setattr(cc, 'find_claude_code', lambda found_roots: roots.userprofile / 'claude.exe')
     monkeypatch.setattr(cc, 'connect_claude_code', lambda claude, command: False)
+    monkeypatch.setattr(cc, 'connect_claude_plugin', lambda claude, target: False)
     answer = client.post('/api/connect/claude-code')
     assert answer.status_code == 200 and answer.json()['connected'] is False
     assert answer.json()['command'].startswith('claude mcp add --scope user obscura -- ')
@@ -129,7 +169,8 @@ def test_claude_code_unconfirmed_keeps_the_command(client, roots, monkeypatch):
 def test_bridge_cannot_use_connect_routes(client, roots, monkeypatch):
     store_config(roots)
     touched = []
-    for name in ('write_desktop_entry', 'build_mcpb', 'connect_claude_code', 'restart_desktop'):
+    for name in ('write_desktop_entry', 'build_mcpb', 'connect_claude_code', 'restart_desktop', 'sync_marketplace',
+                 'connect_claude_plugin'):
         monkeypatch.setattr(cc, name, lambda *args, _name=name, **kwargs: touched.append(_name))
     for path in ('claude-desktop', 'claude-desktop/bundle', 'claude-code', 'claude-desktop/restart'):
         answer = client.post(f'/api/connect/{path}', headers={'X-Obscura-Client': 'mcp'})

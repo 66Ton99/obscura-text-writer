@@ -239,3 +239,138 @@ def test_restart_installer_runs_its_exe(roots):
     cc.restart_desktop(config, roots, list_processes=lambda: [(21, exe)] if not stopped else [], stop=stopped.append,
                        start=started.append, sleep=lambda seconds: None)
     assert stopped == [21] and started == [[str(exe)]]
+
+
+# --- the stable marketplace copy and the plugin in Claude Code --------------------------------------------------------
+
+MARKET = Path(__file__).resolve().parents[1] / 'integrations' / 'claude'
+
+
+def copied_files(target):
+    return sorted(path.relative_to(target).as_posix() for path in target.rglob('*') if path.is_file())
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_sync_creates_copy_with_marker(tmp_path):
+    from storygen.skill_bundles import user_files
+    target = tmp_path / 'data' / 'claude' / 'marketplace'
+    assert cc.sync_marketplace(MARKET, target, '0.1.0') == 'created'
+    assert copied_files(target) == sorted(user_files(MARKET) + [cc.VERSION_MARKER])
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.1.0'
+    assert cc.sync_marketplace(MARKET, target, '0.1.0') == 'unchanged'
+    (target / 'obscura' / 'stale.md').write_text('old', encoding='utf-8')
+    assert cc.sync_marketplace(MARKET, target, '0.2.0') == 'updated'
+    assert not (target / 'obscura' / 'stale.md').exists()
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
+    assert [p.name for p in target.parent.iterdir()] == ['marketplace']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_sync_refuses_foreign_folder(tmp_path):
+    target = tmp_path / 'claude' / 'marketplace'
+    target.mkdir(parents=True)
+    (target / 'notes.txt').write_text('mine', encoding='utf-8')
+    with pytest.raises(cc.MarketplaceConflict) as raised:
+        cc.sync_marketplace(MARKET, target, '0.1.0')
+    assert raised.value.path == target
+    assert copied_files(target) == ['notes.txt']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_sync_failure_keeps_old_copy(tmp_path, monkeypatch):
+    target = tmp_path / 'claude' / 'marketplace'
+    cc.sync_marketplace(MARKET, target, '0.1.0')
+    before = {name: (target / name).read_bytes() for name in copied_files(target)}
+    real, count = cc.shutil.copy2, []
+
+    def failing(src, dst, *args, **kwargs):
+        count.append(src)
+        if len(count) == 2:
+            raise OSError('disk full')
+        return real(src, dst, *args, **kwargs)
+    monkeypatch.setattr(cc.shutil, 'copy2', failing)
+    with pytest.raises(OSError):
+        cc.sync_marketplace(MARKET, target, '0.2.0')
+    assert {name: (target / name).read_bytes() for name in copied_files(target)} == before
+    assert [p.name for p in target.parent.iterdir()] == ['marketplace']
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_refresh_only_when_copy_exists(tmp_path, caplog):
+    target = tmp_path / 'claude' / 'marketplace'
+    cc.refresh_marketplace(MARKET, target, '0.1.0')
+    assert not target.exists() and not target.parent.exists()
+    cc.sync_marketplace(MARKET, target, '0.1.0')
+    cc.refresh_marketplace(MARKET, target, '0.2.0')
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
+    cc.refresh_marketplace(None, target, '0.3.0')
+    assert (target / cc.VERSION_MARKER).read_text(encoding='utf-8') == '0.2.0'
+    (target / cc.VERSION_MARKER).unlink()
+    cc.refresh_marketplace(MARKET, target, '0.3.0')
+    assert not (target / cc.VERSION_MARKER).exists()
+    assert 'marketplace' in caplog.text
+
+
+class PluginRunner:
+    """`claude plugin …`: `listed` is what `marketplace list --json` prints; `codes` maps a subcommand to its exit code."""
+
+    def __init__(self, listed='[]', codes=None, raises=None):
+        self.calls, self.listed, self.codes, self.raises = [], listed, codes or {}, raises
+
+    def __call__(self, argv, **kwargs):
+        assert not kwargs.get('shell') and kwargs.get('timeout') == cc.TIMEOUT
+        self.calls.append(argv[1:])
+        if self.raises:
+            raise self.raises
+        key = argv[3] if argv[2] == 'marketplace' else argv[2]
+        out = self.listed.encode() if key == 'list' else b''
+        return subprocess.CompletedProcess(argv, self.codes.get(key, 0), out, b'')
+
+
+def listed(path):
+    return json.dumps([{'name': 'obscura', 'source': 'directory', 'path': str(path), 'installLocation': str(path)}])
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_plugin_sequence_new(tmp_path):
+    target, run = tmp_path / 'marketplace', PluginRunner()
+    assert cc.connect_claude_plugin(tmp_path / 'claude.exe', target, run=run) is True
+    assert run.calls == [['plugin', 'marketplace', 'list', '--json'],
+                         ['plugin', 'marketplace', 'add', str(target), '--scope', 'user'],
+                         ['plugin', 'install', 'obscura@obscura', '--scope', 'user']]
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_plugin_sequence_other_path(tmp_path):
+    target, run = tmp_path / 'marketplace', PluginRunner(listed(tmp_path / 'elsewhere'))
+    assert cc.connect_claude_plugin(tmp_path / 'claude.exe', target, run=run) is True
+    assert run.calls == [['plugin', 'marketplace', 'list', '--json'],
+                         ['plugin', 'marketplace', 'remove', 'obscura'],
+                         ['plugin', 'marketplace', 'add', str(target), '--scope', 'user'],
+                         ['plugin', 'install', 'obscura@obscura', '--scope', 'user']]
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_plugin_sequence_same_path(tmp_path):
+    target = tmp_path / 'marketplace'
+    target.mkdir()
+    run = PluginRunner(listed(str(target).upper() if os.name == 'nt' else target))
+    assert cc.connect_claude_plugin(tmp_path / 'claude.exe', target, run=run) is True
+    assert run.calls == [['plugin', 'marketplace', 'list', '--json'],
+                         ['plugin', 'install', 'obscura@obscura', '--scope', 'user']]
+
+
+@pytest.mark.req('STORE-MCP-001')
+@pytest.mark.parametrize('runner', [PluginRunner(listed='not json'), PluginRunner(listed='{"a": 1}'),
+                                    PluginRunner(codes={'list': 1}), PluginRunner(codes={'add': 1}),
+                                    PluginRunner(codes={'install': 1}),
+                                    PluginRunner(raises=subprocess.TimeoutExpired('claude', cc.TIMEOUT))])
+def test_plugin_failures(tmp_path, runner):
+    assert cc.connect_claude_plugin(tmp_path / 'claude.exe', tmp_path / 'marketplace', run=runner) is False
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_plugin_commands_to_copy(tmp_path):
+    target = tmp_path / 'my folder' / 'marketplace'
+    assert cc.plugin_commands(target) == [f'claude plugin marketplace add "{target}" --scope user',
+                                          'claude plugin install obscura@obscura --scope user']

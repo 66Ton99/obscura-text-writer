@@ -1,4 +1,5 @@
-"""STORE-MCP-001 S08–S11: connect Obscura's MCP bridge to Claude Desktop and Claude Code, and restart Claude Desktop.
+"""STORE-MCP-001 S08–S11, S14–S16: connect Obscura's MCP bridge and skills to Claude Desktop and Claude Code, and
+restart Claude Desktop.
 
 Every function takes its folders and process operations as arguments, so tests never touch the real Claude. Only the entry
 `mcpServers.obscura` of Claude Desktop's configuration is written; everything else in that file is kept as it was. Processes
@@ -7,16 +8,20 @@ run with fixed argv, never through a shell and never with text from a request.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Literal
+
+from .skill_bundles import desktop_zip, skill_names, user_files
 
 ALIAS = 'obscura-mcp.exe'
 CHECKOUT_BRIDGE = 'storygen-mcp.exe'
@@ -25,6 +30,10 @@ BACKUP_SUFFIX = '.obscura-backup'
 CONFIG_NAME = 'claude_desktop_config.json'
 TIMEOUT = 30
 NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
+VERSION_MARKER = 'obscura-version.txt'
+MARKETPLACE = 'obscura'
+PLUGIN = 'obscura@obscura'
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -246,3 +255,103 @@ def restart_desktop(config: DesktopConfig, roots: Roots, *, list_processes=runni
         return False
     start(argv)
     return True
+
+
+# --- skills: the stable marketplace copy and the plugin in Claude Code (S14, S15) ----------------------------------
+
+class MarketplaceConflict(Exception):
+    """The marketplace folder exists without Obscura's version marker: it is someone else's and is never replaced."""
+
+    def __init__(self, path: Path):
+        super().__init__(str(path))
+        self.path = path
+
+
+def marketplace_target(data_dir: Path) -> Path:
+    return Path(data_dir) / 'claude' / 'marketplace'
+
+
+def sync_marketplace(source: Path, target: Path, version: str) -> Literal['created', 'updated', 'unchanged']:
+    """Copy the user files of the marketplace to `target` as a whole; the old copy survives any failure."""
+    marker = target / VERSION_MARKER
+    exists = target.exists()
+    if exists and not marker.is_file():
+        raise MarketplaceConflict(target)
+    files = user_files(source)
+    if exists and marker.read_text(encoding='utf-8') == version and all((target / name).is_file() for name in files):
+        return 'unchanged'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(dir=target.parent, prefix='.marketplace-'))
+    old = target.with_name(target.name + '.old')
+    try:
+        for name in files:
+            (temporary / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source / name, temporary / name)
+        (temporary / VERSION_MARKER).write_text(version, encoding='utf-8')
+        if exists:
+            if old.exists():
+                shutil.rmtree(old)
+            os.replace(target, old)
+        try:
+            os.replace(temporary, target)
+        except OSError:
+            if exists:
+                os.replace(old, target)
+            raise
+    except BaseException:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    if exists:
+        shutil.rmtree(old, ignore_errors=True)
+    return 'updated' if exists else 'created'
+
+
+def refresh_marketplace(source: Path | None, target: Path, version: str, log: logging.Logger = logger) -> None:
+    """At launch: refresh a copy the author already connected; never create one, never call `claude`."""
+    if source is None or not target.exists():
+        return
+    try:
+        result = sync_marketplace(source, target, version)
+    except MarketplaceConflict as error:
+        log.warning('Скіли Claude: тека marketplace без позначки Obscura, не змінено: %s', error.path)
+    except OSError as error:
+        log.warning('Скіли Claude: копію marketplace не оновлено (%s): %s', type(error).__name__, error)
+    else:
+        if result != 'unchanged':
+            log.info('Скіли Claude: копію marketplace оновлено до %s', version)
+
+
+def _same_path(a: str, b: Path) -> bool:
+    try:
+        return os.path.normcase(str(Path(a).resolve())) == os.path.normcase(str(Path(b).resolve()))
+    except (OSError, ValueError):
+        return False
+
+
+def connect_claude_plugin(claude: Path, target: Path, run=subprocess.run) -> bool:
+    """Register `target` as the user's `obscura` marketplace and install the plugin; any doubt is `False`."""
+    base = [str(claude), 'plugin']
+    listed = _run(run, base + ['marketplace', 'list', '--json'])
+    if listed is None or listed.returncode:
+        return False
+    try:
+        entries = json.loads((listed.stdout or b'').decode('utf-8', 'replace'))
+    except ValueError:
+        return False
+    if not isinstance(entries, list):
+        return False
+    ours = next((entry for entry in entries if isinstance(entry, dict) and entry.get('name') == MARKETPLACE), None)
+    if ours is None or not _same_path(str(ours.get('path') or ''), target):
+        if ours is not None:
+            removed = _run(run, base + ['marketplace', 'remove', MARKETPLACE])
+            if removed is None or removed.returncode:
+                return False
+        added = _run(run, base + ['marketplace', 'add', str(target), '--scope', 'user'])
+        if added is None or added.returncode:
+            return False
+    installed = _run(run, base + ['install', PLUGIN, '--scope', 'user'])
+    return installed is not None and installed.returncode == 0
+
+
+def plugin_commands(target: Path) -> list[str]:
+    return [f'claude plugin marketplace add "{target}" --scope user', f'claude plugin install {PLUGIN} --scope user']
