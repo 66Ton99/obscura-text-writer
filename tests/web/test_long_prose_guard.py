@@ -106,3 +106,19 @@ def test_body_read_by_the_guard_still_reaches_the_route(tmp_path, store_edition)
     # The route saw the whole body: a run was created (or refused for a model reason), never a validation error.
     assert response.status_code != 422, response.text
     assert READ_ONLY not in response.text
+
+
+def test_store_exports_a_level_two_story(tmp_path, request):
+    import json
+    from storygen.domain import ContentRating
+    from storygen.generation.dependencies import save_manual_prose
+    client, _, repo, story, scene = setup(tmp_path, structured=False)
+    for each in repo.list_scenes(story.id):
+        save_manual_prose(repo, each.id, 'Текст сцени.\n', repo.get_scene(each.id).revision)
+    # Rated before the Store edition applies, as after an import or a restore from another edition.
+    repo.update_scene_rating(scene.id, ContentRating(sexual=2, violence=0, themes=0), repo.get_scene(scene.id).revision)
+    request.getfixturevalue('store_edition')
+    response = client.post(f'/api/stories/{story.id}/export', json={'format': 'md'})
+    assert response.status_code == 200, response.text
+    manifest = json.loads(client.get(response.json()['manifest_url']).content)
+    assert manifest['age_rating'] == '18+'

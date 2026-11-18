@@ -13,6 +13,9 @@ from .locking import AppInstanceLock
 
 
 EXCLUDED = {'worker.lock', 'storygen.sqlite3-wal', 'storygen.sqlite3-shm', 'storygen.sqlite3-journal'}
+# Files never copied, at any depth and in any letter case (Windows opens .ENV as .env): a .env may hold provider keys
+# (SECURITY-002, DESKTOP-001).
+EXCLUDED_NAMES = {'.env'}
 
 
 def new_destination(source: Path, destination: Path) -> Path:
@@ -68,7 +71,7 @@ def create_backup(source: Path, destination: Path) -> Path:
             source_db.close()
         for path in source_files:
             relative = path.relative_to(source)
-            if relative.as_posix() in EXCLUDED | {'storygen.sqlite3'}:
+            if relative.as_posix() in EXCLUDED | {'storygen.sqlite3'} or relative.name.lower() in EXCLUDED_NAMES:
                 continue
             target = data / relative
             target.parent.mkdir(parents=True, exist_ok=True)

@@ -67,27 +67,53 @@
 
 Пакет MSIX на такому інтерпретаторі збирається лише з `--allow-vendor-runtime`: пакет для публікації слід збирати на офіційному CPython з python.org, бо умови розповсюдження доданого файла не з’ясовано.
 
-Для збирання зручно мати окреме середовище на офіційному Python, не чіпаючи робоче:
+Для збирання тримайте постійне середовище `.venv-store` у корені робочої копії на офіційному CPython 3.12 з python.org, не чіпаючи робоче `.venv`:
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv C:\tmp\obscura-build-venv
-C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-C:\tmp\obscura-build-venv\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
-C:\tmp\obscura-build-venv\Scripts\python.exe scripts/build_store.py --out C:\tmp\obscura-build ...
+& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv .venv-store
+.venv-store\Scripts\python.exe -c "import sys; print(sys.base_prefix)"
+.venv-store\Scripts\python.exe -m pip install -r requirements-lock.txt
+.venv-store\Scripts\python.exe -m pip install -e ".[web,publication,local-tokens,desktop,mcp,build]"
+.venv-store\Scripts\python.exe scripts/build_store.py --out C:\tmp\obscura-build ...
 ```
 
+Друга команда має показати теку python.org (`...\Programs\Python\Python312`), а не Python із комплекту іншого застосунку. Extra `build` закріплює перевірені версії PyInstaller (див. «Ліцензії компонентів»). На машині з увімкненим Smart App Control локальна самоперевірка свіжої збірки відмовить; тоді збирайте в CI (розділ нижче).
+
 Так перевірено 11.11.2026 на CPython 3.12.10: попереджень про інтерпретатор немає, додаткові файли не потрібні, пакет збирається без `--allow-vendor-runtime`.
+
+## Значки пакета
+
+`store_build/msix/Assets` містить `StoreLogo.png` (50 px), `Square44x44Logo.png` (44 px) і `Square150x150Logo.png` (150 px), намальовані з емблеми вебінтерфейсу `src/storygen/web/static/favicon.svg`. Після зміни емблеми їх перемальовує:
+
+```powershell
+./.venv/Scripts/python.exe -m playwright install chromium
+./.venv/Scripts/python.exe scripts/make_store_assets.py
+```
+
+## Збирання в CI
+
+Робочий процес `.github/workflows/store-build.yml` збирає пакет на чистому образі `windows-latest` з офіційним CPython 3.12 тими самими командами, що й вище. Він запускається для кожного PR у `main`, що зачіпає збирання, і вручну з вкладки Actions. Якщо в образі є `makeappx`, збирається непідписаний `.msix` з тестовою ідентичністю `Obscura.CI` — лише щоб перевірити склад пакета; інакше збирання йде з `--skip-msix` і попередженням. Звіти, журнали, повідомлення, `.msix` і тека `Obscura` лишаються артефактами запуску на 7 днів. Секретів, підпису й публікації в CI немає.
+
+Це потрібно, бо на машині з увімкненим Smart App Control свіжозібраний непідписаний `obscura-mcp.exe` чи `Obscura.exe` не запускається, і самоперевірка локального збирання відмовляє з цієї причини, а не через код.
 
 ## Ліцензії компонентів
 
 `THIRD-PARTY-NOTICES.txt` складається за фактичним вмістом збірки: скрипт читає записи PyInstaller про всі зібрані файли й бере ліцензійні тексти дистрибутивів, яким вони належать, а також ліцензію самого інтерпретатора й PyInstaller. Компонент без тексту ліцензії зупиняє збирання.
 
-Значок у треї — власний код на Windows API (`storygen/win_tray.py`), сторонньої бібліотеки трея в збірці немає. Якщо в збірку потрапить бібліотека з ліцензією родини GPL (GPL, LGPL, AGPL), збирання зупиняється з її назвою (`copyleft_distributions`), і рішення ухвалює власник.
+Wheel `tokenizers` не має ліцензійного файла, тому його текст разом із ліцензіями 121 бібліотеки Rust, вкомпільованої в нього, лежить у `store_build/licenses/tokenizers-<версія>.txt`. Після оновлення `tokenizers` збирання зупиниться («Немає тексту ліцензії для: tokenizers <версія>»), доки файл не перегенерувати:
+
+```powershell
+./.venv/Scripts/python.exe -I scripts/tokenizers_notices.py --out store_build/licenses/tokenizers-<версія>.txt
+```
+
+Скрипт бере перелік crate зі SBOM встановленого wheel, завантажує архіви з static.crates.io (звіряючи SHA-256 зі SBOM) і текст Apache-2.0 з GitHub. Crate без ліцензійних файлів зупиняє скрипт, доки його не додано в таблицю `MANUAL` із текстом і причиною; старий файл видаліть.
+
+Значок у треї — власний код на Windows API (`storygen/win_tray.py`), сторонньої бібліотеки трея в збірці немає. Якщо в збірку потрапить бібліотека з ліцензією родини GPL (GPL, LGPL, AGPL), збирання зупиняється з її назвою (`copyleft_distributions`), і рішення ухвалює власник. Винятки — лише PyInstaller і `pyinstaller-hooks-contrib` (`COPYLEFT_EXCEPTIONS`): загрузчик PyInstaller має Bootloader Exception, а runtime hooks, що потрапляють у збірку, — під Apache-2.0. Виняток діє, лише поки заявлена ліцензія точно збігається з записаною; тому extra `build` закріплює перевірені версії, а оновлення PyInstaller потребує звірки таблиці.
 
 ## Перевірка встановлення
 
-Пакет зі Store підписує Microsoft. Щоб встановити власноруч зібраний пакет, його треба підписати сертифікатом, якому довіряє система; процедура — у [ручних перевірках](verification/manual.md#store-package-install). Це зміна системних налаштувань безпеки, тому її виконує власник машини. На момент написання її не виконано.
+Пакет зі Store підписує Microsoft. Щоб встановити власноруч зібраний пакет, його треба підписати сертифікатом, якому довіряє система, а якщо ввімкнено Smart App Control — перевіряти через приватний тестовий випуск у Partner Center; процедура — у [ручних перевірках](verification/manual.md#store-package-install). Це зміна системних налаштувань безпеки, тому її виконує власник машини. На момент написання її не виконано.
 
 ## Чого тут немає
 
-Подання в Store, справжні значки пакета, автоматичне збирання в CI. Перед першим поданням варто звірити з Partner Center правила щодо версії пакета й набору значків.
+Подання в Store, підпис і публікація з CI. Перед першим поданням варто звірити з Partner Center правила щодо версії пакета й набору значків.

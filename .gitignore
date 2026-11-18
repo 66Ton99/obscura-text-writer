@@ -13,6 +13,7 @@
 
 # Python environments and caches
 .venv/
+.venv-store/
 venv/
 __pycache__/
 *.py[cod]

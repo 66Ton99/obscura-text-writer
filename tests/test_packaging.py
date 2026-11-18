@@ -90,10 +90,13 @@ def test_notices_carry_name_version_licence_and_text(tmp_path):
         'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/LICENSE.BSD', 'BSD 3-CLAUSE LICENSE')], 'BSD-3-Clause'),
         'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], ''),
     }
-    text = third_party_notices(['alpha', 'tray', 'tokenizers'], lookup=table.__getitem__, runtime_license='PYTHON SOFTWARE FOUNDATION LICENSE')
+    licences = tmp_path / 'licences'
+    write(licences, 'tokenizers-1.0.txt', 'Apache License Version 2.0\n\nahash 0.8.12\nMIT text')
+    text = third_party_notices(['alpha', 'tray', 'tokenizers'], lookup=table.__getitem__, runtime_license='PYTHON SOFTWARE FOUNDATION LICENSE',
+                               licenses_dir=licences)
     assert 'Alpha 1.0\nLicence: MIT' in text and 'Permission is hereby granted' in text and 'vendored notice' in text
     assert 'Tray 1.0\nLicence: BSD-3-Clause' in text and 'BSD 3-CLAUSE LICENSE' in text
-    assert 'tokenizers 1.0\nLicence: Apache-2.0' in text and 'github.com/huggingface/tokenizers' in text
+    assert 'tokenizers 1.0\n' in text and 'Apache License Version 2.0' in text and 'ahash 0.8.12\nMIT text' in text
     assert 'Python runtime and the libraries distributed with it' in text and 'PYTHON SOFTWARE FOUNDATION LICENSE' in text
 
 
@@ -113,12 +116,21 @@ def test_distribution_without_a_licence_text_stops_the_build(tmp_path):
         third_party_notices(['mystery'], lookup=table.__getitem__)
 
 
+def test_bundled_licence_of_another_version_stops_the_build(tmp_path):
+    table = {'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], '')}
+    write(tmp_path / 'licences', 'tokenizers-0.9.txt', 'old text')
+    assert missing_licenses(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences') == ['tokenizers']
+    with pytest.raises(ValueError, match='Немає тексту ліцензії для: tokenizers 1.0'):
+        third_party_notices(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences')
+
+
 def test_declared_dependencies_all_have_licence_texts():
     for module in ('keyring', 'reportlab', 'tokenizers'):
         pytest.importorskip(module)
     names = dependency_closure(root_requirements(ROOT / 'pyproject.toml'))
-    assert missing_licenses(names) == []
-    assert len(third_party_notices(names)) > 20000
+    licences = ROOT / packaging.BUNDLED_LICENSES
+    assert missing_licenses(names, licenses_dir=licences) == []
+    assert len(third_party_notices(names, licenses_dir=licences)) > 20000
 
 
 def test_bundled_distributions_come_from_the_freezer_records(tmp_path):
@@ -235,6 +247,55 @@ def test_copyleft_is_found_by_expression_licence_or_classifier():
     assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['gpl', 'lgpl-text', 'lgpl-classifier']
 
 
+def _exception_distribution(name, texts):
+    licence = [text for text in texts if not text.startswith('License ::')]
+    return MetadataDistribution(name, License=licence[0] if licence else None,
+                                Classifier=[text for text in texts if text.startswith('License ::')])
+
+
+PYINSTALLER_LICENCES = {'GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute '
+                        'non-free programs (including commercial ones)',
+                        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'}
+HOOKS_LICENCES = {'License :: OSI Approved :: Apache Software License',
+                  'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'}
+
+
+def test_copyleft_exceptions_pass_only_with_the_exact_declared_licence():
+    # Literal metadata as reviewed (probe П7), not read back from the table under test.
+    assert packaging.COPYLEFT_EXCEPTIONS['pyinstaller'][0] == PYINSTALLER_LICENCES
+    assert packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0] == HOOKS_LICENCES
+    pyi, hooks = PYINSTALLER_LICENCES, HOOKS_LICENCES
+    table = {
+        'pyinstaller': _exception_distribution('pyinstaller', pyi),
+        'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks),
+        'PyInstaller_Hooks.Contrib': _exception_distribution('PyInstaller_Hooks.Contrib', hooks),
+    }
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == []
+
+
+def test_copyleft_exception_with_changed_licence_is_refused():
+    hooks = set(packaging.COPYLEFT_EXCEPTIONS['pyinstaller-hooks-contrib'][0]) | {'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'}
+    table = {'pyinstaller': MetadataDistribution('pyinstaller', License='GPL-3.0-only'),
+             'pyinstaller-hooks-contrib': _exception_distribution('pyinstaller-hooks-contrib', hooks)}
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['pyinstaller', 'pyinstaller-hooks-contrib']
+
+
+def test_copyleft_exception_with_a_non_gpl_or_missing_licence_is_refused():
+    table = {'pyinstaller': MetadataDistribution('pyinstaller', License='MIT'),
+             'pyinstaller-hooks-contrib': MetadataDistribution('pyinstaller-hooks-contrib')}
+    assert copyleft_distributions(list(table), lookup=table.__getitem__) == ['pyinstaller', 'pyinstaller-hooks-contrib']
+
+
+def test_copyleft_exception_table_names_a_reason_for_each_entry():
+    assert set(packaging.COPYLEFT_EXCEPTIONS) == {'pyinstaller', 'pyinstaller-hooks-contrib'}
+    assert all(reason.strip() for _, reason in packaging.COPYLEFT_EXCEPTIONS.values())
+
+
+def test_installed_freezer_matches_the_exception_table():
+    pytest.importorskip('PyInstaller')
+    assert copyleft_distributions(['pyinstaller', 'pyinstaller-hooks-contrib']) == []
+
+
 def test_copyleft_distribution_stops_the_notices(tmp_path):
     table = {'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/COPYING', 'text')], 'LGPL-3.0-only')}
     with pytest.raises(ValueError, match='родини GPL.*tray'):
@@ -339,6 +400,8 @@ def test_package_assets_exist_with_the_declared_sizes():
     for name, size in packaging.ASSETS.items():
         with Image.open(ROOT / 'store_build' / 'msix' / 'Assets' / name) as image:
             assert image.size == (size, size) and image.format == 'PNG'
+            colours = image.convert('RGBA').getcolors(maxcolors=size * size)
+            assert len(colours) > 8, f'{name}: placeholder, not the emblem'
 
 
 def test_find_makeappx(tmp_path, monkeypatch):
@@ -388,3 +451,99 @@ def test_build_script_refuses_bad_arguments_before_freezing(tmp_path, arguments,
     result = run_script('--out', str(out), *arguments)
     assert result.returncode == 1 and needle in result.stderr
     assert not out.exists() or sorted(p.name for p in out.iterdir()) == ['BUILD-FAILED.txt']
+
+
+def _load_build_store():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('build_store_under_test', ROOT / 'scripts' / 'build_store.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def plugin_tree(tmp_path):
+    root = tmp_path / 'integrations' / 'claude'
+    files = {
+        '.claude-plugin/marketplace.json': '{}',
+        'obscura/.claude-plugin/plugin.json': '{"name": "obscura"}',
+        'obscura/shared/rules.md': 'rules',
+        'obscura/skills/start-story/SKILL.md': '---\nname: start-story\n---\nSee ${CLAUDE_PLUGIN_ROOT}/shared/rules.md\n',
+        'obscura/evals/x.json': '{}',
+    }
+    for rel, text in files.items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(text, encoding='utf-8')
+    return root, sorted(files)
+
+
+def test_plugin_files_are_tracked_user_files_only(plugin_tree):
+    root, tracked = plugin_tree
+    (root / 'obscura/skills/start-story/draft.tmp').write_text('stray', encoding='utf-8')
+    assert packaging.plugin_files(root, tracked) == ['.claude-plugin/marketplace.json', 'obscura/.claude-plugin/plugin.json',
+                                                     'obscura/shared/rules.md', 'obscura/skills/start-story/SKILL.md']
+
+
+def test_plugin_files_refuse_a_plugin_without_manifest(plugin_tree):
+    root, tracked = plugin_tree
+    (root / 'obscura/.claude-plugin/plugin.json').unlink()
+    with pytest.raises(ValueError, match='plugin.json'):
+        packaging.plugin_files(root, [rel for rel in tracked if not rel.endswith('plugin.json')])
+
+
+def test_plugin_files_refuse_a_cross_skill_reference(plugin_tree):
+    root, tracked = plugin_tree
+    skill = root / 'obscura/skills/draft-scene/SKILL.md'
+    skill.parent.mkdir(parents=True)
+    skill.write_text('Use ${CLAUDE_PLUGIN_ROOT}/skills/start-story/SKILL.md\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='draft-scene'):
+        packaging.plugin_files(root, tracked + ['obscura/skills/draft-scene/SKILL.md'])
+
+
+def test_repository_plugin_files_hold_every_skill():
+    listed = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z', 'integrations/claude'], capture_output=True, check=True)
+    prefix = 'integrations/claude/'
+    tracked = [item[len(prefix):] for item in listed.stdout.decode('utf-8').split('\0') if item]
+    files = packaging.plugin_files(ROOT / 'integrations' / 'claude', tracked)
+    for skill in ('start-story', 'draft-scene', 'publish', 'series-bible', 'setup-models'):
+        assert f'obscura/skills/{skill}/SKILL.md' in files
+    assert not [rel for rel in files if rel.startswith('obscura/evals/')]
+
+
+def test_bridge_check_requires_the_guide(monkeypatch, tmp_path):
+    build_store = _load_build_store()
+    answers = {'--help': b'storygen-mcp\n', '--self-check': b'storygen-mcp: ok\nguide: absent\n'}
+
+    def fake(arguments, **kwargs):
+        return subprocess.CompletedProcess(arguments, 0, stdout=answers[arguments[1]], stderr=b'')
+
+    monkeypatch.setattr(build_store.subprocess, 'run', fake)
+    with pytest.raises(build_store.Refused, match='провідник'):
+        build_store.check_bridge(tmp_path)
+    answers['--self-check'] = b'storygen-mcp: ok\nguide: ok\n'
+    build_store.check_bridge(tmp_path)
+
+
+def test_package_version_of_the_project_is_1_0_0_0():
+    import tomllib
+    project = tomllib.loads((ROOT / 'pyproject.toml').read_text(encoding='utf-8'))['project']
+    plugin = json.loads((ROOT / 'integrations/claude/obscura/.claude-plugin/plugin.json').read_text(encoding='utf-8'))
+    assert package_version(project['version']) == '1.0.0.0'
+    assert plugin['version'] == project['version']
+
+
+def test_plugin_files_check_skills_as_they_will_ship(plugin_tree):
+    root, tracked = plugin_tree
+    skill = root / 'obscura/skills/start-story'
+    (skill / 'references').mkdir()
+    (skill / 'references/new.md').write_text('never added to git', encoding='utf-8')
+    (skill / 'SKILL.md').write_text('See ${CLAUDE_PLUGIN_ROOT}/skills/start-story/references/new.md\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='start-story'):
+        packaging.plugin_files(root, tracked)
+    # An untracked draft skill is not shipped, so it cannot refuse the build.
+    (skill / 'references/new.md').unlink()
+    (skill / 'SKILL.md').write_text('See ${CLAUDE_PLUGIN_ROOT}/shared/rules.md\n', encoding='utf-8')
+    draft = root / 'obscura/skills/draft-idea/SKILL.md'
+    draft.parent.mkdir(parents=True)
+    draft.write_text('Use ${CLAUDE_PLUGIN_ROOT}/skills/start-story/SKILL.md\n', encoding='utf-8')
+    assert 'obscura/skills/draft-idea/SKILL.md' not in packaging.plugin_files(root, tracked)

@@ -41,6 +41,7 @@ def test_backups_item_appears_once_there_are_backups(tmp_path):
 @pytest.mark.parametrize('name,expected', [('Ukrainian_Ukraine', 'uk'), ('uk_UA', 'uk'), ('English_United States', 'en'),
                                            ('pl_PL', 'en'), (None, 'en')])
 def test_menu_language_follows_the_system(monkeypatch, name, expected):
+    monkeypatch.setattr(desktop_tray, '_windows_ui_langid', lambda: None)
     monkeypatch.setattr(desktop_tray.locale, 'getlocale', lambda: (name, 'cp1251'))
     assert desktop_tray.system_locale() == expected
 
@@ -111,3 +112,13 @@ def test_launcher_without_a_tray_keeps_running_and_logs_it(monkeypatch, tmp_path
     thread.join(30)
     assert result == {'code': 0}
     assert 'Значок у треї недоступний' in (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
+
+
+def test_tray_language_follows_the_windows_ui_language(monkeypatch):
+    assert desktop_tray.ui_language(0x0422) == 'uk'
+    assert desktop_tray.ui_language(0x0409) == 'en'
+    assert desktop_tray.ui_language(0x0415) == 'en'
+    # A Ukrainian Windows interface wins over a regional format that says otherwise.
+    monkeypatch.setattr(desktop_tray, '_windows_ui_langid', lambda: 0x0422)
+    monkeypatch.setattr(desktop_tray.locale, 'getlocale', lambda: ('English_United States', 'cp1252'))
+    assert desktop_tray.system_locale() == 'uk'
