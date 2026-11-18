@@ -33,7 +33,7 @@
 
 ---
 
-### Task 1:  Таблиця винятків GPL-перевірки
+### Task 1: Таблиця винятків GPL-перевірки
 
 **Files:**
 - Modify: `src/storygen/packaging.py` (`copyleft_distributions`, нова `COPYLEFT_EXCEPTIONS`)
