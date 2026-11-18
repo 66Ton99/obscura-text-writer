@@ -38,12 +38,19 @@ function drawRating(after){
   const form=document.createElement('form');form.id='scene-rating';form.className='panel';
   const fieldset=document.createElement('fieldset'),legend=document.createElement('legend');
   uiText(legend,'textContent',()=>t('rating.scene.legend'));fieldset.append(legend);
+  // Radio and its text on one row; the help button sits outside the <label> so it does not become the labelled control.
   const radio=(value,render)=>{
-    const label=document.createElement('label'),input=document.createElement('input'),span=document.createElement('span');
-    input.type='radio';input.name='mode';input.value=value;uiText(span,'textContent',render);label.append(input,span);fieldset.append(label);return input;
+    const row=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input'),span=document.createElement('span');
+    row.className='rating-mode';input.type='radio';input.name='mode';input.value=value;uiText(span,'textContent',render);label.append(input,span);row.append(label);fieldset.append(row);return row;
   };
-  radio('inherit',()=>t('rating.scene.inherit',{p0:storyRating?t('rating.scene.summary',{p0:storyRating.sexual,p1:storyRating.violence,p2:storyRating.themes}):t('rating.level.unset')}));
+  const inheritRow=radio('inherit',()=>t('rating.scene.inherit'));
+  const storyHelp=document.createElement('button'),storyTip=document.createElement('span');
+  storyHelp.type='button';storyHelp.className='help-tip';storyHelp.textContent='i';storyHelp.setAttribute('aria-describedby','scene-rating-story');uiAttr(storyHelp,'aria-label',()=>t('rating.scene.story_help'));
+  storyTip.id='scene-rating-story';storyTip.className='help-tip-text';storyTip.setAttribute('role','tooltip');
+  uiText(storyTip,'textContent',()=>t('rating.scene.story',{p0:storyRating?t('rating.scene.summary',{p0:storyRating.sexual,p1:storyRating.violence,p2:storyRating.themes}):t('rating.level.unset')}));
+  inheritRow.append(storyHelp,storyTip);
   radio('own',()=>t('rating.scene.own'));
+  const axisWraps=[];
   for(const axis of axes){
     // The help button sits outside the <label>: a button inside it would become the labelled control instead of the select.
     const wrap=document.createElement('div'),head=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
@@ -54,7 +61,7 @@ function drawRating(after){
     help.type='button';help.className='help-tip';help.textContent='?';help.setAttribute('aria-describedby',tipId);uiAttr(help,'aria-label',()=>t('rating.help.button'));
     tip.id=tipId;tip.className='help-tip-text';tip.setAttribute('role','tooltip');uiText(tip,'textContent',()=>t(`rating.help.${axis}`));
     for(const level of allowedLevels(maxRating[axis],shownRating?shownRating[axis]:null)){const option=document.createElement('option');option.value=String(level);uiText(option,'textContent',()=>t(`rating.level.${level}`));select.append(option)}
-    head.append(label,help,tip);wrap.append(head,select);fieldset.append(wrap);
+    head.append(label,help,tip);wrap.append(head,select);fieldset.append(wrap);axisWraps.push(wrap);
   }
   const hint=document.createElement('small');uiText(hint,'textContent',()=>t('rating.scene.hint'));fieldset.append(hint);
   if(limited(maxRating)){const limit=document.createElement('small');limit.className='rating-edition-hint';uiText(limit,'textContent',()=>t('rating.edition.hint',{p0:maxRating.sexual}));fieldset.append(limit)}
@@ -62,7 +69,8 @@ function drawRating(after){
   form.append(fieldset,save);
   for(const axis of axes)form.elements[axis].value=String(shownRating?shownRating[axis]:0);
   form.elements.mode.value=own?'own':'inherit';
-  const sync=()=>{for(const axis of axes)form.elements[axis].disabled=form.elements.mode.value==='inherit'};
+  // «Як у творі» hides the axis lists: the scene simply takes the story rating.
+  const sync=()=>{const inherit=form.elements.mode.value==='inherit';for(const axis of axes)form.elements[axis].disabled=inherit;for(const wrap of axisWraps)wrap.hidden=inherit};
   sync();form.addEventListener('change',event=>{if(event.target.name==='mode')sync()});
   form.onsubmit=async event=>{
     event.preventDefault();

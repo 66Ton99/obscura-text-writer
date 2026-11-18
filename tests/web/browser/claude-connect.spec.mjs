@@ -67,3 +67,25 @@ test('Claude Desktop skills as ZIP files and Claude Code with the skills',async(
   await expect(block.locator('.connect-result')).toContainText('Міст підключено, а скіли — ні');
   await expect(block.locator('code')).toHaveText(commands.join('\n'));
 });
+
+test('Codex and Claude blocks stand side by side on a wide screen',async({page})=>{
+  await page.goto('/');
+  const [codex,claude]=await Promise.all([page.locator('#codex-connect').boundingBox(),page.locator('#claude-connect').boundingBox()]);
+  if(test.info().project.name==='mobile'){
+    expect(claude.y).toBeGreaterThanOrEqual(codex.y+codex.height);
+  }else{
+    expect(Math.abs(claude.y-codex.y)).toBeLessThan(2);
+    expect(claude.x).toBeGreaterThanOrEqual(codex.x+codex.width);
+  }
+  await page.locator('#codex-connect summary').click();
+  const [codexOpen,claudeAfter]=await Promise.all([page.locator('#codex-connect').boundingBox(),page.locator('#claude-connect').boundingBox()]);
+  expect(codexOpen.height).toBeGreaterThan(codex.height);
+  if(test.info().project.name==='mobile'){
+    // Stacked: the Claude block moves down below the opened Codex block.
+    expect(claudeAfter.y).toBeGreaterThanOrEqual(codexOpen.y+codexOpen.height);
+  }else{
+    // Side by side: opening Codex neither moves nor stretches the Claude block.
+    expect(Math.abs(claudeAfter.y-claude.y)).toBeLessThan(1);
+    expect(Math.abs(claudeAfter.height-claude.height)).toBeLessThan(1);
+  }
+});

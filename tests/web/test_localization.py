@@ -91,3 +91,13 @@ def test_text_cover_refusals_are_translated():
     assert diagnostic('Невідома палітра обкладинки','en')=='Unknown cover palette'
     assert diagnostic('Для обкладинки потрібна назва: задайте її в картці або у творі','en')==\
         'A cover needs a title: set it in the card or in the story'
+
+
+def test_character_availability_warning_is_translated():
+    # The characters page shows the server warning through diagnostic(); it must be in the catalog in both languages.
+    from storygen.characters.projection import TEMPORAL_WARNING
+    from storygen.web.localization import diagnostic
+    assert diagnostic(TEMPORAL_WARNING, 'uk') == TEMPORAL_WARNING
+    assert diagnostic(TEMPORAL_WARNING, 'en') == ('The timing of this description has not been checked; '
+                                                 'it may contain details from future scenes.')
+    # The page itself (load and preview, with a locale switch) is checked in tests/web/browser/characters-page.spec.mjs.

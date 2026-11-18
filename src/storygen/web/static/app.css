@@ -507,6 +507,10 @@ body:has(#workspace.focus-mode) #notice { z-index: 30; }
 @media (max-width: 500px) { .app-dialog { padding: 20px; } .app-dialog-actions button { flex: 1; } }
 /* Age rating axes: label with a "?" help tip shown on hover, keyboard focus or tap. */
 .rating-axis { margin: 16px 0; }
+.rating-axis[hidden] { display: none; }
+.rating-mode { position: relative; display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.rating-mode label, .panel .rating-mode label { display: inline-flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; }
+#scene-rating .rating-mode input[type="radio"] { display: inline-block; width: auto; margin: 0; padding: 0; }
 .rating-axis-head { position: relative; display: flex; align-items: center; gap: 8px; }
 .rating-axis-head label, .panel .rating-axis-head label { margin: 0; }
 .rating-axis select { margin: 6px 0 0; }
@@ -656,6 +660,8 @@ body.ghost-open #notice { z-index: 70; }
 
 /* STORE-MCP-001: «Connect to Claude» in the library. */
 .claude-connect{margin:1rem 0;padding:.75rem 1rem;border:1px solid var(--border-color);border-radius:8px}
+.connect-row{display:grid;grid-template-columns:1fr;gap:0 1rem;align-items:start}
+@media (min-width:768px){.connect-row{grid-template-columns:1fr 1fr}}
 .claude-connect summary{cursor:pointer;font-weight:600}
 .claude-connect .connect-actions,.claude-connect .connect-restart{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
 .claude-connect .connect-result p{margin:.5rem 0;overflow-wrap:anywhere}
