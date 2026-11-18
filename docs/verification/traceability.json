@@ -6771,7 +6771,8 @@
         "tests/web/test_codex_connect_routes.py::test_busy_lock_report_has_specific_reason",
         "tests/test_codex_skill_install.py::test_inspect_does_not_read_foreign_file_contents",
         "tests/web/test_codex_connect_routes.py::test_missing_skill_source_is_409_before_profile_write",
-        "tests/web/test_codex_connect_routes.py::test_real_skill_io_failure_stays_500"
+        "tests/web/test_codex_connect_routes.py::test_real_skill_io_failure_stays_500",
+        "tests/web/test_browser_fixture.py::test_browser_fixture_creates_missing_root_and_isolates_before_app"
       ]
     },
     {

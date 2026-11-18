@@ -121,7 +121,10 @@ def core_review_fixture(repo,story):
 
 def main():
     import os
-    test_root = Path('C:/tmp') if os.name == 'nt' else None
+    configured = os.environ.get('OBSCURA_BROWSER_TEST_ROOT')
+    test_root = Path(configured) if configured else Path('C:/tmp') if os.name == 'nt' else None
+    if test_root is not None:
+        test_root.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix='obscura-browser-', dir=test_root) as directory:
         root = Path(directory)
         profile = root/'home'
