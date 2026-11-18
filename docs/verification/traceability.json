@@ -2701,7 +2701,7 @@
     {
       "id": "R24-MESSAGES-S01",
       "requirement": "R24-MESSAGES",
-      "scope": "R-24: мовний вибір, каталог і presentation guards; не доказ літературної якості чи реальної поведінки моделей.",
+      "scope": "R-24: мовний вибір, каталог і presentation guards; не доказ літературної якості чи реальної поведінки моделей. Попередження про часову доступність опису на сторінці персонажів (завантаження й попередній перегляд, з перемиканням мови) перевіряє Playwright tests/web/browser/characters-page.spec.mjs.",
       "tests": [
         "tests/web/test_localization.py::test_api_diagnostic_preserves_original",
         "tests/web/test_localization.py::test_diagnostics_do_not_translate_author_parameters",

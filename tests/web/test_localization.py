@@ -98,8 +98,6 @@ def test_character_availability_warning_is_translated():
     from storygen.characters.projection import TEMPORAL_WARNING
     from storygen.web.localization import diagnostic
     assert diagnostic(TEMPORAL_WARNING, 'uk') == TEMPORAL_WARNING
-    english = diagnostic(TEMPORAL_WARNING, 'en')
-    assert english != TEMPORAL_WARNING and english.isascii()
-    script = (Path(__file__).resolve().parents[2] / 'src/storygen/web/static/characters.js').read_text(encoding='utf-8')
-    assert 'data.warnings.join' not in script and 'result.warnings.join' not in script
-    assert script.count('warnings.map(diagnostic)') == 2
+    assert diagnostic(TEMPORAL_WARNING, 'en') == ('The timing of this description has not been checked; '
+                                                 'it may contain details from future scenes.')
+    # The page itself (load and preview, with a locale switch) is checked in tests/web/browser/characters-page.spec.mjs.

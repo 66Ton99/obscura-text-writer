@@ -81,3 +81,26 @@ test('word target recommendation permits larger values',async({page,request})=>{
   expect(await scene.evaluate(el=>el.checkValidity())).toBeTruthy();
   await expect(page.locator('#scene-target-help')).toContainText(/15.?000/);
 });
+
+test('timing warning follows the interface language on load and in preview',async({page,request})=>{
+  const UK='Часову доступність опису не перевірено; він може містити відомості з майбутніх сцен.';
+  const EN='The timing of this description has not been checked; it may contain details from future scenes.';
+  const f=await(await request.post('/test-fixture')).json();
+  const imported=await request.post(`/api/stories/${f.story_id}/sources`,{multipart:{characters:{name:'characters.md',mimeType:'text/plain',buffer:Buffer.from('## Anna'+String.fromCharCode(10)+'The lighthouse keeper.'+String.fromCharCode(10))}}});
+  expect(imported.ok()).toBeTruthy();
+  const cards=(await(await request.get(`/api/stories/${f.story_id}/characters`)).json()).cards;
+  const scene=(await(await request.get(`/api/stories/${f.story_id}`)).json()).scenes.find(s=>s.id===f.scene_id);
+  expect((await request.patch(`/api/scenes/${f.scene_id}`,{data:{story_id:f.story_id,expected_revision:scene.revision,character_ids:[cards.at(-1).id]}})).ok()).toBeTruthy();
+  await page.goto(`/stories/${f.story_id}/characters`);
+  await page.locator('[data-ui-locale="en"]').click();
+  const status=page.locator('#characters-status');
+  await expect(status).toHaveText(EN);
+  await page.locator('[data-ui-locale="uk"]').click();
+  await expect(status).toHaveText(UK);
+  await page.locator('[data-ui-locale="en"]').click();
+  await page.locator('#characters-preview').click();
+  const info=page.getByRole('status').filter({hasText:EN}).filter({hasNot:status});
+  await expect(info).toHaveCount(1);
+  await page.locator('[data-ui-locale="uk"]').click();
+  await expect(page.getByRole('status').filter({hasText:UK})).toHaveCount(2);
+});

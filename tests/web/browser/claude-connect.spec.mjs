@@ -77,8 +77,15 @@ test('Codex and Claude blocks stand side by side on a wide screen',async({page})
     expect(Math.abs(claude.y-codex.y)).toBeLessThan(2);
     expect(claude.x).toBeGreaterThanOrEqual(codex.x+codex.width);
   }
-  // Opening one block does not stretch or move the other.
   await page.locator('#codex-connect summary').click();
-  const after=await page.locator('#claude-connect').boundingBox();
-  expect(Math.round(after.y)).toBe(Math.round(test.info().project.name==='mobile'?after.y:claude.y));
+  const [codexOpen,claudeAfter]=await Promise.all([page.locator('#codex-connect').boundingBox(),page.locator('#claude-connect').boundingBox()]);
+  expect(codexOpen.height).toBeGreaterThan(codex.height);
+  if(test.info().project.name==='mobile'){
+    // Stacked: the Claude block moves down below the opened Codex block.
+    expect(claudeAfter.y).toBeGreaterThanOrEqual(codexOpen.y+codexOpen.height);
+  }else{
+    // Side by side: opening Codex neither moves nor stretches the Claude block.
+    expect(Math.abs(claudeAfter.y-claude.y)).toBeLessThan(1);
+    expect(Math.abs(claudeAfter.height-claude.height)).toBeLessThan(1);
+  }
 });
