@@ -21,12 +21,15 @@ if(root){
     const reasons={install_busy:'codex.install_busy',unsafe_install_root:'codex.unsafe_install_root'};
     const specific=(answer.errors||[]).map(reason=>reasons[reason]).filter(Boolean);
     box.replaceChildren(...(specific.length?specific.map(key=>line(key)):[line('codex.'+result)]));
+    const success=box===skills&&(result==='installed'||result==='unchanged');
     for(const field of ['path','installed','restored','conflicts','backups']){
+      if(success&&field==='installed')continue;
       const values=Array.isArray(answer[field])?answer[field]:answer[field]?[answer[field]]:[];
       for(const value of values)box.append(line('codex.'+(field==='installed'?'installed_list':field),{p0:value}));
     }
-    if(result==='installed'||result==='unchanged'){
-      if(box===skills)for(const name of answer.names||[])box.append(line('codex.name',{p0:name}));
+    if(success){
+      const changed=new Set(answer.installed||[]);
+      for(const name of answer.names||[])box.append(line(changed.has(name)?'codex.installed_list':'codex.current_name',{p0:name}));
     }
   }
   function failure(box,error){

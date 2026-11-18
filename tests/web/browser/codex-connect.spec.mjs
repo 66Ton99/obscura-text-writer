@@ -114,3 +114,27 @@ test('Codex busy and unsafe roots give specific recovery in both languages',asyn
     await page.unroute('**/api/connect/codex/skills');
   }
 });
+
+
+test('Codex lists each skill once and preserves changed versus current',async({page},testInfo)=>{
+  let answer;
+  await page.route('**/api/connect/codex/skills',route=>reply(200,answer)(route));
+  const root=await open(page);
+  for(const [result,installed] of [['installed',names],['unchanged',[]],['installed',[names[1],names[3]]]]){
+    answer={result,installed,names,backups:[]};
+    await page.locator('[data-ui-locale="uk"]').click();
+    await root.locator('[data-codex-action="skills"]').click();
+    const rows=root.locator('.codex-skills-result p');
+    for(const name of names){
+      await expect(rows.filter({hasText:name})).toHaveCount(1);
+      if(!installed.includes(name))await expect(rows.filter({hasText:name})).toContainText('Уже актуальний:');
+    }
+    await page.locator('[data-ui-locale="en"]').click();
+    for(const name of names){
+      const row=rows.filter({hasText:name});
+      await expect(row).toHaveCount(1);
+      await expect(row).toContainText(installed.includes(name)?'Installed:':'Already current:');
+    }
+  }
+  await page.screenshot({path:testInfo.outputPath('codex-skills-once.png'),fullPage:true});
+});
