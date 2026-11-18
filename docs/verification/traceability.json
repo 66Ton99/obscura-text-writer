@@ -4830,6 +4830,20 @@
       ]
     },
     {
+      "id": "PACKAGING-001-S07",
+      "requirement": "PACKAGING-001",
+      "scope": "Робочий процес store-build: Windows і офіційний CPython 3.12, тестова ідентичність або --skip-msix, артефакти на 7 днів, без секретів і лише contents: read.",
+      "tests": [
+        "tests/test_store_workflow.py::test_store_workflow_builds_on_windows_with_official_python",
+        "tests/test_store_workflow.py::test_store_workflow_packs_a_test_identity_or_skips_msix",
+        "tests/test_store_workflow.py::test_store_workflow_has_no_secrets_and_reads_only"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-package-ci",
+        "reason": "Сам запуск відбувається в GitHub Actions; тест перевіряє лише текст робочого процесу, а результат збирання видно в артефактах запуску."
+      }
+    },
+    {
       "id": "MEMORY-SELECT-S01",
       "requirement": "MEMORY-SELECT",
       "scope": "Запит без переповнення не змінюється; розкладання проєкції на рядки байтово тотожне попередній реалізації.",
