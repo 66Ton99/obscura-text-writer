@@ -2274,6 +2274,73 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Виконання ще не почалося: writing-plans вимагає перегляду конкретного плану й вибору нативного або субагентного способу. Рекомендація — нативно в поточній сесії, один незалежний review основи наприкінці.
 - Перевірка документів: python -X utf8 scripts/check_docs.py — код 0. verify.py не запускався; результатів реалізації немає й docs/STATUS.md не переписано. Сайт uk/en поки не змінюється, бо поведінка ще не реалізована; відповідне оновлення заплановано в задачі CLI.
 
+## 2026-11-17 — Інтеграція Codex: основа, нативне виконання
+
+- План основи затверджено власником; обрано нативне виконання. Реалізація в C:/tmp/obscura-codex-design, гілка codex/obscura-codex-integration.
+- Task 1: RED — відсутній codex_connect; GREEN — 38 тестів конфігурації та незмінені тести Claude. Конфігуратор TOML, унікальні копії, права/DACL, звірка конкурентної зміни, ізольовані профілі; STORE-MCP-S12 і traceability у цьому ж коміті.
+- Користувацька документація Task 1 не змінюється: поки немає UI чи публічного CLI. Оновлення uk/en заплановано разом із CLI.
+- Task 2: RED — відсутній codex_skills; GREEN — 14 passed, 1 skipped разом із незміненими тестами плагіна Claude. П’ять скілів, правила, шляхи, клієнтський Model/Model routing, рецепти, відмова при дрейфі; CODEX-SKILLS S01/S03 і traceability. OS відмовила у створенні тестового symlink — цей тест skipped, не доказ живої перевірки symlink.
+- Task 3: RED — відсутній codex_skill_install; GREEN — 13 тестів установки, включно зі справжнім Windows junction, керованими backup, конфліктами та безпечним відкатом при паралельній авторській правці; CODEX-SKILLS-S02 і traceability у цьому ж коміті. Публічного UI/CLI ще немає, тому сайт оновлюється в Task 4.
+- Попередній повний pytest (розпочато до змін, завершено після зміни pyproject) дав 2 failed, 3582 passed, 19 skipped: test_declared_dependencies_all_have_licence_texts і test_build_dependencies_have_no_copyleft не бачили tomlkit у старому PYTHONPATH процесу. Прогін не є чистим baseline, бо джерела змінювалися. Обидва тести повторено з ізольованим target C:/tmp/obscura-codex-deps: 2 passed. Остаточний verify.py виконується після стабілізації коду.
+
+### 18.11.2026 — CLI основи Codex
+
+- Task 4: RED — CLI відсутній, 5 failed; GREEN — 8 тестів реального CLI, аргументів, тимчасового профілю, чужого cwd, відмови генерації та ланцюжка config→generate→install→update→conflict. Джерела Claude й пакування не змінено.
+- Оновлено mcp uk/en: Store obscura-mcp.exe проти checkout storygen-mcp.exe, CLI встановлення/оновлення, корені, конфлікти й ручне відновлення. CODEX-SKILLS-S06 і traceability додано разом із кодом. Повний verify.py й незалежне рев’ю ще попереду.
+- Перший стабільний verify.py на 35cceba: 3630 passed, 0 failed/errors, 20 skipped, source_changed=false; artifacts/verification-o0970t6y/result.json. До виправлень рев’ю, не доказ їхнього завершення.
+- Незалежне цілісне рев’ю (gpt-6.2-astra, діапазон 541fac4..35cceba) дало 10 Important, 0 Critical, 2 Minor. Один fix pass: 18 відтворених RED; GREEN — 147 passed, 1 skipped у нових тестах плюс незмінені Claude/packaging. Виправлено ACL до приватного запису; HTTP-only та inline TOML; фази відкату й parent identity/reparse; межі H2, scalar/frontmatter та fragment links; реальні MCP-згадки; переносну ізоляцію тестів; ASCII JSON stdout. Повторний повний verify ще потрібен.
+- Проба конфігуратора зі справжнім Codex CLI 0.166.0 у C:/tmp/obscura-codex-interop-vwq4wafh: mcp get obscura --json підтвердив stdio, command/args/enabled; міст і моделі не запускалися.
+- Відкладені Minor: тест чужого editable install має послаблену чутливість через уже правильний PYTHONPATH; після невдачі --output може лишитися неповний пакет, який треба прибрати/переглянути вручну. Основне --install має перевірений відкат; ці дрібниці не входили у fix pass.
+- Фінальний verify.py на f76a6b8: **3668 passed, 0 failed, 0 errors, 2 skipped**, source_changed=false; artifacts/verification-qd7r5hqm/result.json. Skipped — два тести створення symlink через права Windows. На відміну від першого прогону, task-done запускає через Git Bash, тож 18 POSIX hook-тестів цього разу виконалися, а не skipped.
+- Ще одна жива проба CLI 0.166.0: C:/tmp/obscura-codex-migration-7iaxz_5f, inline/HTTP-helper/oauth_resource/auth → запис stdio, кожен успішно читається mcp get; моделей і моста не запускали.
+- План периферії: [2026-11-18-codex-integration-ui.md](2026-11/2026-11-18-codex-integration-ui.md). Він спирається на реалізовані інтерфейси та рев’ю основи, чекає на перегляд. Нативний спосіб уже обраний. Проба локальної JSON-schema Codex підтвердила skills/list, mcpServerStatus/list, mcpServer/tool/call та ephemeral thread/start; це опис протоколу, не виконана live-перевірка двох клієнтів.
+
+#### Рев’ю основи: рішення за важливими зауваженнями
+
+| № | Виправлення | Доказ RED→GREEN |
+|---|---|---|
+| 1 | ACL до першого приватного запису, збереження ACE й режиму legacy/auto-inherited/protected | test_private_acl_is_applied_before_bytes_and_preserved |
+| 2 | Повний HTTP-only перелік та відмова deprecated bearer_token без витоку значення | test_all_http_only_fields_are_removed_for_stdio, test_deprecated_bearer_token_is_refused_without_exposing_it |
+| 3 | Inline mcp_servers без obscura підтримується | test_inline_parent_can_add_obscura_without_changing_other |
+| 4 | Повторна перевірка батьків, reparse та ідентичності до файлових операцій | test_parent_redirect_during_staging_is_refused |
+| 5 | Відкат зберігає авторське вилучення й початковий конфлікт ще не обробленої цілі | test_rollback_does_not_restore_directory_deleted_after_publication, test_conflict_on_not_yet_touched_target_is_named |
+| 6 | Заміна однієї H2 замість видалення наступних секцій; регістр advisor | test_model_adaptation_preserves_other_sections, test_lowercase_advisor_instruction_is_not_emitted |
+| 7 | Повна перевірка підтримуваного frontmatter і md-посилань із фрагментом | test_entire_frontmatter_is_validated, test_markdown_fragment_does_not_hide_missing_reference |
+| 8 | Ізоляція прив’язана до pytest basetemp, не C:/tmp literal | test_codex_roots_are_temporary і повний прогін |
+| 9 | Контракт тестує реальні короткі MCP-виклики, не порожню множину префіксів | test_unknown_mcp_tool_is_reported — ненульові ключові інструменти та навмисна помилка звичайного виклику |
+| 10 | JSON підтримує Unicode-шлях на legacy stdout | test_cli_emits_json_with_unicode_path_on_legacy_stdout |
+
+Після fix pass весь набір зелений; повторне модельне рев’ю виправлень не запускалося. Пункт 8 і чутливість перевірки 9 — виправлення тестів, а не нові продуктові гілки.
+
+#### Зафіксовані рішення й межі
+
+- Попередній pytest не є чистим baseline, бо pyproject змінився під час прогону; відсутня тестова залежність виправлена явним PYTHONPATH, фінальний стабільний verify зелений. Ціна помилки — регресія мала б зупинити фінальний gate.
+- Фікстура перевіряє pytest basetemp, не конкретний диск; усі прогони цієї сесії лишилися у C:/tmp. Ціна помилки — слабша перевірка ізоляції, тому HOME/USERPROFILE/CODEX_HOME звіряються разом.
+- Legacy DACL копіюється сумісним API, modern — SetNamedSecurityInfoW: сліпе переведення legacy на auto-inheritance додавало батьківські ACE у живій пробі. Ціна помилки — розширення доступу; тести перевіряють реальні ACE і protection до першого запису.
+- Discovery/user-scope/MCP двох клієнтів залишено критерієм периферії; ціна помилки — не можна оголошувати повну клієнтську підтримку.
+- Вебмаршрути/UI/Store-freeze залишено наступному плану; ціна помилки — core draft не є завершеною інтеграцією кнопкою.
+- Якість, ціни й поведінку моделей не вимірювали відповідно до заборони власника; ціна помилки — літературна якість залишається непідтвердженою.
+- Рецензент не підтверджував незавершений full suite; остаточний результат установлено лише фінальним verify. Ціна помилки — хибний green, який заборонено використовувати для готовності.
+
+Відкладені Minor без потайного включення в наступний обсяг: сильніший тест чужої editable-інсталяції та явна обробка залишкового часткового --output. Успішна core-установка не залежить від них; пошкоджені авторські файли не перезаписуються.
+- Доставка основи: draft PR #206 на main; rebased code ідентичний перевіреному f76a6b8, перевірений SHA збережено в codex/obscura-codex-core-verified. Зовнішній PR cross-review лишається фінальним gate після периферії, не оголошений виконаним.
+- Основну теку C:/Projects/text-generator оновлено fast-forward без втрати сторонніх notes/ і .wrangler/. Проектна .venv отримала перевірений tomlkit 0.15.2. У ній check_docs.py пройшов, smoke основи — 66 passed, 1 skipped (OS symlink). Вебкнопки ще немає; наступний план чекає на перегляд.
+- Службові артефакти .superpowers/sdd/2026-11-17-codex-integration-core залишено: автоматична перевірка дозволів відхилила їх рекурсивне очищення через недоведені вміст і цінність. Видалення не потрібне для доставки; безпечний варіант — зберегти матеріали.
+
+### Codex, периферія — 18.11.2026
+
+Власник затвердив окремий план UI та нативне виконання. origin/main a4ee490 інтегровано; паралельні Claude/packaging джерела не змінені. Task 1: read-only inspect_skills, три авторські маршрути, фіксовані корені/порт, bridge/Origin захист. RED: 5 inspect import failures і відсутній модуль маршрутів; GREEN: 55 focused tests. Користувацькі інструкції кнопки оновлюються у Task 4 разом із готовим UI; чинний CLI не змінився.
+`nTask 2: окремий блок Codex, live UA/EN, незалежні результати та clipboard fallback. RED 8 absent-block scenarios → GREEN 12 desktop/mobile Codex+Claude. Візуальний прохід: 1058/374px, без горизонтального overflow, кнопки42px; знімки C:/tmp/obscura-codex-ui-{desktop,mobile}.png. Detect: один advisory про rgb(0,0,0) на нерендереному Jinja main, без нових literal кольорів; чинні токени збережені. API імпорти взято з фактичних api.js/i18n.js (ui.js з плану відсутній). Інструкції кнопок додаються Task4.
+
+Task 3: обидва Codex backend PASS RPC skills repo/user, catalog/list_stories, без моделей. User scope — тимчасовий CODEX_HOME/skills, бо dirs6 ігнорує env home на Windows; власник дозволив лише читання справжніх скілів. Точна user .agents і GUI не перевірені. Store PYZ містить tomlkit, license gate окремо FAIL через pyinstaller/pyinstaller-hooks-contrib GPL-family у TOC; ліцензія tomlkit окремо PASS, це не загальний gate; runtime self-check BLOCKED Windows Application Control (запуск unsigned frozen-моста). Заблоковану політику не обходили. PR лишається draft; повного приймання ще немає. Уражені packaging/Claude файли не редагували.
+
+Task 4: оновлено обидві мовні версії mcp-інструкцій: дві кнопки, backup/відновлення, явне enabled/HTTP→stdio, restart/new session, conflict/partial і Store/frozen. Сторінка текстова, застарілих UI-зображень немає; neutral QA артефакти вже перевірено у Task2. Повне приймання лишається незавершеним через Store gate і точний user .agents/GUI. Фінальне незалежне рев’ю й pytest виконуються на стабільному дереві.
+
+Фінальне незалежне рев’ю периферії (64da5b2..7c49adc, gpt-6.2-astra): 4 Important, 3 Minor, Critical=0. Єдиний fix pass: незалежний GET-стан, lazy GET після розгортання, окремі install_busy/unsafe_install_root повідомлення, manifest-first/streamed status без читання чужих вкладень. RED: 4 pytest failures і 6 browser failures; GREEN:41 pytest і18 browser desktop/mobile. Початковий full verify перервано на31% до виправлень, результату немає; фінальний запускається заново на стабільному SHA. Minor відкладено: missing source file→500 замість409; browser fixture вимагає C:/tmp; дубль назв після першої установки. Попередні два Minor основи також лишаються. User docs uk/en вже пояснюють незалежність дій, conflict/partial, busy lock і відновлення; нових інструкцій або screenshot через ці виправлення не потрібно.
+
+Фінальний код1fbca9e: verify.py artifacts/verification-5z1fzvnj —3673 passed,0failed/errors,20skipped, source_changed=false; Git Bash verify.py tests/test_pre_push_hook.py artifacts/verification-9g_cdcdu —18passed,0skipped, той самий snapshot. Разом3691 унікальний виконаний тест, два OS-denied symlink skips. Browser18passed; check_docs пройшов. Усі4Important виправлено одним RED→GREEN проходом, нове рев’ю не запускали. Forbidden Claude/packaging diff порожній. PR206 draft: зовнішній PR cross-review не запускався, бо повний integration gate не зелений (Store runtime/license й точний .agents/GUI). Злиття не виконано. Наступні коміти лише документують уже перевірений код; авторські untracked notes/.wrangler в основній теці не перетинаються з оновленням.
+
+Доставка: branch03d0991 відправлено, PR206 оновлено на main та лишено draft. Основна тека була detached a4ee490 із лише untracked docs/superpowers/notes/ і workers/waitlist/.wrangler/; перетинів немає, fast-forward03d0991 зберіг обидві теки. У головній теці60 focused tests PASS. check_docs спершу виявив посилання STATUS на локальний ignored artifact, замінено на текстові шляхи як в основному звіті (щоб працювало на fresh checkout); локальні result/JUnit/log копіюються окремо. Код після перевіреного1fbca9e незмінний. Worktree й ledger збережено, бо приймання заблоковане; cleanup не потрібен для доставки.
 ## 2026-11-18 — R-39 / #119: скіли в пакеті й провідник у MCP (PR 1, план `docs/superpowers/plans/2026-11-18-store-release-skills.md`)
 
 - Специфікація зміни: `docs/superpowers/specs/2026-11/2026-11-17-store-release-design.md` (затверджено власником 18.11.2026 разом із поправкою: проба П5 показала, що Claude Code читає плагін локального маркетплейсу з місця, тож старт Obscura не викликає `claude`).
@@ -2285,6 +2352,56 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Фінальне рев’ю гілки (субагент Opus): 0 критичних, 4 важливих — 3 виправлено (`f233d71`: відновлення обірваної заміни копії, невдалий відкат, помилка запису ZIP); зависання шима `claude.cmd` відкладено як наявний шаблон усіх викликів `claude`. 7 дрібних відкладено.
 - Cross-review (codex/gpt-6.1-sol @ `f233d71`): 6 зауважень, 5 виправлено (`319ead0`: прибирання лише власних тек, чужий `marketplace.old` — конфлікт, унікальний тимчасовий ZIP і читання назад, суворіші тести промпта й ZIP), 1 відхилено (умовне розгортання блоку в браузерному тесті — наявний шаблон файлу).
 - `verify.py` на `319ead0` (з `C:/tmp/store-verify`): passed 3647, failed 0, skipped 1.
+
+### Codex206 — погоджений поділ18.11.2026
+
+Власник прямо затвердив checkout-обсяг: B1 і M1–M3; B2/B3 передано R-39 PR2, M4/M5 відкладені. main17fbe56 (#207) інтегровано merge1928446:8конфліктів узгоджено зі збереженням Claude Desktop skills і Codex, обох allow-list, uk/en mcp й журналів;96focused passed,1OS symlink skipped, check_docs PASS. Forbidden diff відносно main порожній. Поправки дизайну/SPEC/плану відображають уже надане рішення, не нове погодження. Окремий акаунт/GUI потребує участі власника, запит на готовність середовища подано; решта виконується нативно з RED→GREEN.
+
+M1/Task5: missing shared/rules.md відтворив POST500 (RED); missing SKILL.md уже правильно відмовляв409. Вузький _bundle нормалізує лише FileNotFoundError генератора; FileNotFoundError установника й PermissionError джерела лишаються500. Джерела Claude, генератор і установник не змінені. Додано приймання каталогу27/get_guide та відсутності get_guide у clean Codex-пакеті. Інструкції відновлення неповного checkout додано uk/en, пару rehash виконано.
+
+M2/Task6: RED показав, що server.py ігнорує явно вибраний missing root; першу harness-помилку argv виправлено до справжнього RED. Тепер OBSCURA_BROWSER_TEST_ROOT підтриманий, батьківська тека створюється до TemporaryDirectory; тест підтверджує всі профілі й absent.env до create_app та збереження synthetic gateway. Зміна лише тестового стенда; user docs оновлення не потребують.
+
+M3/Task7: desktop/mobile RED відтворив дві появи кожної назви. При успіху UI тепер проходить names один раз, позначаючи installed із фактичного набору змін і already current для решти; partial/conflict групи збережені. Додано first/unchanged/managed-update UA/EN перевірки й нейтральні screenshots Playwright. Пояснення результату актуалізовано uk/en; нові site-знімки не потрібні, сторінка mcp текстова й геометрія панелі не змінена.
+
+Task8/B1: підготовлено docs/verification/codex-checkout-acceptance.md — окремий Windows-акаунт, власний checkout/venv, штатна user .agents установка, нейтральний сервер18761, точні діагностичні JSON-RPC обох executable та GUI/checklist доказів. Процедура не виконувалася й не оголошує B1 пройденим; запит готовності акаунта очікує власника. Store-проби лишаються історією й відповідальністю R39PR2. M3 visual desktop/mobile: рівно5рядків, без переповнення; detect JS=[];22browser passed. Поточні code gates готуються на стабільному дереві; native reviewer оцінить лише поправку/main merge/M1–M3, не повторно незмінну основу.
+
+Checkout206, фінальний gate6969cbb: artifacts/verification-uy1804r6 —3741passed,0failed/errors,2OS symlink skips, source_changed=false; Git Bash включив POSIX hooks у повний прогін.22browser passed, check_docs/site pair PASS, forbidden diff(main17fbe56) порожній. STATUS повністю регенеровано: старе поєднання319ead0/1fbca9e прибрано, жодних агрегатів різних SHA. Нативне свіже review поправки1928446..6969cbb+merge:Critical0,Important0,2новіMinor відкладено (skill_source_invalid UI advice generic; relative test-root на Python3.10/3.11), тимчасовий STATUS-Minor усунув запланований verify. M4/M5 відкладені власником; змін M1–M3 після перевіреного коду немає. User docs uk/en явно звужені до checkout, Store-приймання окреме. B1: процедура готова й доставлена в основну теку, фактичний вхід/GUI/системна .agents очікують власника. Cross-review коду виконується окремо після зеленого локального gate; B1 все одно блокує ready/merge.
+
+Доставка checkout-поправки: M1–M3 виконано й відправлено; main синхронізовано до перевіреного коду6969cbb без зміни author notes/.wrangler. Main smoke:71passed,1OS symlink skip; check_docs PASS. Усі3741повного verify та22browser зелені. External cross-review НЕ запущено: automatic approval review відхилив npx-команду через передачу поточного приватного коду/контексту зовнішній моделі; попередня явна згода охоплювала лише специфікацію. Відмову не обходили, marker відсутній; потрібна окрема згода на код206. B1 окремого Windows-акаунта/GUI також очікує власника. Store B2/B3 не є блокерами206. Гілка й PR лишаються draft до цих двох умов; жодних модельних ходів Obscura або записів у справжній профіль власника не виконано.
+
+### Зовнішній cross-review коду206 — згода й triage
+
+Власник явно дозволив передачу поточного diff/контексту коду206; попереднє automatic rejection подолано саме новою згодою, не обхідним запуском. detent завершився0, claude/default @c85e8b4,5findings. Report: tmp/cross-review-claude-codex-obscura-codex-integration-c85e8b4-j4GnVi/report.md (не git).
+
+Cross-review: claude/default @ c85e8b4 (author: codex) — 5 findings: 4 fixed, 1 rejected
+
+| # | Оцінка | Рішення | Доказ / причина |
+| --- | --- | --- | --- |
+| 1 | Important: порожня копія readonly config | Виправлено | read-only_config та failed_backup_permissions RED→GREEN; відкритий ексклюзивний handle, ACL перед байтами, cleanup власного артефакту. Collision guard і реальні ACL тести підтверджені. |
+| 2 | Important: reason-код у conflicts | Виправлено |3parent_redirect RED→GREEN: conflict, conflicts=(), errors=(install_changed,linked_path); named target і rollback цілі збережені. Browser RED→GREEN не показує код як ім'я та лишає partial. |
+| 3 | Слабкі outcome assertions захисту відкату | Виправлено | parent redirect та late author edit тепер вимагають точний conflict і точні поля; parent cases ловлять дефект2. Коректний late-edit baseline уже був зеленим. |
+| 4 | Слабкі truthy assertions restored/conflicts | Виправлено | failed third rename вимагає restored=(obscura-start-story,), conflicts=(); author edit — conflicts=(obscura-start-story,), installed=(). Фактичні rollback сценарії пройшли. |
+| 5 | Minor: S05 test не звіряє exact reason/state | Відхилено з fix pass, відкладено | Поточний код повертає skills_unsupported/unsupported, тест уже перевіряє409, available=false й відсутність читання джерел. Прогалину точності тесту визнаємо, але додатковий Store-test polish не входить у safety fix pass checkout. Це rejected у marker, не заперечення існування Minor. |
+
+Один safety fix pass:5pytest RED (2backup+3parent) і2browser RED →72focused pytest та24browser GREEN. Зміцнення правильних rollback baseline не називаємо новими поведінковими RED. Реальні Windows legacy/inherited/protected ACL перевірені також до backup-write. Нова зміна коду вимагає нового повного verify; попередні3741passed стосуються6969cbb й не оголошуються фінальним proof після safety fixes. User docs uk/en доповнені recovery для write-protected config і зміненого шляху; layout та Claude/Store-файли не змінені. M4/M5 не робили;2minor native review та Minor5 cross-review лишаються відкладеними. B1: акаунт готовий за повідомленням власника, процедура надана, фактичних результатів/GUI ще немає. Зовнішнє review повторно не запускається після виправлень за його правилом once per PR.
+
+
+### B1 — підготовлений комплект замість ручного розгортання, 18.11.2026
+
+На пряме прохання власника весь незалежний від Test setup виконано в yuriy. C:/tmp/Obscura-Codex-B1 містить git archive027434b (без приватних untracked/.git), перенесений підписаний Python3.12.10, автономну venv із web/mcp, підписаний CLI0.166.0, driver та cmd. ACL: Test ReadAndExecute, лише results Modify; owner/System/Admin FullControl. kit-info прив’язує guard до SID Test; реальний owner запуск відмовив до змін. Чотири standalone safety unittest PASS (SID, scopes/paths, whitelist RPC). launcher --self-check PASS; повна preparation-проба обох backend PASS:5user-scope CODEX_HOME/skills,27tools,list_stories=[],0modelturns. PREPARATION-CHECK.json має b1_passed=false; це не системна .agents/GUI і не B1PASS. Автономність Python підтверджено sys.base_prefix у kit/python.
+
+Версійовані допоміжні файли docs/verification/b1-kit; коротку покрокову процедуру codex-checkout-acceptance.md скопійовано в README-UK.txt комплекту. Лише Test-dependent дії залишені власнику: перший вхід Windows, можлива per-user реєстрація вже встановленого Codex, вхід у Codex, запуск driver та GUI-відповіді. Звіт загалом INCOMPLETE до всіх відповідей. Без модельних turn/start, без запису в owner .agents/.codex, без послаблення Windows policies.
+
+Повний verify.py після safety fix027434b:3744passed,0failed/errors,2OSsymlinkskip,source_changed=false; artifacts/verification-dv4sjrq6. Допоміжні B1-файли додано пізніше й перевірено окремо, повний звіт не приписано їм. Користувацька документація: оновлена саме ручна процедура; продуктова поведінка та site uk/en після027434b не змінені. B1 залишається відкритим до фактичного запуску в Test.
+
+Допоміжні safety-тести також виконано через verify.py:4passed,0failed/errors/skipped,source_changed=false; artifacts/verification-zjcdghg9. STATUS містить цей частковий прогін та окремий історичний повний027434b. Службовий verify --help не виконав тестів, unconfirmed не зараховано як PASS.
+
+
+### Codex206 — B1 прийнято18.11.2026
+
+B1 виконано 18.11.2026, запуск 20261118-164659-b6b2f8 (15:46:59–15:49:25 UTC, 16:46–16:49 Europe/Warsaw), checkout027434b. Штатний установник встановив усі п’ять скілів у C:/Users/Test/.agents/skills; MCP configured у Test/.codex/config.toml зі штатною копією. CLI0.166.0 та app backend0.169.0-alpha.11.1 підтвердили ті самі п’ять user-scope шляхів, discovery_errors=0,27tools incl get_guide, list_stories=[] без помилки; model_turns=0. Власник підтвердив у GUI всі п’ять скілів і enabled obscura. Загальний automatic/status=PASS. Доказ: docs/verification/evidence/2026-11-18-codex-b1.json (копія без Windows SID, SHA-256 оригіналу збережено). Це закриває checkout B1, але не доводить Store runtime/license чи літературну якість. Тестову Obscura після перевірки зупинено; її збережений у Test MCP URL належить цьому завершеному тестовому запуску.
+
+Tasks5–8 checkout-поправки завершено: M1–M3, main17fbe56, повний3744passed/2skip,24browser, native review, дозволений cross-review і safety fix, B1. Docs/SPEC уточнено за фактичним прийманням, нової продуктової поведінки немає; site uk/en та знімки змін не потребують. Ready for review дозволено після цих gates; merge самостійно не виконуємо. Test kit і worktree збережено. M4/M5, два native Minor та Minor5 cross-review залишаються відкладеними.
 
 ## 2026-11-18 — R-39 / #119, PR 2: пакет Store 1.0.0 (план `docs/superpowers/plans/2026-11-18-store-release-package.md`)
 
@@ -2299,3 +2416,15 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Фінальне рев’ю гілки (субагент Opus): 0 критичних, 1 важливе, 6 дрібних. Виправлено (`5a46167`): скіли перевіряються на копії лише відстежуваних файлів; резервні копії пропускають `.env` у будь-якому регістрі (переоцінено з дрібного: Windows відкриває `.ENV` як `.env`); CI зупиняється після невдалої установки з `requirements-lock.txt` (переоцінено з дрібного); формулювання тригера PACKAGING-001-S07. Відкладено: тека `Obscura/` в артефакті після відмови без маркера, мережеві помилки `tokenizers_notices.py` обривають скрипт (без запису файла), вузький фільтр шляхів CI.
 - `verify.py` на `5a46167` (з `C:/tmp/store-verify`; з довгої теки worktree 173 тести падали на MAX_PATH): passed 3672, failed 0, skipped 1. CI `store-build` зелений на кожному push після виправлення `--report-url`.
 - Cross-review (codex/gpt-6.1-sol @ `dc49445`): 3 зауваження, усі виправлено (`11ef6cb`): виняток GPL-перевірки з будь-якою іншою (зокрема не-GPL чи порожньою) ліцензією зупиняє збирання; порожній SBOM зупиняє `tokenizers_notices.py`; тест винятків звіряє буквальні перевірені метадані.
+
+
+### Codex206 — конкурентне оновлення main після B1
+
+Під час запису B1 main оновився до d12c8a7 (#208 Store PR2). Інтегровано без власних змін Claude/Store-файлів;4docs-конфлікти: SPEC зберігає Codex-конфігуратор та новий опис packaging, журнал містить обидві історії, sync mcp перераховано, STATUS буде замінено свіжим verify. Автоматично злиті uk/en mcp зберігають обидва набори інструкцій; pyproject бере версію1.0.0 та pinned MCP2.3.0, зберігаючи tomlkit extra web. B1 доказ для027434b чинний для незмінених Codex-компонентів і джерел скілів; full/browser gate оновленого main запускається окремо.
+
+
+### Codex206 — фінальна перевірка main208
+
+Після інтеграції main d12c8a7 (#208), merge67fdc0b: повний verify.py3753passed,0failed/errors,20skip (18POSIX sh unavailable,2Windows symlink permissions),source_changed=false; artifacts/verification-eor0jsy6. 24browser Codex+Claude desktop/mobile PASS. CI store-build44341453142 і site44341453297 SUCCESS. Захищені Claude/Store-файли відносно нового main не змінені. Codex core/routes/installer/generator та джерела SKILL.md/references/shared не змінилися від027434b; B1 докази залишаються для цієї поведінки. B1 PASS — штатна Test/.agents/skills, обидва backend,27tools,list_stories=[],model_turns0, GUI підтвердив власник. Злиття PR206 не виконано.
+
+Inherited whitespace у ліцензійному тексті tokenizers із main не редагували; власні конфліктні docs перевірено diff --check. Повторного model cross-review після вже виконаного safety pass немає (once per PR); автоматично злитий main208 мав власне review. User docs uk/en mcp збережені та rehash; ця фінальна зміна — записи приймання без продуктових змін.

@@ -6791,6 +6791,143 @@
       "tests": [
         "tests/test_waitlist_worker.py::test_s09_old_rows_are_purged_daily"
       ]
+    },
+    {
+      "id": "STORE-MCP-S12",
+      "requirement": "STORE-MCP-001",
+      "scope": "Безпечний TOML-конфігуратор Codex: керовані поля, незмінність сторонніх даних, backup, конфлікт і відмова.",
+      "tests": [
+        "tests/test_codex_connect.py::test_missing_config_is_created",
+        "tests/test_codex_connect.py::test_existing_config_is_idempotent",
+        "tests/test_codex_connect.py::test_http_migration_keeps_unrelated_settings",
+        "tests/test_codex_connect.py::test_invalid_toml_is_untouched",
+        "tests/test_codex_connect.py::test_non_table_is_untouched",
+        "tests/test_codex_connect.py::test_unique_backup_keeps_exact_previous_bytes",
+        "tests/test_codex_connect.py::test_changed_file_is_not_overwritten",
+        "tests/test_codex_connect.py::test_failed_replace_keeps_original",
+        "tests/test_codex_connect.py::test_powershell_command_quotes_apostrophes",
+        "tests/test_codex_connect.py::test_config_home_must_be_absolute",
+        "tests/test_codex_connect.py::test_config_home_selects_explicit_profile",
+        "tests/test_codex_connect.py::test_codex_roots_are_temporary",
+        "tests/test_codex_connect.py::test_inline_parent_can_add_obscura_without_changing_other",
+        "tests/test_codex_connect.py::test_all_http_only_fields_are_removed_for_stdio",
+        "tests/test_codex_connect.py::test_deprecated_bearer_token_is_refused_without_exposing_it",
+        "tests/test_codex_connect.py::test_private_acl_is_applied_before_bytes_and_preserved",
+        "tests/test_codex_connect.py::test_read_only_config_never_leaves_an_empty_backup",
+        "tests/test_codex_connect.py::test_failed_backup_permissions_do_not_publish_an_empty_copy",
+        "tests/test_codex_connect.py::test_backup_collision_never_deletes_an_existing_file"
+      ]
+    },
+    {
+      "id": "CODEX-SKILLS-S01",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Детерміновані переносні тексти, адаптація клієнта й звірка MCP-контракту; не поведінка моделей.",
+      "tests": [
+        "tests/test_codex_skills.py::test_real_sources_generate_five_self_contained_skills",
+        "tests/test_codex_skills.py::test_generation_does_not_change_sources",
+        "tests/test_codex_skills.py::test_rules_and_references_are_portable",
+        "tests/test_codex_skills.py::test_source_drift_refuses_the_whole_bundle",
+        "tests/test_codex_skills.py::test_external_reference_is_rejected",
+        "tests/test_codex_skills.py::test_symlink_source_is_rejected",
+        "tests/test_codex_skills.py::test_model_adaptation_preserves_other_sections",
+        "tests/test_codex_skills.py::test_entire_frontmatter_is_validated",
+        "tests/test_codex_skills.py::test_markdown_fragment_does_not_hide_missing_reference"
+      ]
+    },
+    {
+      "id": "CODEX-SKILLS-S03",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Детерміновані переносні тексти, адаптація клієнта й звірка MCP-контракту; не поведінка моделей.",
+      "tests": [
+        "tests/test_codex_skills.py::test_planning_and_scene_routing_use_current_session",
+        "tests/test_codex_skills.py::test_provider_recipes_are_preserved",
+        "tests/test_codex_skills.py::test_unknown_mcp_tool_is_reported",
+        "tests/test_codex_skills.py::test_lowercase_advisor_instruction_is_not_emitted"
+      ]
+    },
+    {
+      "id": "CODEX-SKILLS-S02",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Маніфест, preflight, кероване оновлення, ізоляція staging/backup й відкат без втрати правок.",
+      "tests": [
+        "tests/test_codex_skill_install.py::test_first_install_and_repeat",
+        "tests/test_codex_skill_install.py::test_managed_update_creates_exact_backups",
+        "tests/test_codex_skill_install.py::test_conflict_preflight_leaves_all_targets_untouched",
+        "tests/test_codex_skill_install.py::test_reparse_target_is_refused_before_any_write",
+        "tests/test_codex_skill_install.py::test_failed_third_rename_restores_original_trees",
+        "tests/test_codex_skill_install.py::test_rollback_preserves_concurrent_author_edit",
+        "tests/test_codex_skill_install.py::test_backups_and_staging_are_not_discoverable",
+        "tests/test_codex_skill_install.py::test_busy_lock_refuses_without_changes",
+        "tests/test_codex_skill_install.py::test_unsafe_bundle_is_rejected_before_write",
+        "tests/test_codex_skill_install.py::test_parent_redirect_during_staging_is_refused",
+        "tests/test_codex_skill_install.py::test_rollback_does_not_restore_directory_deleted_after_publication",
+        "tests/test_codex_skill_install.py::test_conflict_on_not_yet_touched_target_is_named",
+        "tests/test_codex_skill_install.py::test_inspect_missing_never_creates_profile",
+        "tests/test_codex_skill_install.py::test_inspect_current_outdated_and_partial",
+        "tests/test_codex_skill_install.py::test_inspect_conflict_does_not_modify_tree",
+        "tests/web/test_codex_connect_routes.py::test_skills_install_and_repeat",
+        "tests/web/test_codex_connect_routes.py::test_partial_report_keeps_backups",
+        "tests/web/test_codex_connect_routes.py::test_busy_lock_report_has_specific_reason",
+        "tests/test_codex_skill_install.py::test_inspect_does_not_read_foreign_file_contents",
+        "tests/web/test_codex_connect_routes.py::test_missing_skill_source_is_409_before_profile_write",
+        "tests/web/test_codex_connect_routes.py::test_real_skill_io_failure_stays_500",
+        "tests/web/test_browser_fixture.py::test_browser_fixture_creates_missing_root_and_isolates_before_app"
+      ]
+    },
+    {
+      "id": "CODEX-SKILLS-S06",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Справжній CLI у дочірньому Python із тимчасовими профілями; повний ланцюжок основи без моделей.",
+      "tests": [
+        "tests/test_install_codex_skills.py::test_cli_output_is_deterministic",
+        "tests/test_install_codex_skills.py::test_cli_requires_one_destination",
+        "tests/test_install_codex_skills.py::test_cli_refuses_nonempty_output",
+        "tests/test_install_codex_skills.py::test_cli_installs_into_temporary_profile",
+        "tests/test_install_codex_skills.py::test_cli_uses_its_checkout_from_another_cwd",
+        "tests/test_install_codex_skills.py::test_cli_generation_failure_does_not_install",
+        "tests/test_install_codex_skills.py::test_core_config_and_install_sequence",
+        "tests/test_install_codex_skills.py::test_cli_emits_json_with_unicode_path_on_legacy_stdout"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S13",
+      "requirement": "STORE-MCP-001",
+      "scope": "Маршрути Codex у тимчасовому профілі без моделей.",
+      "tests": [
+        "tests/web/test_codex_connect_routes.py::test_mcp_save_and_repeat",
+        "tests/web/test_codex_connect_routes.py::test_status_is_read_only",
+        "tests/web/test_codex_connect_routes.py::test_corrupt_config_is_untouched",
+        "tests/web/test_codex_connect_routes.py::test_request_cannot_choose_destinations_or_bridge_url",
+        "tests/web/test_codex_connect_routes.py::test_bridge_cannot_access_codex_routes",
+        "tests/web/test_codex_connect_routes.py::test_foreign_origin_cannot_write",
+        "tests/web/test_codex_connect_routes.py::test_invalid_codex_home_does_not_hide_skills",
+        "tests/web/test_codex_connect_routes.py::test_skill_source_error_does_not_hide_mcp"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#codex-connect-ui",
+        "reason": "Playwright виконується окремим браузерним runner, не pytest."
+      }
+    },
+    {
+      "id": "CODEX-SKILLS-S05",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Маршрути Codex у тимчасовому профілі без моделей.",
+      "tests": [
+        "tests/web/test_codex_connect_routes.py::test_store_skills_are_unsupported_without_touching_sources"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#codex-connect-ui",
+        "reason": "Playwright виконується окремим браузерним runner, не pytest."
+      }
+    },
+    {
+      "id": "CODEX-SKILLS-S04",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Checkout: штатна user .agents/skills, CLI й GUI окремого Windows-акаунта, MCP/list_stories без моделей.",
+      "manual": {
+        "procedure": "docs/verification/codex-checkout-acceptance.md#codex-b1-checkout",
+        "reason": "Потрібен окремий локальний Windows-акаунт і ручний вхід/GUI власника. Процедура та попередній сумісний CODEX_HOME/skills не є виконанням B1."
+      }
     }
   ]
 }

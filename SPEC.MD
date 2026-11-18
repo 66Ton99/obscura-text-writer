@@ -109,6 +109,7 @@ Storygen автоматизує створення українського оп
 - [WAITLIST-001 — Список очікування платної версії](#waitlist-001)
 - [MCP-BRIDGE — Локальний MCP-клієнт до сервера Obscura](#mcp-bridge)
 - [CLAUDE-SKILLS — Скіли Obscura для Claude](#claude-skills)
+- [CODEX-SKILLS — Скіли Obscura для Codex](#codex-skills)
 - [WRITING-MODE — Режим твору: пише чат чи Obscura](#writing-mode)
 - [EDIT-SENTENCE-CONTEXT — Речення в контексті редакторської правки](#edit-sentence-context)
 - [EDIT-SENTENCE-GROUPS — Одна група прийняття на речення](#edit-sentence-groups)
@@ -4748,6 +4749,25 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - THEN закриваються й запускаються знову лише процеси Claude Desktop
 - AND запит моста чи іншого походження до маршрутів підключення отримує 403, і жодна дія не виконується.
 
+<a id="store-mcp-s12"></a>
+#### Scenario: STORE-MCP-S12 — Конфігурація Codex без втрати налаштувань
+- GIVEN явно визначений користувацький профіль Codex і команда локального моста
+- WHEN конфігуратор зберігає запис mcp_servers.obscura
+- THEN новий файл створюється без копії відсутнього файла, а наявний зберігається в унікальній байтовій копії поруч
+- AND змінюються лише command, args, enabled=true й конфліктні HTTP-поля запису obscura, інші сервери, політики та коментарі зберігаються
+- AND рівнозначний запис не переписується, некоректний TOML/не-таблиця не змінюється, а конкурентна зміна до фінальної звірки відхиляє запис
+- AND стан підтверджує лише прочитаний файл, не живе підключення клієнта.
+- AND копія read-only оригіналу SHALL містити точно його байти, включно з допустимим порожнім оригіналом; неповну копію не підтверджують: копію пишуть через уже відкритий ексклюзивний дескриптор після застосування прав; невдалий власний артефакт прибирають без вилучення файла, який існував до операції.
+
+#### Scenario: STORE-MCP-S13 — Авторські маршрути Codex
+- GIVEN локальний авторський запит до /api/connect/codex або /api/connect/codex/skills
+- WHEN автор зберігає MCP-конфігурацію чи встановлює скіли
+- THEN сервер використовує лише власні корені й loopback-порт settings.port; тіло та Host не обирають argv, джерело чи призначення
+- AND GET /api/connect/codex/status лише читає стан файлів, не створює профіль, замки чи копії; помилка одного підблоку не приховує стан і дію другого
+- AND запит моста до всіх трьох маршрутів та POST стороннього Origin отримує 403 до дій
+- AND MCP і скіли мають незалежні результати; JSON не містить TOML, секретів чи traceback.
+- AND бібліотека показує збережений файл, просить нову сесію, відображає conflict/partial й копії та перекладає попередній результат після зміни UA/EN.
+
 <a id="store-mcp-s14"></a>
 #### Scenario: STORE-MCP-S14 — Стала копія скілів у теці творів
 - GIVEN маркетплейс `obscura` поруч зі збіркою
@@ -4778,6 +4798,8 @@ Worker SHALL щодня (Cron Trigger `17 3 * * *`) видаляти запис�
 - AND збирання зупиняється, якщо `obscura-mcp.exe --self-check` друкує не `guide: ok` (міст не бачить провідника).
 
 #### Технічний опис і сумісність (STORE-MCP-001)
+
+- **Конфігуратор Codex.** codex_connect.config_path(userprofile, codex_home) обирає абсолютний CODEX_HOME/config.toml або USERPROFILE/.codex/config.toml; відносний чи порожній явно заданий CODEX_HOME відхиляється. write_config(path, command) через TOML Kit (tomlkit>=0.13,<1, extra web) зберігає лише керовані поля stdio-запису й прибирає його HTTP-поля url, bearer_token_env_var, http_headers, env_http_headers, http_headers_helper, oauth, oauth_resource, auth. Застарілий bearer_token відхиляється без зміни файла, бо Codex 0.166.0 не приймає його в жодному транспорті; scopes і сумісні політики зберігаються. Порожній запис obscura додається як inline-table, якщо батьківська mcp_servers задана inline. Відомі політики stdio, env і решта файла не змінюються; значення ключів не генеруються й не повертаються статусом. Наявний файл копіюється байтово в унікальний config.toml.obscura-backup-<id>; POSIX-права й Windows DACL копії та файла заміни застосовуються до першого приватного запису. Зберігаються ACE та режим захисту/успадкування: для auto-inherited DACL — SetNamedSecurityInfoW, для legacy DACL без auto-inherited — сумісний SetFileSecurityW, щоб не додати батьківські ACE. Службові кешові прапорці Windows можуть нормалізуватися без зміни дозволів. Після серіалізації — повторний parse, тимчасовий файл поруч, звірка початкових байтів перед атомарним os.replace і перечитування результату. Зовнішній редактор лишає вузьку гонку між останньою звіркою й replace; автоматичного руйнівного відновлення немає. config_status повертає тільки state і шлях; powershell_command лише формує команду для копіювання, не виконує її. Автоматична фікстура isolated_codex спрямовує тестові HOME/USERPROFILE/CODEX_HOME і Path.home у тимчасовий профіль.
 
 - **Модулі.** `storygen/mcp/launch.py` (`Connection`, `start_obscura`, `ObscuraUnavailable`, `START_TIMEOUT`); `storygen/mcp/bridge.py` (`build_server(..., connection=)`, `main`: `--url`, `--data-dir`); `storygen/packaging.py` (`BRIDGE_NAME`, `BRIDGE_CONTENTS`, `BRIDGE_ENTRY`, `bridge_pyinstaller_args`, `appx_manifest(bridge_executable=)`); `scripts/build_store.py` (`freeze_bridge`, `check_bridge` з вимогою `guide: ok`, `tracked_plugin_files`, `bridge_megabytes` і `plugin_files` у підсумку), `packaging.plugin_files`; `bridge.connection_for`, `bridge.main(--self-check)`. Обв’язка: `storygen/mcp/edition.py` (`edition_refusal`), prompt `start_story`, `storygen/claude_connect.py` (`Roots`, `bridge_command`, `claude_code_command`, `find_desktop_config`, `write_desktop_entry`, `UnusableConfig`, `build_mcpb`, `find_claude_code`, `connect_claude_code`, `restart_desktop`, `MarketplaceConflict`, `marketplace_target`, `sync_marketplace`, `refresh_marketplace`, `connect_claude_plugin`, `plugin_commands`, `write_desktop_skills`), `storygen/skill_bundles.py` (CLAUDE-SKILLS), `desktop._refresh_skills`, `web/routes_connect.py` (`_marketplace_source`, `NO_PLUGIN`), `static/claude-connect.js`; тести тримає подалі від справжнього Claude автоматична фікстура `tests/conftest.py::isolated_claude`.
 - **Сумісність.** Наявні записи клієнтів з `--url` працюють як раніше. Запис робочої копії без аргументів поводиться як раніше (`http://127.0.0.1:8765`). Установлений міст і запис із `--data-dir` знаходять Obscura на будь-якому порту. Формат даних і HTTP API не змінюються.
@@ -6892,3 +6914,76 @@ THEN failure SHALL не лишати source/counts/сцен, legacy counts ли�
 - WHEN він підтверджує, скасовує або натискає Escape
 - THEN діалог застосунку повертає відповідне рішення або введене значення без виконання скасованої дії
 - AND повторний запит не підтверджує іншу дію, а фокус повертається до попереднього елемента або доступного контейнера.
+
+
+<a id="codex-skills"></a>
+### Requirement: CODEX-SKILLS — Переносні скіли Obscura для Codex
+
+Репозиторій SHALL мати детермінований генератор codex_skills.generate_skills(source), що читає незмінені джерела integrations/claude/obscura й повертає SkillBundle (files, sources, generator_version). Він SHALL генерувати рівно п’ять самодостатніх тек obscura-start-story, obscura-draft-scene, obscura-publish, obscura-series-bible, obscura-setup-models із переносним frontmatter, вбудованими спільними правилами та відносними довідковими файлами. Текст відповідає мовою автора й зберігає згоду до записів, власні рішення, прогрес і протокол MCP. Планування та всі чотири етапи сцени SHALL виконувати поточна сесія без автоматичного перемикання моделей, advisor або субагентів. Це обрана поведінка, а не висновок про якість моделей.
+
+<a id="codex-skills-s01"></a>
+#### Scenario: CODEX-SKILLS-S01 — Самодостатній пакет із незмінених джерел
+- GIVEN чинні п’ять скілів Claude й спільні правила
+- WHEN генератор формує пакет Codex
+- THEN кожен SKILL.md містить спільні правила рівно один раз, узгоджені name/назву теки, переносні поля та розв’язувані локальні посилання
+- AND джерела лишаються незмінними, повторення дає ті самі байти й SHA-256 джерел
+- AND невідомі межі секцій, нерозв’язане/зовнішнє посилання чи reparse/symlink джерела відхиляються до запису на диск.
+
+<a id="codex-skills-s02"></a>
+#### Scenario: CODEX-SKILLS-S02 — Кероване встановлення без втрати правок
+- GIVEN пакет Codex і явно визначена абсолютна користувацька тека
+- WHEN install_skills встановлює чи оновлює п’ять obscura-* скілів
+- THEN нові теки отримують перевірений маніфест, рівнозначні не переписуються, а попередня незмінена керована версія має точну копію поза сканованим skills/
+- AND чужа/змінена тека, некоректний маніфест, зайвий/відсутній файл, reparse чи зайнятий замок зупиняють установку до зміни цілей
+- AND помилка посеред замін відновлює лише незмінені власні результати; паралельна правка автора зберігається, а partial називає конфлікт і наявні копії
+- AND installed підтверджується перечитуванням усіх файлів; staging/backup не створюють зайвих видимих скілів.
+
+<a id="codex-skills-s03"></a>
+#### Scenario: CODEX-SKILLS-S03 — Клієнтські інструкції та MCP-контракт
+- GIVEN сформований пакет Codex
+- WHEN перевіряється його структура й інструкції
+- THEN секції Model і Model routing адаптовано цілком до поточної сесії, без /model, Advisor, Sonnet/Opus-маршрутизації чи CLAUDE_PLUGIN_ROOT
+- AND назви й параметри інструментів MCP та рецепти провайдерів збережені; згадані інструменти звіряються з MCP-BRIDGE тестами, а не імпортом MCP у production-генератор.
+
+<a id="codex-skills-s06"></a>
+#### Scenario: CODEX-SKILLS-S06 — CLI робочої копії
+- GIVEN робоча копія Obscura та явно обраний спосіб --output або --install
+- WHEN автор запускає scripts/install_codex_skills.py
+- THEN пакет береться з checkout самого скрипта, незалежно від cwd та чужої editable-інсталяції
+- AND --output пише лише в нову/порожню теку, а --install — у користувацьку .agents/skills, не в CODEX_HOME
+- AND відмова генерації не змінює профіль; stdout містить JSON-результат без traceback/ключів, exit code 0 означає успіх/unchanged, 1 — відмову, 2 — неправильні аргументи.
+
+#### Scenario: CODEX-SKILLS-S04 — Приймання клієнтами без моделей
+- GIVEN нейтральний сервер Obscura, тимчасова конфігурація Codex і згенеровані скіли
+- WHEN CLI та backend застосунку виконують локальні діагностичні RPC без turn/start
+- THEN skills/list виявляє п'ять скілів із правильними шляхами й scope, а MCP-каталог містить list_stories
+- AND mcpServer/tool/call(list_stories) успішно читає лише нейтральний стенд без виклику моделі
+- AND user .agents/skills та GUI discovery у окремому локальному Windows-акаунті мають окремі докази; їх не зараховують за файловим configured чи сумісним CODEX_HOME/skills.
+
+#### Scenario: CODEX-SKILLS-S05 — Межа Store та frozen
+- GIVEN Store або frozen-видання
+- WHEN автор перевіряє стан або просить установити скіли Codex
+- THEN статус має available=false, а POST повертає 409 skills_unsupported без пошуку джерел чи змін профілю
+- AND конфігуратор MCP працює незалежно від джерел скілів.
+
+#### Технічний опис і сумісність (CODEX-SKILLS)
+
+- Генератор не пише на диск і не запускає процесів; бере лише SKILL.md і Markdown із references відомих п’яти скілів. Джерела мають SHA-256 за відносними шляхами, результат — UTF-8/LF. Не використовує глобальну заміну назв Claude: поля рецептів та моделі провайдерів лишаються чинними.
+- Frontmatter перевіряється повністю в явно підтримуваному піднаборі YAML: однорядкові рядки, а metadata — дворівнева мапа рядків; невідомі поля, некоректні plain scalars і непідтримувані структури відхиляються. Підстановка спільних правил, межі Model/Gates і Model routing перевіряються структурно; невідомий дрейф відмовляє до встановлення. Заміна стосується лише відповідної H2-секції; наступні секції зберігаються. Інструкції advisor/subagents поза власним адаптером відхиляються незалежно від регістру. Локальні довідки рахуються від теки файла, що містить посилання; Markdown-фрагмент #anchor відділяється від шляху, існування локального файла перевіряється окремо.
+- Для checkout реалізовано генератор, кероване встановлення, CLI та UI; живе user .agents/skills discovery CLI/backend і GUI прийнято18.11.2026 у Test (B1run20261118-164659-b6b2f8). Пакування скілів і runtime/license Store не прийняті, належать R-39 PR2. Структурна перевірка та нейтральні RPC не є літературним виміром.
+
+- **Кероване встановлення.** codex_skill_install.install_skills(bundle, userprofile) встановлює у userprofile/.agents/skills. Власний .obscura-install.json має schema=1, generator_version, sources (відносні шляхи→SHA-256), files (відносні шляхи→SHA-256, без маніфесту). Повний preflight відмовляє при локальних змінах або неперевіреному походженні; force-встановлення немає. Замок .agents/.obscura-install.lock серіалізує процеси; зайнятий/застарілий замок не видаляється автоматично.
+- Пакет спершу готується в .agents/obscura-staging/<id>, старі дерева переміщуються у .agents/obscura-backups/<id>. Обидві теки поза skills/; залишки після відмов також не скануються як скіли. Reparse/junction, абсолютні/обхідні шляхи й спеціальні файли не обходяться під час inventory. Перед підготовкою, публікацією, резервуванням і відкатом повторно перевіряються всі батьківські теки від довіреного userprofile, reparse-ознаки та запам’ятовані ідентичності тек. Перед заміною повторно звіряється попереднє дерево; зовнішня гонка після звірки лишається відомим обмеженням.
+- InstallReport повертає installed/unchanged/conflict/failed/partial, фактично встановлені й відновлені назви, конфлікти, наявні копії та безпечні коди причин. failed означає відсутність залишкових власних змін, partial — повне безпечне відновлення неможливе. Відкат не стирає авторську паралельну зміну й не відтворює теку, яку автор видалив/перемістив після публікації: завершена фаза публікації записується окремо. Початковий конфлікт ще не обробленої цілі також зберігається в report. Резервні та staging-теки очищуються вручну; автоматичного uninstall немає.
+
+- **CLI checkout.** scripts/install_codex_skills.py додає src власного checkout на початок sys.path, генерує з integrations/claude/obscura та приймає рівно один із --output PATH / --install. Перша дія створює тільки нові файли у новій/порожній теці, друга використовує USERPROFILE (інакше Path.home)/.agents/skills. JSON-результат використовує ASCII-екранування Unicode, тому перенаправлений Windows stdout не падає після запису файлів. JSON-результат і exit code описані S06. UI-кнопка й реєстрація MCP цим CLI не додаються.
+
+- **Усунені відхилення, рев’ю основи 18.11.2026.** Додано підтримку inline-батька TOML та повний перелік HTTP-only полів за [парсером Codex 0.166.0](https://github.com/openai/codex/blob/rust-v0.166.0/codex-rs/config/src/mcp_types.rs). Раніше власна перевірка могла оголосити конфігурацію готовою, хоча Codex її відхиляв. ACL тепер застосовується до першого запису, а спосіб копіювання зберігає наявну модель успадкування; сучасний API описано у [документації Windows](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-setnamedsecurityinfow). Генератор більше не губить наступні H2-секції, перевіряє весь підтримуваний frontmatter й посилання з фрагментами; перевірка MCP охоплює реальні короткі виклики. Установник не обходить підмінений батьківський junction і не скасовує авторське вилучення опублікованої теки. CLI повертає JSON і на legacy stdout з Unicode-шляхом.
+
+- **HTTP-периферія Codex.** routes_codex_connect не запускає клієнтів. GET повертає mcp.state/path, skills.available/state/present/conflicts/versions і команду для копіювання. Кожна частина має незалежний state=error з reason/detail/detail_original у відповіді 200; помилка читання MCP чи генерації скілів не відкидає справний підблок і команду. Коди відмов POST залишаються нижче. POST конфігурації повертає ConfigResult і команду; POST скілів — InstallReport і names усіх п'яти скілів. Успіх — 200, формат TOML — 422, конкурентна зміна/джерело/конфлікт — 409, I/O/partial/failed — 500; reason фіксований, detail локалізований. inspect_skills лише читає керовані manifest/hash-дерева: missing/current/outdated/conflict. Спершу перевіряє manifest (до 1 MiB), потім перелік файлів; сторонні вкладення не читає, задекларовані файли хешує потоково. Частина відсутніх керованих тек означає outdated; авторська правка, невалідний manifest або reparse — conflict. Бібліотека має окремий details Codex із незалежними діями MCP/скілів. Стан завантажується лише за першого розгортання: згорнутий блок не читає профіль. Зайнятий замок install_busy й unsafe_install_root мають окремі локалізовані пояснення, а не повідомлення про авторські правки. Pending блокує обидві кнопки; Store/frozen вимикає лише установку скілів. Успіх підтверджує збереження файла й просить нову сесію; конфлікт/partial показує конкретні назви, відновлені теки та копії. Команда й шляхи — textContent; UA/EN оновлює також показані результати. Clipboard failure виділяє команду для ручного копіювання.
+
+- **Виправлення периферії M1–M3, 18.11.2026.** Усунено M1: відсутній обов’язковий файл усередині наявного checkout-джерела дає POST409 skill_source_invalid до встановлення, GET має незалежну source-помилку; справжні помилки доступу/запису установника лишаються500 skills_io_failed без приватних деталей. Усунено M2: browser fixture приймає OBSCURA_BROWSER_TEST_ROOT, створює батьківську теку перед TemporaryDirectory (Windows default C:/tmp, POSIX стандартна tempdir) і задає HOME/USERPROFILE/CODEX_HOME до create_app. Усунено M3: після installed/unchanged кожен скіл показано один раз, змінені позначені installed, незмінені — already current; partial/conflict зберігають окремі фактичні групи installed/restored/conflicts/backups. Вимоги не послаблено. За рішенням власника18.11.2026 системний user .agents/GUI лишається прийманням checkout PR206; Store runtime/license (B2/B3) передано в R-39 PR2 й не є критеріями злиття206. Історичні невдалі Store-проби збережені в manual.md#codex-clients.
+
+- **Обсяг Codex PR206 після поділу18.11.2026.** Підтверджена підтримка й критерії випуску цього пакета стосуються checkout. B1 перевіряється в окремому локальному Windows-акаунті зі штатною user .agents/skills, CLI й GUI без модельних ходів. Для майбутнього Store підтримка Codex runtime ще не прийнята: B2/B3 належать R-39 PR2. Захисна відмова установки скілів у Store/frozen з S05 лишається. Чинний get_guide з27-інструментного MCP-каталогу збережено для Claude; згенеровані Codex-скіли його не згадують.
+
+- **Усунені відхилення cross-review206, 18.11.2026.** _write_backup тримає ексклюзивний write-handle відкритим під час копіювання прав, запису, flush/fsync: readonly-атрибут чи read-only DACL не змушує повторно відкривати вже захищену копію. Права застосовуються до приватних байтів, як і раніше. При помилці артефакт із тією самою ідентичністю прибирається; колізія імені не видаляє наявну копію. Код шляху _Conflict не маскується під назву скіла: errors містить install_changed і фіксовану причину, InstallReport.conflicts — лише підтверджені цілі, result лишається conflict або partial відповідно до відкату. UI локалізує причину шляху та не приховує partial за нею. Це виправлення існуючих S12/S02, а не розширення обсягу чи Store-пакування.

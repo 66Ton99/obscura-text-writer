@@ -61,6 +61,16 @@ The easiest way to connect is from the Obscura library: expand the “Connect to
 
 The chat cannot connect or restart Claude by itself: only you do this, in Obscura.
 
+### Codex buttons in the library
+
+If config.toml is write-protected, check its permissions before trying again. A backup creation error stops the settings write. If the skill installation path changed or became unsuitable, review the folders and named backups; a partial result also requires checking what was actually restored.
+
+Expand “Connect to Codex” and press the button with the same name. Obscura saves the obscura stdio server in CODEX_HOME/config.toml or USERPROFILE/.codex/config.toml. The button can create the file before Codex is installed. It explicitly enables obscura and replaces its HTTP settings with local stdio; other servers and policies are preserved. After “Codex settings saved”, open a new session or restart Codex. This confirms the file; check the live connection in the client itself.
+
+Each change to an existing config.toml creates a unique .obscura-backup-* copy beside it; repeating an unchanged action creates no backup. Repair malformed TOML by hand first. To restore, close Codex, save any later edits and restore the chosen copy. You can copy the PowerShell command for manual setup from the same block.
+
+“Install Codex skills” is a separate checkout action that installs five obscura-* skills and lists their names. MCP success does not confirm skill installation. For conflict, review the named author edits; for partial, also review installed and restored folders and backups before removing anything. Update and recovery details are in the skills section below. The skills button is disabled in Store/frozen builds. In this update, the Codex buttons target Obscura installed from source; acceptance of the Microsoft Store version is separate.
+
 ### By hand
 
 Start Obscura as usual before you work. The chat client connects to `http://127.0.0.1:8765`. If Obscura runs on another port, add the arguments `--url http://127.0.0.1:<port>`.
@@ -94,13 +104,21 @@ The file may already hold the application's own settings: keep them and add an `
 
 For another port add `"args": ["--url", "http://127.0.0.1:8770"]`. In the `claude mcp add` and `codex mcp add` commands the arguments go after the program path: `… storygen-mcp.exe --url http://127.0.0.1:8770`.
 
-**Codex.** In a terminal:
+**Codex.** For Obscura installed from Microsoft Store, run in a terminal:
 
-```powershell
-codex mcp add obscura -- C:\Obscura\.venv\Scripts\storygen-mcp.exe
-```
+~~~powershell
+codex mcp add obscura -- obscura-mcp.exe
+~~~
 
-Or add a `[mcp_servers.obscura]` section with the line `command = 'C:\Obscura\.venv\Scripts\storygen-mcp.exe'` to `~/.codex/config.toml`.
+For a source checkout, use that checkout's own bridge (replace C:\Obscura with your folder):
+
+~~~powershell
+codex mcp add obscura -- "C:\Obscura\.venv\Scripts\storygen-mcp.exe"
+~~~
+
+`obscura-mcp.exe` is the installed build's bridge; `storygen-mcp.exe` in `.venv\Scripts` is the source checkout's bridge. If the checkout runs on another port, append `--url http://127.0.0.1:8770`; for a desktop-launcher instance with a separate library, use `--data-dir "C:\Obscura Library"`.
+
+Alternatively, add a `[mcp_servers.obscura]` entry with `command` and optional `args` in `~/.codex/config.toml`. Preserve the rest of the file and keep a backup. With `CODEX_HOME` set, the file lives in that folder. Local Codex clients use the same configuration profile; open a new session or restart the client after changing it.
 
 Browser chat clients (claude.ai, chatgpt.com) do not support local servers.
 
@@ -143,6 +161,33 @@ claude plugin uninstall obscura@obscura
 ```powershell
 claude plugin marketplace remove obscura
 ```
+## Codex skills from a source checkout
+
+If Obscura reports an incomplete skill source, restore the checkout files and try again. This refusal does not change installed skills. A successful result lists each skill once and marks installed and already current skills. For a partial installation, review the separate groups of changed, restored and conflicting folders.
+
+The Codex package is generated from the same sources as the Claude skills; no manual text copying is needed. It contains `obscura-start-story`, `obscura-series-bible`, `obscura-draft-scene`, `obscura-publish`, and `obscura-setup-models`. Planning and every scene stage use the current Codex session without automatically switching models.
+
+First connect MCP as described above. Then run from the Obscura checkout folder:
+
+~~~powershell
+.\.venv\Scripts\python.exe .\scripts\install_codex_skills.py --install
+~~~
+
+Skills are saved in `%USERPROFILE%\.agents\skills`. `CODEX_HOME` changes the MCP configuration folder, but not this skills folder. If skills do not appear, open a new session or restart Codex. Ask to “start a story” or explicitly mention `$obscura-start-story`.
+
+To inspect the package without installing it, generate into a new or empty folder:
+
+~~~powershell
+.\.venv\Scripts\python.exe .\scripts\install_codex_skills.py --output "C:\tmp\obscura-codex-skills"
+~~~
+
+**Updating.** Update the source checkout and repeat `--install`. An unchanged package is not rewritten. The previous managed version is kept in `%USERPROFILE%\.agents\obscura-backups\<id>`; prepared or unrecovered files stay in the adjacent `obscura-staging\<id>`. These folders are outside skill discovery. The JSON result lists actual backup paths.
+
+An unmanaged folder, a damaged `.obscura-install.json` manifest, or your edits stop installation of the entire set before replacements. Save your changes separately and reconcile them with the new package; there is no automatic force overwrite. `failed` means an unsuccessful operation with no remaining changes made by it; `partial` means a complete safe rollback was not possible. Inspect the listed conflicts and backups before retrying.
+
+**Restoring and removing.** Close Codex. To restore, first save any later edits, then manually return the needed folder from the reported backup. To remove the set, delete only the five listed `obscura-*` folders under `.agents\skills`. After checking them, you can manually clear backups and staging; they are not removed automatically. Do not remove `.agents\.obscura-install.lock` while another installer is running; after a crash, check that its process has finished.
+
+This method is available from source. Installing skills from the Microsoft Store package will come in a separate update.
 
 ## Writing with the chat
 
