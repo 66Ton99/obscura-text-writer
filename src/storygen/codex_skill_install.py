@@ -329,3 +329,45 @@ def install_skills(bundle: SkillBundle, userprofile: Path) -> InstallReport:
                 lock.rmdir()
         except (OSError,_Conflict):
             pass
+
+
+@dataclass(frozen=True)
+class SkillStatus:
+    state: Literal['missing', 'current', 'outdated', 'conflict']
+    present: tuple[str, ...]
+    conflicts: tuple[str, ...]
+    versions: dict[str, str]
+
+
+def inspect_skills(bundle: SkillBundle, userprofile: Path) -> SkillStatus:
+    """Inspect managed files without creating directories, locks or backups."""
+    expected = _payloads(bundle)
+    profile = Path(userprofile)
+    if not profile.is_absolute():
+        raise ValueError('profile_must_be_absolute')
+    skills = profile/'.agents/skills'
+    guard = _Directories(profile)
+    present, conflicts, versions = [], [], {}
+    current = True
+    try:
+        guard.watch(skills)
+    except _Conflict:
+        return SkillStatus('conflict', (), _NAMES, {})
+    for name in _NAMES:
+        try:
+            guard.check(skills)
+            files = _tree(skills/name)
+            guard.check(skills)
+            if files is None:
+                current = False
+                continue
+            present.append(name)
+            if not _managed(files):
+                conflicts.append(name)
+                continue
+            versions[name] = json.loads(files[MANIFEST])['generator_version']
+            current = current and files == expected[name]
+        except _Conflict:
+            conflicts.append(name)
+    state = 'conflict' if conflicts else 'current' if current else 'outdated' if present else 'missing'
+    return SkillStatus(state, tuple(present), tuple(conflicts), versions)

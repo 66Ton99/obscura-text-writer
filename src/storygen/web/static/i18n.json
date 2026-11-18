@@ -2578,7 +2578,11 @@
     "series.origin": "точка відліку",
     "broken_text.banner": "У тексті пошкоджених символів «�»: {p1}. Виправте слова, де вони стоять.",
     "broken_text.next": "До наступного",
-    "run.waiting_whole_answer": "Чекаємо на повну відповідь моделі"
+    "run.waiting_whole_answer": "Чекаємо на повну відповідь моделі",
+    "Підключення до Codex виконує лише автор в Obscura": "Підключення до Codex виконує лише автор в Obscura",
+    "Не вдалося зберегти налаштування Codex; перевірте файл і повторіть": "Не вдалося зберегти налаштування Codex; перевірте файл і повторіть",
+    "Не вдалося встановити всі скіли Codex; перевірте конфлікти та резервні копії": "Не вдалося встановити всі скіли Codex; перевірте конфлікти та резервні копії",
+    "Скіли Codex доступні лише з checkout Obscura": "Скіли Codex доступні лише з checkout Obscura"
   },
   "en": {
     "ui.save": "Save",
@@ -5159,6 +5163,10 @@
     "series.origin": "origin",
     "broken_text.banner": "Broken characters «�» in the text: {p1}. Fix the words where they appear.",
     "broken_text.next": "Next",
-    "run.waiting_whole_answer": "Waiting for the full model answer"
+    "run.waiting_whole_answer": "Waiting for the full model answer",
+    "Підключення до Codex виконує лише автор в Obscura": "Only the author can configure Codex in Obscura",
+    "Не вдалося зберегти налаштування Codex; перевірте файл і повторіть": "Could not save Codex settings; check the file and try again",
+    "Не вдалося встановити всі скіли Codex; перевірте конфлікти та резервні копії": "Could not install all Codex skills; check conflicts and backups",
+    "Скіли Codex доступні лише з checkout Obscura": "Codex skills are available only from an Obscura checkout"
   }
 }

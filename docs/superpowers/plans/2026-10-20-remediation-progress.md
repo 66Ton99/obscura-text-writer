@@ -2326,3 +2326,7 @@ Playwright `memory-kind.spec.mjs` і `core-review.spec.mjs` пройшли вр�
 - Доставка основи: draft PR #206 на main; rebased code ідентичний перевіреному f76a6b8, перевірений SHA збережено в codex/obscura-codex-core-verified. Зовнішній PR cross-review лишається фінальним gate після периферії, не оголошений виконаним.
 - Основну теку C:/Projects/text-generator оновлено fast-forward без втрати сторонніх notes/ і .wrangler/. Проектна .venv отримала перевірений tomlkit 0.15.2. У ній check_docs.py пройшов, smoke основи — 66 passed, 1 skipped (OS symlink). Вебкнопки ще немає; наступний план чекає на перегляд.
 - Службові артефакти .superpowers/sdd/2026-11-17-codex-integration-core залишено: автоматична перевірка дозволів відхилила їх рекурсивне очищення через недоведені вміст і цінність. Видалення не потрібне для доставки; безпечний варіант — зберегти матеріали.
+
+### Codex, периферія — 18.11.2026
+
+Власник затвердив окремий план UI та нативне виконання. origin/main a4ee490 інтегровано; паралельні Claude/packaging джерела не змінені. Task 1: read-only inspect_skills, три авторські маршрути, фіксовані корені/порт, bridge/Origin захист. RED: 5 inspect import failures і відсутній модуль маршрутів; GREEN: 55 focused tests. Користувацькі інструкції кнопки оновлюються у Task 4 разом із готовим UI; чинний CLI не змінився.

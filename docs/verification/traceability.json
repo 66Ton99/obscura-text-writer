@@ -6672,7 +6672,12 @@
         "tests/test_codex_skill_install.py::test_unsafe_bundle_is_rejected_before_write",
         "tests/test_codex_skill_install.py::test_parent_redirect_during_staging_is_refused",
         "tests/test_codex_skill_install.py::test_rollback_does_not_restore_directory_deleted_after_publication",
-        "tests/test_codex_skill_install.py::test_conflict_on_not_yet_touched_target_is_named"
+        "tests/test_codex_skill_install.py::test_conflict_on_not_yet_touched_target_is_named",
+        "tests/test_codex_skill_install.py::test_inspect_missing_never_creates_profile",
+        "tests/test_codex_skill_install.py::test_inspect_current_outdated_and_partial",
+        "tests/test_codex_skill_install.py::test_inspect_conflict_does_not_modify_tree",
+        "tests/web/test_codex_connect_routes.py::test_skills_install_and_repeat",
+        "tests/web/test_codex_connect_routes.py::test_partial_report_keeps_backups"
       ]
     },
     {
@@ -6688,6 +6693,27 @@
         "tests/test_install_codex_skills.py::test_cli_generation_failure_does_not_install",
         "tests/test_install_codex_skills.py::test_core_config_and_install_sequence",
         "tests/test_install_codex_skills.py::test_cli_emits_json_with_unicode_path_on_legacy_stdout"
+      ]
+    },
+    {
+      "id": "STORE-MCP-S13",
+      "requirement": "STORE-MCP-001",
+      "scope": "Маршрути Codex у тимчасовому профілі без моделей.",
+      "tests": [
+        "tests/web/test_codex_connect_routes.py::test_mcp_save_and_repeat",
+        "tests/web/test_codex_connect_routes.py::test_status_is_read_only",
+        "tests/web/test_codex_connect_routes.py::test_corrupt_config_is_untouched",
+        "tests/web/test_codex_connect_routes.py::test_request_cannot_choose_destinations_or_bridge_url",
+        "tests/web/test_codex_connect_routes.py::test_bridge_cannot_access_codex_routes",
+        "tests/web/test_codex_connect_routes.py::test_foreign_origin_cannot_write"
+      ]
+    },
+    {
+      "id": "CODEX-SKILLS-S05",
+      "requirement": "CODEX-SKILLS",
+      "scope": "Маршрути Codex у тимчасовому профілі без моделей.",
+      "tests": [
+        "tests/web/test_codex_connect_routes.py::test_store_skills_are_unsupported_without_touching_sources"
       ]
     }
   ]

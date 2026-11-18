@@ -247,3 +247,55 @@ def test_conflict_on_not_yet_touched_target_is_named(tmp_path,bundle,monkeypatch
     assert report.result in {'conflict','failed','partial'}
     assert NAMES[-1] in report.conflicts
     assert (tmp_path/'.agents/skills'/NAMES[-1]/'SKILL.md').read_text()=='author edit'
+
+
+@pytest.mark.req('CODEX-SKILLS')
+def test_inspect_missing_never_creates_profile(tmp_path, bundle):
+    from storygen.codex_skill_install import inspect_skills
+    profile = tmp_path/'absent'
+    report = inspect_skills(bundle, profile)
+    assert report.state == 'missing' and report.present == ()
+    assert report.conflicts == () and report.versions == {}
+    assert not profile.exists()
+
+
+@pytest.mark.req('CODEX-SKILLS')
+def test_inspect_current_outdated_and_partial(tmp_path, bundle):
+    from storygen.codex_skill_install import inspect_skills
+    install_skills(bundle, tmp_path)
+    before = tree(tmp_path)
+    report = inspect_skills(bundle, tmp_path)
+    assert report.state == 'current' and set(report.present) == set(NAMES)
+    assert report.versions == dict.fromkeys(NAMES, '1')
+    assert tree(tmp_path) == before
+    assert inspect_skills(update(bundle), tmp_path).state == 'outdated'
+    target = tmp_path/'.agents/skills'/NAMES[-1]
+    for child in target.iterdir():
+        child.unlink()
+    target.rmdir()
+    assert inspect_skills(bundle, tmp_path).state == 'outdated'
+
+
+@pytest.mark.req('CODEX-SKILLS')
+@pytest.mark.parametrize('mutation', ['edit', 'manifest', 'junction'])
+def test_inspect_conflict_does_not_modify_tree(tmp_path, bundle, mutation):
+    from storygen.codex_skill_install import inspect_skills
+    install_skills(bundle, tmp_path)
+    target = tmp_path/'.agents/skills'/NAMES[0]
+    if mutation == 'junction':
+        outside = tmp_path/'private'
+        outside.mkdir()
+        (outside/'secret').write_text('private')
+        if os.name == 'nt':
+            import subprocess
+            linked = target/'linked'
+            subprocess.run(['cmd','/c','mklink','/J',str(linked),str(outside)], check=True, capture_output=True)
+        else:
+            (target/'linked').symlink_to(outside, target_is_directory=True)
+    else:
+        (target/('SKILL.md' if mutation == 'edit' else '.obscura-install.json')).write_text('private')
+    before = tree(tmp_path)
+    report = inspect_skills(bundle, tmp_path)
+    assert report.state == 'conflict' and report.conflicts == (NAMES[0],)
+    assert 'private' not in repr(report)
+    assert tree(tmp_path) == before
