@@ -44,6 +44,39 @@ def split_plan(text,default_title='Сцена'):
     return text[:boundaries[0][0]],sections
 
 
+class PreambleError(ValueError):
+    """PLAN-PREAMBLE-S02: 'boundary' — the new preamble would change the scene split; 'no_scenes' — the plan has no
+    scene boundary, so it has no preamble at all."""
+    def __init__(self,reason):
+        self.reason=reason
+        super().__init__({'boundary':'Вступ змінив би поділ плану на сцени: приберіть заголовки рівня сцен і рядки «Сцена N:».',
+                          'no_scenes':'У плані немає заголовків сцен, тож немає й вступу. Імпортуйте план із заголовками сцен.'}[reason])
+
+
+def replace_preamble(text,new):
+    """PLAN-PREAMBLE-S01: (plan with `new` as its preamble, old preamble); the scene sections stay byte for byte.
+    A non-empty new preamble ends with a blank line before the first scene."""
+    old,sections=split_plan(text)
+    rest=text[len(old):]
+    new=new.replace('\r\n','\n')
+    if not new.strip():new=''
+    else:
+        new=new.rstrip('\n')+'\n'
+        if not rest.startswith(('\n','\r\n')):new+='\n'
+    candidate=new+rest
+    preamble,after=split_plan(candidate)
+    if preamble==new and [s.text for s in after]==[s.text for s in sections]:return candidate,old
+    raise PreambleError('boundary' if preamble_editable(text) else 'no_scenes')
+
+
+def preamble_editable(text):
+    """Whether the plan has a scene boundary, so that a plain one-line preamble can stand before it."""
+    old,sections=split_plan(text)
+    candidate='x\n\n'+text[len(old):]
+    preamble,after=split_plan(candidate)
+    return preamble=='x\n\n' and [s.text for s in after]==[s.text for s in sections]
+
+
 # BOOK-STRUCTURE: parts and arcs in a plan. A part heading sits above the scene level; an arc line is cut from the scene plan.
 PART_TITLE=re.compile(r'^(?:частина|part)\b[^:]*(?::\s*(.*))?$',re.IGNORECASE)
 ARC_LINE=re.compile(r'^(?:арка|arc)\s*:\s*(.*)$',re.IGNORECASE)
