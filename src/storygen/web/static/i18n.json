@@ -2656,7 +2656,9 @@
     "history.already_same": "Текст уже такий самий",
     "history.restored": "Версію повернуто",
     "history.no_head": "Немає поточного тексту цього матеріалу",
-    "history.is_current": "Це вже поточна версія"
+    "history.is_current": "Це вже поточна версія",
+    "plan.renumber": "Перенумерувати",
+    "plan.renumber_hint": "Вирівняти номери всіх нумерованих списків плану"
   },
   "en": {
     "ui.save": "Save",
@@ -5315,6 +5317,8 @@
     "history.already_same": "The text is already the same",
     "history.restored": "Version restored",
     "history.no_head": "There is no current text of this material",
-    "history.is_current": "This is already the current version"
+    "history.is_current": "This is already the current version",
+    "plan.renumber": "Renumber",
+    "plan.renumber_hint": "Put the numbers of every numbered list in the plan in order"
   }
 }

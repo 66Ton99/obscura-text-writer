@@ -1,7 +1,7 @@
 import {sceneStatus,liveScene} from './workspace-status.js';
 import {confirmDialog} from './dialogs.js';
 import {t,msg,labelEntries,getLocale,uiText,uiAttr,uiHTML,diagnostic} from './i18n.js';
-import {state,textEditor,selectScene,refresh} from './editor.js';
+import {state,textEditor,selectScene,refresh,planNumbering} from './editor.js';
 import {api,json,notice} from './api.js';
 import {invokeWorkspaceCommand} from './workspace-commands.js';
 import {performPrimary,primaryAction} from './workspace-state.js';
@@ -61,6 +61,7 @@ function render(){
   uiText(hintInfo,"textContent",()=>(action.target&&state.scene?.heads[action.target]?t("m_44df09bb6ff6"):state.mode==='review'?t("m_34c3cc998162"):state.mode==='memory'?t("m_e310e34e8865"):t("m_93abd76dba4c")));
   uiText(primary,"title",()=>(diagnostic(reason)));
   const repeat=document.querySelector('#workspace-edit-prose');repeat.hidden=state.mode!=='prose';repeat.disabled=busy||isActive()||state.saving;
+  const renumberPlan=document.querySelector('#plan-renumber');if(renumberPlan){renumberPlan.hidden=state.mode!=='plan'||!state.scene;renumberPlan.disabled=state.saving||state.bufferOrigin==='history'||!!textEditor.isReadOnly?.();}
   const take=document.querySelector('#workspace-use-draft');take.hidden=state.mode!=='draft'||!state.scene?.heads.draft||state.bufferOrigin==='history';take.disabled=busy||isActive()||state.saving||state.dirty;
   // #105: tab statuses follow the refreshed view even while the buffer keeps the author's text and revision.
   const live=liveScene(state.scene,state.view?.scenes);
@@ -119,6 +120,7 @@ document.querySelector('#workspace-edit-prose').onclick=async()=>{
     await launch({mode:'edit_loop',editor_source_head:'prose',editor_source_version_id:state.scene.heads.prose});
   }catch(error){notice(error.message,'error')}finally{busy=false;render()}
 };
+document.querySelector('#plan-renumber')?.addEventListener('click',()=>{planNumbering.renumberAll();textEditor.focus();});
 document.querySelector('#workspace-use-draft').onclick=async()=>{
   if(state.dirty||state.saving||busy||isActive())return;
   const scene=state.scene,id=scene?.heads.draft,epoch=state.bufferEpoch;

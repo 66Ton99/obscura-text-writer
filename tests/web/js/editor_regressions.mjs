@@ -5,8 +5,9 @@ const listeners=new Map(),elements=new Map(),pendingEvents=[];
 class Element{
   value='';textContent='';disabled=false;hidden=false;dataset={storyId:'s'};children=[];handlers={};classList={toggle(){}};
   setAttribute(name,value){this[name]=value}
-  addEventListener(name,handler){this.handlers[name]=handler}
-  trigger(name){this.handlers[name]?.()}
+  // Several listeners per event, as in a browser: the editor buffer and the plan numbering both listen to input.
+  addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)}
+  trigger(name){for(const handler of this.handlers[name]||[])handler({type:name,inputType:'insertText'})}
   replaceChildren(){this.children=[]}
   append(...items){this.children.push(...items)}
 }

@@ -237,6 +237,11 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 
 З теки `frontend` з `PYTHONPATH=<робоча копія>/src` запустити `./node_modules/.bin/playwright test brief-link --reporter=line`. Synthetic server (`POST /test-brief-link`): нейтральні картки «Лера» (протагоністка), «Марко», «Ніна», сцени «Ранок у парку» і «Кав’ярня» з головою brief і ручною прозою без родоводу, без provider calls, локаль uk-UA. Cases `brief-link.spec.mjs` для desktop і mobile: `author confirms the brief with introductions and moves to the next scene` (знімки `docs/images/brief-link-{desktop,mobile}.png`; після підтвердження панель згорнута, API повертає `source=link`, «Наступна непідтверджена сцена» відкриває «Кав’ярня»); `conflict keeps the ticked introductions and saves nothing` (зміна сцени до натискання → повідомлення про помилку, прапорець лишається, `source=fallback`); `opening the brief and switching scenes keep the ticked introductions`; `prose replaced elsewhere is never confirmed unseen` (409, редактор перечитує нову прозу, позначки старої прози не переносяться, підтвердження записується на нову прозу); `an unsaved change to a confirmation is not shown as confirmed`. Переглянути обидва знімки на нейтральність. Наявність процедури не є фактичним PASS; результат запуску записується в журналі виконання.
 
+<a id="plan-numbering"></a>
+## Перенумерація пунктів плану
+
+З теки `frontend` з `PYTHONPATH=<робоча копія>/src` запустити `npx playwright test browser/plan-numbering.spec`. Synthetic server (`POST /test-fixture`), без provider calls. Cases для desktop і mobile: `PLAN-NUMBERING-S01 Enter at the end of an item continues the list and shifts the rest` (зокрема порожній пункт розриває список, а пункти нижче нумеруються від 1); `PLAN-NUMBERING-S01 Ctrl+Z after Enter takes back the renumbering, then the new item`; `PLAN-NUMBERING-S02 a new first item renumbers the list and leaves parsed lines alone`; `PLAN-NUMBERING-S03 deleting an item shifts the numbers; the button fixes every list`; `PLAN-NUMBERING-S04 one Ctrl+Z undoes the renumbering; other tabs keep their numbers`. Наявність процедури не є фактичним PASS; результат запуску записується в журналі виконання.
+
 <a id="model-import-metadata"></a>
 ## Тарифи, ліміти й journal counts
 
