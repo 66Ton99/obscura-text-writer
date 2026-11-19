@@ -43,6 +43,9 @@ def unconfirmed_core_scenes(view, scenes) -> int:
 
 
 def preview(repo, request, view=None):
+    if getattr(request,'edit_pass_limit',None) is None:
+        from .edit_pass import resolve_edit_pass_limit
+        request=resolve_edit_pass_limit(repo,request)
     if request.mode=='impact':
         from .impact_context import readiness
         return readiness(repo,request)

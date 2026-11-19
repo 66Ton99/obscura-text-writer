@@ -50,7 +50,7 @@ WRITING_FIELDS = ('target_words', 'ending_goal', 'genre', 'tone', 'point_of_view
 PROVIDER_FIELDS = ('provider', 'model', 'base_url', 'timeout', 'response_mode', 'include_usage', 'local_disable_thinking',
                    'venice_include_system_prompt', 'venice_disable_thinking', 'venice_reasoning_effort')
 ROLE_FIELDS = ('context_tokens', 'max_output_tokens', 'max_input_chars', 'temperature', 'future_plan_mode', 'future_plan_count', 'stop_sequences')
-EDITOR_FIELDS = ('edit_mode', 'edit_review')
+EDITOR_FIELDS = ('edit_mode', 'edit_review', 'edit_pass_limit')
 DEFAULT_KEYS = ('OPENROUTER_API_KEY', 'VENICE_API_KEY')
 MODELS_LIMIT = 200
 # update_scene: null is a real plan_version_id (the scene has no plan version yet), so "not given" needs its own value.
@@ -729,7 +729,7 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
         роль planner/writer/editor/memory (provider, model, base_url лише для local, timeout, response_mode, include_usage,
         local_disable_thinking, venice_include_system_prompt, venice_disable_thinking, venice_reasoning_effort,
         context_tokens, max_output_tokens, max_input_chars, temperature, future_plan_mode, future_plan_count,
-        stop_sequences; для editor ще edit_mode, edit_review). Нова роль потребує provider і model. Назву ключа, промпти,
+        stop_sequences; для editor ще edit_mode, edit_review, edit_pass_limit — максимум проходів редактури 1–10). Нова роль потребує provider і model. Назву ключа, промпти,
         оцінювача й бюджет змінює лише автор. Моделі не викликає, але від моделі залежить вартість наступних запусків."""
         identifier(story_id)
         if section not in SETTINGS_SECTIONS:

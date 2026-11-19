@@ -2340,7 +2340,7 @@ DependencySnapshot v1 містить scope, типізовані finite selector
 
 URL із credentials/query/fragment відхиляються. Ім’я змінної ключа можна налаштувати; значення не зберігається у ролі. ID моделі обов’язковий, не є константою `local-model`. Кожна роль має власний provider/model, системний промпт-версію, контекстний і вихідний бюджет, температуру, stop-послідовності, режими.
 
-Типові рольові параметри: context 8192, output 2048 токенів, max input 80000 символів, temperature 0.7 у діапазоні 0–2; output строго менший context; до чотирьох непорожніх stop-послідовностей до 200 символів. `response_mode`: prompt_json або json_schema; include_usage типово false. `memory_mode`: лише evidence_delta (збережене snapshot читається як evidence_delta); `edit_mode`: prose/patches; типові evidence_delta і prose. Промпт підготовки структури налаштовується окремо в ролі планувальника.
+Типові рольові параметри: context 8192, output 2048 токенів, max input 80000 символів, temperature 0.7 у діапазоні 0–2; output строго менший context; до чотирьох непорожніх stop-послідовностей до 200 символів. `response_mode`: prompt_json або json_schema; include_usage типово false. `memory_mode`: лише evidence_delta (збережене snapshot читається як evidence_delta); `edit_mode`: prose/patches; типові evidence_delta і prose. `edit_pass_limit` ролі редактора: 1–10, типово 5 (EDIT-LOOP-S02); MCP `update_settings` змінює його разом з `edit_mode` і `edit_review` (`mcp/bridge.EDITOR_FIELDS`). Промпт підготовки структури налаштовується окремо в ролі планувальника.
 
 OpenAI SDK використовується через окремі клієнти з `max_retries=0`, потоковим Chat Completions, max_tokens, temperature та stop. Структурована відповідь за потреби отримує strict JSON schema: прибираються defaults, усі properties стають required, додаткові властивості заборонені. Автоматичного fallback або модельного ремонту JSON немає.
 
@@ -5067,7 +5067,7 @@ GET preview SHALL повертати похідне has_changes. Історич�
 <a id="edit-loop"></a>
 ### Requirement: EDIT-LOOP — Багатопрохідна редактура з одним прийняттям
 
-RunRequest SHALL підтримувати mode=edit_loop, scene_id та strict int edit_pass_limit 1..10 (типово 5). Це окремий запуск лише редактора patches/diff/prose, без автоматичних memory/evaluator/classify. Поточні heads.draft/prose не змінюються між проходами. Під час початку виконання джерелом SHALL бути поточна завершена актуальна проза, а за її відсутності — чернетка; непридатна поточна проза не замінюється чернеткою мовчки. Readiness SHALL бути без записів і називати тільки редактора та максимум спроб.
+RunRequest SHALL підтримувати mode=edit_loop, scene_id та strict int edit_pass_limit 1..10 або `null`. Запит без ліміту SHALL отримувати `edit_pass_limit` ролі редактора твору (`RoleSettings.edit_pass_limit`, 1..10, типово 5; без ролі редактора — 5) до перевірки готовності, до створення запуску й до скасування за `request_id` (`generation/edit_pass.py::resolve_edit_pass_limit`), тож збережений запит завжди має число, а повтор того самого `request_id` порівнюється з уже заповненим запитом. Це окремий запуск лише редактора patches/diff/prose, без автоматичних memory/evaluator/classify. Поточні heads.draft/prose не змінюються між проходами. Під час початку виконання джерелом SHALL бути поточна завершена актуальна проза, а за її відсутності — чернетка; непридатна поточна проза не замінюється чернеткою мовчки. Readiness SHALL бути без записів і називати тільки редактора та максимум спроб.
 
 `generation/editor_loop.py` SHALL відповідати за source/context/readiness, приватний результат проходу, checkpoint, stop і підсумкову пропозицію. Run SHALL мати необов’язковий editor_loop checkpoint з IDs джерела/початкової та поточної робочої копії, кандидатів, початковою scene_revision і target CAS, seen SHA-256, attempt_count, stop_reason та proposal_attempt_id; авторських текстів у публічному Run немає. Working copies — незмінні draft VersionRef з provenance/input_refs/snapshot, без призначення головами. Baseline snapshot прив’язаний до початкових джерел, target CAS — до початкової прози; перед кожним викликом і перед завершенням перевіряються початковий snapshot, ревізія сцени та prose-head CAS. Публікація нового результату не повинна робити його stale лише через заміну вихідної прози.
 
@@ -5079,6 +5079,14 @@ RunRequest SHALL підтримувати mode=edit_loop, scene_id та strict i
 - GIVEN перший прохід виправив одну помилку, а другий знайшов наступну
 - WHEN цикл виконує другий прохід
 - THEN джерелом є збережений кандидат першого; початкові чернетка та проза лишаються вибраними до рішення автора.
+
+<a id="edit-loop-s02"></a>
+### Scenario: EDIT-LOOP-S02 — Ліміт проходів із налаштувань редактора
+
+- GIVEN роль редактора твору має `edit_pass_limit=2`, а збережені раніше налаштування без поля читаються з 5
+- WHEN запит `edit_loop`, `scene` чи `remaining` надходить без ліміту (з інтерфейсу чи MCP)
+- THEN перевірка готовності й запуск використовують 2, а збережений запит містить число
+- AND явний ліміт у запиті має перевагу; твір без ролі редактора отримує 5; скасування до запуску й пізніший запуск з тим самим `request_id` дають один запуск.
 
 <a id="edit-loop-stop"></a>
 ### Requirement: EDIT-LOOP-STOP — Завершення та recovery

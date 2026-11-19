@@ -56,6 +56,8 @@ class RunCoordinator:
         skipped_language=[]  # scenes whose automatic evaluation is skipped for their language (STORY-LANGUAGE-S06)
         if not request_id or len(request_id)>200:
             raise ValueError('Потрібен request_id до 200 символів')
+        from .edit_pass import resolve_edit_pass_limit
+        request=resolve_edit_pass_limit(self.repo,request)
         existing=self.repo.find_run_by_request_id(request_id)
         if existing:
             if existing.request!=request:
@@ -200,6 +202,8 @@ class RunCoordinator:
         self.repo.get_story(story_id)
         operations={}
         view=None
+        limit=None
+        from .edit_pass import resolve_edit_pass_limit
         for name in ([operation] if operation else ['prepare',*STAGES,'scene','remaining','rebuild_memory','edit_loop']):
             # model_construct permits the unselected-scene state in a read-only preview.
             request=RunRequest.model_construct(
@@ -213,6 +217,8 @@ class RunCoordinator:
             )
             # One captured view serves every operation of this request.
             if view is None:view=self.repo.context_view(story_id)
+            if limit is None:limit=resolve_edit_pass_limit(self.repo,request).edit_pass_limit
+            request=request.model_copy(update={'edit_pass_limit':limit})
             operations[name]=preview(self.repo,request,view)
         return {'operations':operations}
 
@@ -246,6 +252,8 @@ class RunCoordinator:
     def cancel_request(self, request: RunRequest, request_id: str) -> Run:
         if not request_id or len(request_id)>200 or request.mode not in {'stage','edit_loop'}:
             raise ValueError('Некоректний запит скасування')
+        from .edit_pass import resolve_edit_pass_limit
+        request=resolve_edit_pass_limit(self.repo,request)  # the same stored request as a later enqueue of this id
         with self.condition:
             existing=self.repo.find_run_by_request_id(request_id)
             if existing:

@@ -1873,6 +1873,21 @@
       ]
     },
     {
+      "id": "EDIT-LOOP-S02",
+      "requirement": "EDIT-LOOP",
+      "scope": "Ліміт проходів редактури з налаштувань ролі редактора для запиту без ліміту.",
+      "tests": [
+        "tests/generation/test_edit_pass_settings.py::test_role_settings_default_and_bounds",
+        "tests/generation/test_edit_pass_settings.py::test_old_editor_settings_read_as_five",
+        "tests/generation/test_edit_pass_settings.py::test_request_without_limit_takes_the_editor_setting",
+        "tests/generation/test_edit_pass_settings.py::test_explicit_limit_wins",
+        "tests/generation/test_edit_pass_settings.py::test_story_without_an_editor_role_gives_five",
+        "tests/generation/test_edit_pass_settings.py::test_enqueued_run_stores_the_number",
+        "tests/generation/test_edit_pass_settings.py::test_scene_readiness_uses_the_setting",
+        "tests/web/test_runs.py::test_cancel_request_fences_a_late_enqueue"
+      ]
+    },
+    {
       "id": "EDIT-LOOP-REVIEW-S01",
       "requirement": "EDIT-LOOP-REVIEW",
       "scope": "Єдиний окремий запуск редактора. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
