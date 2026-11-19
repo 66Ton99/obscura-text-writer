@@ -77,7 +77,7 @@ def prepare_scene(repo,scene_id,contract_version=3):
     targets=[t for t in plan_review(view).targets if t.scene_id==scene_id]
     if any(t.blockers for t in targets):raise ValueError('; '.join('Сцена '+str(t.position+1)+' «'+t.scene_title+'» · '+('завдання' if t.material=='brief' else 'проза')+': '+', '.join(dict.fromkeys(t.blockers)) for t in targets if t.blockers))
     role=get_role_settings(repo,scene.story_id)['planner']
-    plan=dict(story_id=scene.story_id,scene_id=scene_id,targets=[t.model_dump() for t in targets],basis_modes=modes_for(view,targets),settings=role.model_dump(),
+    plan=dict(story_id=scene.story_id,scene_id=scene_id,targets=[t.model_dump() for t in targets],basis_modes=modes_for(view,targets),settings=role.model_dump(exclude={'edit_pass_limit'}),
         system=load_prompt('review_part_v3',view.story.language),
         result_cap=min(6000,role.max_output_tokens//2),registry=registry_for([t.model_dump() for t in targets]))
     # The request language travels with the plan; absent means Ukrainian, so Ukrainian plan identities do not change.

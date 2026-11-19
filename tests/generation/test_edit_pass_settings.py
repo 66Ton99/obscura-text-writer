@@ -98,3 +98,28 @@ def test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change(tmp_
     assert worker.enqueue(request, 'same-id').id == run.id
     assert worker.cancel_request(request, 'same-id').id == run.id
     assert repo.get_run(run.id).request.edit_pass_limit == 5
+
+
+@pytest.mark.req('EDIT-LOOP')
+def test_context_fingerprint_does_not_depend_on_the_pass_limit(tmp_path, monkeypatch):
+    """Stored fingerprints were made before the field existed; it does not change the model request."""
+    from storygen.generation import context as module
+    from storygen.generation.context import build_context
+    from tests.generation.test_role_routing import R, make_repo, writer_without_variant
+    repo, item = make_repo(tmp_path, R(0, 1, 1))
+    role = writer_without_variant('local/main')
+    seen = []
+    real = module.json.dumps
+    monkeypatch.setattr(module.json, 'dumps', lambda obj, *a, **k: (seen.append(obj), real(obj, *a, **k))[1])
+    base = build_context(repo, item.id, 'draft', role).fingerprint
+    assert build_context(repo, item.id, 'draft', role.model_copy(update={'edit_pass_limit': 2})).fingerprint == base
+    payloads = [o['settings'] for o in seen if isinstance(o, dict) and 'settings' in o and 'system' in o]
+    assert payloads and all('edit_pass_limit' not in p for p in payloads)
+
+
+@pytest.mark.req('EDIT-LOOP')
+def test_impact_manifest_stamp_ignores_the_pass_limit():
+    from storygen.impact.chunking import settings_for_manifest
+    from types import SimpleNamespace
+    role = RoleSettings(provider=ProviderSettings(model='m'), edit_pass_limit=3)
+    assert 'edit_pass_limit' not in settings_for_manifest(SimpleNamespace(settings=role, wire_schema_version=2))

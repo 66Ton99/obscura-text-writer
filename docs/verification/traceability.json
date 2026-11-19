@@ -1885,7 +1885,10 @@
         "tests/generation/test_edit_pass_settings.py::test_enqueued_run_stores_the_number",
         "tests/generation/test_edit_pass_settings.py::test_scene_readiness_uses_the_setting",
         "tests/web/test_runs.py::test_cancel_request_fences_a_late_enqueue",
-        "tests/generation/test_edit_pass_settings.py::test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change"
+        "tests/generation/test_edit_pass_settings.py::test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change",
+        "tests/generation/test_edit_pass_settings.py::test_context_fingerprint_does_not_depend_on_the_pass_limit",
+        "tests/generation/test_edit_pass_settings.py::test_impact_manifest_stamp_ignores_the_pass_limit",
+        "tests/impact/test_reference_wire.py::test_legacy_fixture_replay"
       ]
     },
     {
