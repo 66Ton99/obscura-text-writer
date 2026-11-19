@@ -2,6 +2,7 @@
 
 Draws src/storygen/web/static/favicon.svg in headless Chromium (Python Playwright) at every size in
 packaging.ASSETS with a transparent background and writes the PNG files into store_build/msix/Assets.
+It also writes src/storygen/web/static/app-icon.png (256 px), from which the tray icon is scaled (DESKTOP-001-S04).
 Run again whenever the favicon changes; needs `python -m playwright install chromium` once.
 """
 import argparse
@@ -15,6 +16,7 @@ sys.path.insert(0, str(ROOT / 'src'))
 from storygen.packaging import ASSETS  # noqa: E402
 
 SOURCE = ROOT / 'src' / 'storygen' / 'web' / 'static' / 'favicon.svg'
+APP_ICON, APP_ICON_SIZE = ROOT / 'src' / 'storygen' / 'web' / 'static' / 'app-icon.png', 256
 
 
 def page_html(svg: bytes, size: int) -> str:
@@ -35,14 +37,15 @@ def main(argv=None) -> int:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
-            for name, size in ASSETS.items():
+            targets = [(args.out / name, size) for name, size in ASSETS.items()] + [(APP_ICON, APP_ICON_SIZE)]
+            for path, size in targets:
                 page = browser.new_page(viewport={'width': size, 'height': size}, device_scale_factor=1)
                 page.set_content(page_html(svg, size))
                 page.wait_for_load_state('load')
-                page.screenshot(path=str(args.out / name), omit_background=True,
+                page.screenshot(path=str(path), omit_background=True,
                                 clip={'x': 0, 'y': 0, 'width': size, 'height': size})
                 page.close()
-                print(f'{name}: {size}x{size}')
+                print(f'{path.name}: {size}x{size}')
         finally:
             browser.close()
     return 0

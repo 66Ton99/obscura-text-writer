@@ -87,6 +87,17 @@ def test_icon_png_is_a_png_of_the_requested_size():
     assert image.format == 'PNG' and image.size == (24, 24) and image.mode == 'RGBA'
 
 
+@pytest.mark.req('DESKTOP-001')
+def test_tray_icon_is_the_obscura_emblem():
+    """The emblem of favicon.svg: transparent rounded corner, wine field, ivory nib."""
+    from PIL import Image
+    image = Image.open(io.BytesIO(desktop_tray.icon_png(64))).convert('RGBA')
+    assert image.getpixel((0, 0))[3] < 128
+    red, green, blue, alpha = image.getpixel((8, 32))
+    assert red > 80 and green < 50 and blue < 70 and alpha > 240
+    assert all(channel > 220 for channel in image.getpixel((26, 22)))
+
+
 def unavailable():
     raise TrayUnavailable()
 

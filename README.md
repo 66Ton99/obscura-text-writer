@@ -41,6 +41,9 @@ Copy-Item .env.example .env
 ./scripts/start.ps1 -DataDir "$env:LOCALAPPDATA/ObscuraTextWriter/data"
 ```
 
+`./scripts/start.ps1 -Desktop` запускає застосунок без консолі, як версію зі Store:
+в окремому вікні зі значком у треї.
+
 Інструкції українською й англійською: [сайт Obscura](https://obscurawriter.com/) (джерело — `docs/site/`).
 
 Докладніше: [запуск і резервне копіювання](https://obscurawriter.com/install.html), [експорт FB2/EPUB](docs/verification/manual.md#ebook-formats) та [PDF A5](docs/verification/manual.md#pdf-publication).

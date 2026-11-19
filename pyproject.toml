@@ -40,7 +40,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "storygen.evaluation" = ["resources/*.txt", "resources/*.json"]
 "storygen.storage" = ["migrations/*.sql"]
-"storygen.web" = ["templates/*.html", "static/*.css", "static/*.js", "static/*.svg", "static/*.json", "static/templates/*.md", "static/licenses/*.txt"]
+"storygen.web" = ["templates/*.html", "static/*.css", "static/*.js", "static/*.svg", "static/*.png", "static/*.json", "static/templates/*.md", "static/licenses/*.txt"]
 "storygen.generation" = ["resources/*.txt", "resources/*.json"]
 "storygen.publication" = ["resources/fb2/*.xsd", "resources/fb2/*.json", "resources/fonts/*.ttf", "resources/fonts/*.txt", "resources/fonts/*.json"]
 
