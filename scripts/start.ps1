@@ -1,4 +1,4 @@
-﻿param([int]$Port=8760,[string]$DataDir='',[switch]$Desktop)
+﻿param([int]$Port=8765,[string]$DataDir='',[switch]$Desktop)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $pythonPath=Join-Path $projectRoot '.venv/Scripts/python.exe'
