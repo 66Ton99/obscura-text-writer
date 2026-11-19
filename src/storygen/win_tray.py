@@ -18,7 +18,7 @@ WM_NULL, WM_DESTROY, WM_CLOSE, WM_CONTEXTMENU = 0x0000, 0x0002, 0x0010, 0x007B
 CALLBACK = 0x8001  # WM_APP + 1
 NIN_SELECT, NIN_KEYSELECT = 0x0400, 0x0401
 NIM_ADD, NIM_DELETE, NIM_SETVERSION = 0, 2, 4
-NIF_MESSAGE, NIF_ICON, NIF_TIP = 0x1, 0x2, 0x4
+NIF_MESSAGE, NIF_ICON, NIF_TIP, NIF_SHOWTIP = 0x1, 0x2, 0x4, 0x80  # version 4 hides the tip without NIF_SHOWTIP
 NOTIFYICON_VERSION_4 = 4
 ERROR_CLASS_ALREADY_EXISTS = 1410
 SM_CXSMICON = 49
@@ -262,7 +262,7 @@ class Win32Api:
 
     def _data(self, hwnd, hicon=None, tip=''):
         return self.NOTIFYICONDATA(cbSize=ctypes.sizeof(self.NOTIFYICONDATA), hWnd=hwnd, uID=1,
-                                   uFlags=NIF_MESSAGE | NIF_ICON | NIF_TIP, uCallbackMessage=CALLBACK, hIcon=hicon,
+                                   uFlags=NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP, uCallbackMessage=CALLBACK, hIcon=hicon,
                                    szTip=tip[:127])
 
     def add_icon(self, hwnd, hicon, tip: str) -> bool:

@@ -59,13 +59,14 @@ def menu_items(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], N
     return items
 
 
+# The Obscura emblem (favicon.svg) rendered by scripts/make_store_assets.py; scaled down to the tray size.
+EMBLEM = Path(__file__).parent / 'web' / 'static' / 'app-icon.png'
+
+
 def _image(size: int = 64):
-    from PIL import Image, ImageDraw
-    image = Image.new('RGBA', (size, size), (92, 26, 43, 255))
-    draw = ImageDraw.Draw(image)
-    margin = round(size * 14 / 64)
-    draw.ellipse((margin, margin, size - margin, size - margin), outline=(245, 238, 228, 255), width=max(1, round(size * 6 / 64)))
-    return image
+    from PIL import Image
+    with Image.open(EMBLEM) as emblem:
+        return emblem.convert('RGBA').resize((size, size), Image.Resampling.LANCZOS)
 
 
 def icon_png(size: int) -> bytes:

@@ -4785,7 +4785,7 @@
     {
       "id": "DESKTOP-001-S04",
       "requirement": "DESKTOP-001",
-      "scope": "Меню трея: порядок, мови, пункт копій, вихід; робота без бібліотеки трея й з --no-tray.",
+      "scope": "Меню трея: порядок, мови, пункт копій, вихід; робота без бібліотеки трея й з --no-tray; емблема й підказка значка.",
       "tests": [
         "tests/test_desktop_tray.py::test_menu_labels_order_and_actions",
         "tests/test_desktop_tray.py::test_backups_item_appears_once_there_are_backups",
@@ -4808,7 +4808,9 @@
         "tests/test_desktop.py::test_no_tray_mode_runs_until_the_server_stops",
         "tests/test_desktop.py::test_quit_with_an_open_stream_still_shuts_the_server_down",
         "tests/test_desktop_tray.py::test_tray_language_follows_the_windows_ui_language",
-        "tests/test_desktop_tray.py::test_run_tray_opens_obscura_with_the_given_opener"
+        "tests/test_desktop_tray.py::test_run_tray_opens_obscura_with_the_given_opener",
+        "tests/test_desktop_tray.py::test_tray_icon_is_the_obscura_emblem",
+        "tests/test_win_tray.py::test_icon_asks_for_the_standard_tooltip"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#desktop-launcher",

@@ -230,3 +230,11 @@ def test_real_api_builds_and_frees_an_icon():
     hicon = api.icon_from_png(buffer.getvalue(), 16)
     assert hicon
     api.destroy_icon(hicon)
+
+
+@pytest.mark.req('DESKTOP-001')
+@pytest.mark.skipif(os.name != 'nt', reason='Windows API')
+def test_icon_asks_for_the_standard_tooltip():
+    """Version 4 hides the standard tooltip unless NIF_SHOWTIP is set: the hover showed an empty box."""
+    data = win_tray.Win32Api()._data(0, None, 'Obscura')
+    assert data.uFlags & win_tray.NIF_SHOWTIP and data.szTip == 'Obscura'
