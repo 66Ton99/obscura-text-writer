@@ -5941,9 +5941,9 @@
     {
       "id": "STORE-MCP-S07",
       "requirement": "STORE-MCP-001",
-      "scope": "Режим «пише чат» за замовчуванням у формі бібліотеки Store. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Режим «пише Obscura» за замовчуванням у формі бібліотеки в усіх виданнях. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
-        "tests/web/test_library_writing_mode.py::test_store_library_preselects_chat",
+        "tests/web/test_library_writing_mode.py::test_store_library_preselects_obscura",
         "tests/web/test_library_writing_mode.py::test_full_library_keeps_obscura"
       ]
     },
