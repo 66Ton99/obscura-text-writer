@@ -2556,6 +2556,16 @@
       ]
     },
     {
+      "id": "R18-STATS-S04",
+      "requirement": "R18-STATS",
+      "scope": "Підсумок прози за твір і відповідь без розбору контексту.",
+      "tests": [
+        "tests/web/test_scene_statistics_api.py::test_story_totals_sum_the_active_scenes",
+        "tests/web/test_scene_statistics_api.py::test_details_false_skips_memory_context_and_usage",
+        "tests/web/test_scene_statistics_api.py::test_statistics_get_has_no_writes_or_dispatch"
+      ]
+    },
+    {
       "id": "R20-WORKSPACE-S01",
       "requirement": "R20-WORKSPACE",
       "scope": "R-20: перевірка конкретних guards/контрактів; браузерне компонування й літературна якість не підтверджуються цими тестами.",
