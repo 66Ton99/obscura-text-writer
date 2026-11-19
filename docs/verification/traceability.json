@@ -4357,7 +4357,8 @@
       "scope": "GET /api/app-info віддає лише видання, межу, версію й адреси посилань.",
       "tests": [
         "tests/web/test_app_info.py::test_app_info_full_edition",
-        "tests/web/test_app_info.py::test_app_info_store_edition"
+        "tests/web/test_app_info.py::test_app_info_store_edition",
+        "tests/web/test_app_info_edition.py::test_is_store_edition_helper"
       ]
     },
     {

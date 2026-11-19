@@ -14,3 +14,5 @@ export function allowedLevels(max,current){
   return levels;
 }
 export function limited(maxRating){return Object.values(maxRating).some(level=>level<2)}
+// STORE-FOOTER: the store edition hides the inner workings of the scene editor; on a failed request nothing is hidden.
+export async function isStoreEdition(){return (await appInfo()).edition==='store'}
