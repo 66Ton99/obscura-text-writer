@@ -5449,7 +5449,7 @@
     {
       "id": "MCP-BRIDGE-S06",
       "requirement": "MCP-BRIDGE",
-      "scope": "Рівно двадцять сім інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
+      "scope": "Рівно двадцять вісім інструментів; стан сцен тим самим словником, що список сцен; посилання на сцену в next_steps. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
       "tests": [
         "tests/mcp/test_bridge.py::test_tool_list_is_exactly_the_twenty_seven_tools",
         "tests/mcp/test_bridge.py::test_get_story_reports_scene_states_with_the_ui_vocabulary",
@@ -7002,6 +7002,61 @@
       "manual": {
         "procedure": "docs/verification/codex-checkout-acceptance.md#codex-b1-checkout",
         "reason": "Потрібен окремий локальний Windows-акаунт і ручний вхід/GUI власника. Процедура та попередній сумісний CODEX_HOME/skills не є виконанням B1."
+      }
+    },
+    {
+      "id": "PLAN-PREAMBLE-S01",
+      "requirement": "PLAN-PREAMBLE",
+      "scope": "Заміна вступу: нова версія source_plan з тими самими секціями, ідемпотентність, CAS за версією плану.",
+      "tests": [
+        "tests/authoring/test_plan_preamble.py::test_replacement_keeps_scenes",
+        "tests/authoring/test_plan_preamble.py::test_new_preamble_is_separated_from_the_first_scene",
+        "tests/authoring/test_plan_preamble.py::test_clearing_the_preamble_leaves_only_scenes",
+        "tests/authoring/test_plan_preamble_storage.py::test_read_returns_the_preamble_and_plan_version",
+        "tests/authoring/test_plan_preamble_storage.py::test_saving_publishes_a_fresh_plan_with_the_same_scenes",
+        "tests/authoring/test_plan_preamble_storage.py::test_unchanged_preamble_creates_no_version",
+        "tests/authoring/test_plan_preamble_storage.py::test_crlf_plan_reads_as_lf_and_unchanged_save_is_a_no_op",
+        "tests/authoring/test_plan_preamble_storage.py::test_stale_plan_version_is_a_conflict_and_changes_nothing"
+      ]
+    },
+    {
+      "id": "PLAN-PREAMBLE-S02",
+      "requirement": "PLAN-PREAMBLE",
+      "scope": "Відмова для вступу, що змінив би поділ, плану без меж сцен і рядків серії; відмова нічого не змінює.",
+      "tests": [
+        "tests/authoring/test_plan_preamble.py::test_a_preamble_that_changes_the_split_is_refused",
+        "tests/authoring/test_plan_preamble.py::test_a_plan_without_scene_boundaries_has_no_editable_preamble",
+        "tests/authoring/test_plan_preamble_storage.py::test_story_without_plan_or_scene_boundaries_is_not_editable",
+        "tests/authoring/test_plan_preamble_storage.py::test_refused_preamble_changes_nothing",
+        "tests/authoring/test_plan_preamble_storage.py::test_series_lines_are_refused_in_an_edition_with_series",
+        "tests/authoring/test_plan_preamble_storage.py::test_server_messages_are_translated_in_the_browser_catalog"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-preamble-panel",
+        "reason": "Збереження введеного тексту в полі після відмови й переклад повідомлення перевіряються в браузері: JS панелі не має автоматичного тесту."
+      }
+    },
+    {
+      "id": "PLAN-PREAMBLE-S03",
+      "requirement": "PLAN-PREAMBLE",
+      "scope": "Проза й підготовлений канон з попереднім вступом застарівають, картки ні; контекст етапу бачить новий вступ.",
+      "tests": [
+        "tests/authoring/test_plan_preamble_storage.py::test_prose_and_prepared_canon_become_stale_cards_do_not",
+        "tests/authoring/test_plan_preamble_storage.py::test_saving_publishes_a_fresh_plan_with_the_same_scenes"
+      ]
+    },
+    {
+      "id": "PLAN-PREAMBLE-S04",
+      "requirement": "PLAN-PREAMBLE",
+      "scope": "HTTP API, панель у налаштуваннях (uk/en) і MCP get_story/update_plan_preamble.",
+      "tests": [
+        "tests/authoring/test_plan_preamble_storage.py::test_http_read_and_save",
+        "tests/authoring/test_plan_preamble_storage.py::test_settings_page_has_the_preamble_panel_in_both_languages",
+        "tests/mcp/test_bridge_plan_preamble.py::test_chat_reads_and_replaces_the_plan_preamble"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-preamble-panel",
+        "reason": "Вигляд і поведінка панелі в «Письмо» перевіряються в браузері вручну."
       }
     }
   ]

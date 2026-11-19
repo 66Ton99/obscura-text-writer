@@ -31,6 +31,9 @@ What happens: Maria calls Lera and asks for advice.
 - Names must match the cards exactly; case and extra spaces do not matter. The application does not guess a similar name and does not create a character from a name alone: generation waits until you fix the name or add a card.
 - An empty "Characters:" line clears the cast; without the line, a cast chosen by hand stays.
 - The other fields are instructions for the models. The number in the heading does not reorder scenes.
+- A file may start with the outline title, a single first-level heading (`# The Lighthouse at the Pier`). The title and the text under it up to the first scene are the outline preamble: it does not become a scene, and the models see it as general notes for every scene. Other unnumbered headings (`## Interlude`) become unnumbered scenes.
+
+You can change the outline preamble after the import too: **Settings → Writing → General notes from the plan**. Saving creates a new version of the outline with the same scenes; the previous one stays in the history. Scenes written with the previous preamble then need review on the "Book check" page. If the outline has already been prepared, run the preparation again: until then the models do not write scenes. A preamble that would change the split into scenes (a scene-level heading such as `## Tone` or a `Scene 5:` line) is not saved: Obscura explains why, and your text stays in the field. A repeated outline import does not replace the preamble. A story without an outline, or with an outline without scene headings, has no preamble, and the panel is disabled.
 
 A character file with name headings of the same level (`## Lera`) creates starting cards with the status "Timing unverified" in a new story. Names that mix alphabets (a Latin C instead of a Cyrillic С) produce a warning.
 

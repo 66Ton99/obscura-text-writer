@@ -6,12 +6,13 @@ The link is `storygen-mcp`, a small program the chat client starts by itself. It
 
 ## What the chat can do
 
-The chat gets twenty-seven tools:
+The chat gets twenty-eight tools:
 
 - **story list** and **story overview**: scenes, their order and their state, in the same words as the scene list, plus the story's rating, target length and characters;
 - **new story**: a title, a language, a target length, the story mode and, optionally, an age rating;
 - **plan and character templates**: the same files the story page offers;
 - **story properties**: the title, the language and the age rating;
+- **outline preamble**: the title and general notes before the first scene, only over the version the chat has read;
 - **new scene** at the chosen place in the story, with a plan or modelled on the previous scene;
 - **scene plan and properties**: the plan (only over the plan the chat has read), the title, the length, the cast and the prose language;
 - **scene context**: the plan, the brief, the cast's cards, the memory of earlier scenes, the age rating, the language and the target length;
@@ -207,6 +208,7 @@ Ask the chat to create a story: a title, a language (Ukrainian or English) and, 
 - In the Microsoft Store edition a rating above the edition limit is refused, and the story is then not created.
 - The chat rewrites a scene plan only over the plan it has read. If you changed the plan after the chat read it, the write is refused with "План сцени змінено після того, як його прочитали" (the scene plan was changed after it was read) and nothing is saved.
 - The previous plan stays in the scene's version history. A plan from the chat is not marked separately there: it is your authored material.
+- The chat reads the outline preamble (the title and general notes before the first scene) with the story and changes it only over the version it has read, as with a scene plan. The scenes stay the same, and those written with the previous preamble need review.
 - The chat changes several story properties one after another. If one of them is refused (for example, the language is already fixed), the rest are not changed, and the chat reports what it managed to apply.
 - You delete unneeded stories in Obscura: the chat cannot do that.
 
