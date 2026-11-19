@@ -139,6 +139,27 @@ def story_title(id: str,body: StoryTitlePatch,request: Request):
     return rename_story(request.app.state.repo,id,body.title,body.expected_revision)
 
 
+class PlanPreambleChange(DomainModel):
+    text: str=Field(max_length=200000)
+    expected_plan_version_id: str=Field(max_length=64)
+
+
+@router.get('/api/stories/{id}/plan-preamble')
+def plan_preamble(id: str,request: Request):
+    from ..storage.plan_preamble import read_plan_preamble
+    return read_plan_preamble(request.app.state.repo,id)
+
+
+@router.put('/api/stories/{id}/plan-preamble')
+def change_plan_preamble(id: str,body: PlanPreambleChange,request: Request):
+    """PLAN-PREAMBLE: a new plan version with the same scenes; scenes written with the old preamble need review."""
+    from ..storage.plan_preamble import replace_plan_preamble
+    from ..impact.presentation import scene_status
+    repo=request.app.state.repo
+    result=replace_plan_preamble(repo,id,body.expected_plan_version_id,body.text)
+    return {**result,'impact_status':scene_status(repo.context_view(id))}
+
+
 @router.post("/api/stories/{id}/sources")
 async def sources(id: str,request: Request):
     form=await request.form(max_part_size=2*1024*1024+1024)
