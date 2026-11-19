@@ -2,20 +2,20 @@
 
 **ПЕРЕВІРКА ПРОЙШЛА** — свідчення конкретного запуску, не поточного довільного стану.
 
-- Початок (UTC): 2026-11-19T14:24:52.500358+00:00
-- Завершення (UTC): 2026-11-19T14:40:15.003688+00:00
-- Базовий commit: `b7315977ceba80f3725e92470597b73f613d39ab`
+- Початок (UTC): 2026-11-19T14:48:33.499861+00:00
+- Завершення (UTC): 2026-11-19T15:04:15.372918+00:00
+- Базовий commit: `45ae45d77204326c06c5253286758ae5521d1f5f`
 - Незакомічені зміни під час перевірки: `false`
-- SHA-256 вихідного знімка: `2a851afa9681da79284ce7525cf51fdbcd808e7807f472d921828b042531b740`
+- SHA-256 вихідного знімка: `9ba8900fb6560c46c847e267775eabed0490351b9a24221369c4b118afb3b1d1`
 - Зміна знімка під час прогону: `false`
 - Exit code: `0`
 - Фактичні testcase результати JUnit: passed: 3858 · failed: 0 · errors: 0 · skipped: 2
-- Тривалість: 922.52 с
+- Тривалість: 941.88 с
 
 Точний argv (JSON, не shell-команда):
 
 ```json
-["C:\\Projects\\text-generator\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--junitxml=C:\\tmp\\preamble-verify\\artifacts\\verification-u82whbq8\\junit.xml", "--basetemp=C:\\tmp\\preamble-verify\\artifacts\\verification-u82whbq8\\test-tmp"]
+["C:\\Projects\\text-generator\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--junitxml=C:\\tmp\\preamble-verify\\artifacts\\verification-u2rs0c1p\\junit.xml", "--basetemp=C:\\tmp\\preamble-verify\\artifacts\\verification-u2rs0c1p\\test-tmp"]
 ```
 
 Результат стосується лише наведеної команди й вихідного знімка. Якщо в argv зазначено окремі файли або фільтри, це часткова перевірка. Збір (collection) не є виконанням; skipped не зараховано до passed. Відсутній або непридатний XML позначається непідтвердженим. Після зміни вихідних файлів звіт історичний. Власний STATUS і artifacts виключено зі знімка; початкова ревізія може мати dirty=true, оскільки звіт створюється до коміту.
@@ -27,7 +27,7 @@
 
 ## Редагування вступу плану (PLAN-PREAMBLE)
 
-Гілка `claude/plan-preamble-edit`, commit `b7315977`: повний verify.py — 3858 passed, 0 failed/errors, 2 skipped; `check_docs.py` узгоджено. Перший прогін із теки `.claude/worktrees/…` дав 1321 FileNotFoundError через задовгі шляхи Windows у `artifacts/…/test-tmp`, тому перевірку виконано з `C:\tmp\preamble-verify`; другий прогін знайшов застарілу кількість інструментів MCP (27 → 28), виправлено. Ручна процедура `manual.md#plan-preamble-panel` виконана частково в браузері на тимчасовій теці даних: кроки 1–3 (панель, збереження, відмова з перекладом і збереженням тексту в полі) PASS; крок 4 (твір без плану) перевірено лише автоматичним тестом.
+Гілка `claude/plan-preamble-edit`, commit `45ae45d7` (після рев'ю PR і рішення «Канон застаріває»; попередній прогін — `b7315977`): повний verify.py — 3858 passed, 0 failed/errors, 2 skipped; `check_docs.py` узгоджено. Перший прогін із теки `.claude/worktrees/…` дав 1321 FileNotFoundError через задовгі шляхи Windows у `artifacts/…/test-tmp`, тому перевірку виконано з `C:\tmp\preamble-verify`; другий прогін знайшов застарілу кількість інструментів MCP (27 → 28), виправлено. Ручна процедура `manual.md#plan-preamble-panel` виконана частково в браузері на тимчасовій теці даних: кроки 1–3 (панель, збереження, відмова з перекладом і збереженням тексту в полі) PASS; крок 4 (твір без плану) перевірено лише автоматичним тестом.
 
 ## Ручне B1 та завершення checkout206
 
