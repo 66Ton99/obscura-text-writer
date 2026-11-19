@@ -23,6 +23,7 @@ const storeEdition=isStoreEdition();
 const textKinds=['draft','edited','manual'],materialOf=ref=>ref.kind==='draft'?'draft':'prose';
 const activeRun=()=>[state.workspaceRun,...(state.workspaceRuns||[])].some(run=>['queued','running','pause_requested','cancellation_requested'].includes(run?.state));
 document.addEventListener('editor-state-changed',()=>updateHistoryControls());
+for(const event of ['workspace-run-state','workspace-run-pending'])document.addEventListener(event,()=>updateHistoryControls());
 function updateTabs(){
   const buttons=[...document.querySelectorAll('#mode-tabs button')];
   for(const button of buttons){
@@ -95,6 +96,7 @@ async function render(){
       const material=materialOf(ref),sceneId=state.scene.id,epoch=state.bufferEpoch;
       if(!await confirmDialog(t('history.restore_confirm')))return;
       if(state.saving||state.dirty||state.scene?.id!==sceneId||state.bufferEpoch!==epoch)return;
+      if(activeRun())throw new Error(t("m_9fafcde1c64a"));
       const v=await api('/api/versions/'+ref.id),before=state.scene.heads[material];
       const result=await api(`/api/scenes/${sceneId}/${material}`,json('POST',{text:v.text,expected_revision:state.scene.revision,content_format:v.version.content_format||'plain'}));
       if(result.version.id===before){notice(t('history.already_same'));return}

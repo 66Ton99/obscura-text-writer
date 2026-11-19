@@ -61,6 +61,11 @@ test.describe('Store edition footer',()=>{
     await list.selectOption(data.scene.heads.prose);await expect(restore).toBeDisabled();
     await list.selectOption(plain.id);await buttons.nth(1).click();
     await expect(page.locator('#version-panel .comparison')).toBeVisible();
+    // A run that starts while the history is open disables restore at once.
+    await list.selectOption(markdown.id);await expect(restore).toBeEnabled();
+    const signal=async run=>page.evaluate(async run=>{const m=await import('/static/editor.js');m.state.workspaceRun=run;document.dispatchEvent(new CustomEvent('workspace-run-state',{detail:run}))},run);
+    await signal({id:'fake',state:'running',request:{mode:'stage',stage:'draft'}});await expect(restore).toBeDisabled();
+    await signal({id:'fake',state:'cancelled',request:{mode:'stage',stage:'draft'}});await expect(restore).toBeEnabled();
     await list.selectOption(markdown.id);await restore.click();
     await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
     await expect.poll(async()=>(await history()).scene.heads.prose).not.toBe(data.scene.heads.prose);
@@ -74,6 +79,22 @@ test.describe('Store edition footer',()=>{
     await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
     await expect(page.locator('#notice')).toContainText('The text is already the same');
     expect((await history()).versions.length).toBe(count);
+  });
+  test('Store history restores a Markdown draft over a plain draft head',async({page,request})=>{
+    await request.post('/test-build-edition',{data:{edition:'store'}});
+    const fixture=await(await request.post('/test-fixture')).json(),scene=fixture.scene_id;
+    const history=async()=>(await(await request.get(`/api/scenes/${scene}/versions`)).json());
+    let data=await history();const markdownDraft=data.scene.heads.draft;
+    expect((await request.post(`/api/scenes/${scene}/draft`,{data:{text:'Проста чернетка.',expected_revision:data.scene.revision,content_format:'plain'}})).ok()).toBe(true);
+    await page.goto(`/stories/${fixture.story_id}?scene=${scene}&material=draft`);
+    await page.locator('#workspace-history summary').click();
+    await page.locator('#history-version').selectOption(markdownDraft);
+    await page.locator('#version-panel > button').nth(2).click();
+    await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
+    await expect.poll(async()=>(await history()).versions.length).toBe(data.versions.length+2);
+    data=await history();
+    const head=await(await request.get(`/api/versions/${data.scene.heads.draft}`)).json();
+    expect(head.version.kind).toBe('draft');expect(head.version.content_format).toBe('markdown');expect(head.text).toContain('Лєра побачила **зорі**.');
   });
   test('full edition keeps run options and extra actions',async({page,request})=>{
     const fixture=await(await request.post('/test-fixture')).json();
