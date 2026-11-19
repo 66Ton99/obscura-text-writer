@@ -93,9 +93,9 @@ def test_tray_icon_is_the_obscura_emblem():
     from PIL import Image
     image = Image.open(io.BytesIO(desktop_tray.icon_png(64))).convert('RGBA')
     assert image.getpixel((0, 0))[3] < 128
-    red, green, blue, _ = image.getpixel((8, 32))
-    assert red > 80 and green < 50 and blue < 70
-    assert all(channel > 220 for channel in image.getpixel((26, 22))[:3])
+    red, green, blue, alpha = image.getpixel((8, 32))
+    assert red > 80 and green < 50 and blue < 70 and alpha > 240
+    assert all(channel > 220 for channel in image.getpixel((26, 22)))
 
 
 def unavailable():
