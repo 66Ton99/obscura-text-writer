@@ -2631,7 +2631,9 @@
     "codex.install_path_changed": "Шлях встановлення змінився або став непридатним. Перевірте теки, відновлені файли й резервні копії перед повторною спробою.",
     "settings.edit_pass_limit_hint": "Скільки разів редактор може пройти чернетку за один запуск. Кожен прохід — окремий виклик моделі.",
     "workspace.take_as_prose": "Взяти як прозу",
-    "workspace.edit_again": "Редагувати"
+    "workspace.edit_again": "Редагувати",
+    "stats.prose_line": "Поточна проза: {p0} / {p1} цільових слів ({p2} / {p3} весь твір)",
+    "stats.summary_store": "Статистика сцени"
   },
   "en": {
     "ui.save": "Save",
@@ -5265,6 +5267,8 @@
     "codex.install_path_changed": "The installation path changed or became unsuitable. Review folders, restored files and backups before trying again.",
     "settings.edit_pass_limit_hint": "How many times the editor may pass over the draft in one run. Each pass is a separate model call.",
     "workspace.take_as_prose": "Use as prose",
-    "workspace.edit_again": "Edit"
+    "workspace.edit_again": "Edit",
+    "stats.prose_line": "Current prose: {p0} / {p1} target words ({p2} / {p3} whole story)",
+    "stats.summary_store": "Scene statistics"
   }
 }
