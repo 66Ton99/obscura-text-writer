@@ -74,6 +74,8 @@ The `storygen-desktop` command starts the application without a PowerShell windo
 ./.venv/Scripts/pythonw.exe -m storygen.desktop --env-file .env
 ```
 
+`./scripts/start.ps1 -Desktop` does the same: it starts the application without a console, with the same stories folder as the ordinary launch (`data` in the application folder or the `-DataDir` value) and with the application's `.env`. The `-Port` option has no effect in this mode.
+
 - `--env-file .env` takes provider keys from the same `.env` file as the ordinary launch. Without this option the application looks for `.env` in the stories folder; a key saved in the settings (Windows credential store) works in both cases.
 
 - Stories are kept in the `Obscura` folder of your profile (`%USERPROFILE%\Obscura`); `--data-dir` sets another folder.
