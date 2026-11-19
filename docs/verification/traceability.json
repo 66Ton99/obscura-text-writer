@@ -4706,6 +4706,39 @@
       ]
     },
     {
+      "id": "STORE-FOOTER-S01",
+      "requirement": "STORE-FOOTER",
+      "scope": "Розмітка сторінки твору у виданні store без «Параметрів запуску» й «Додаткових дій»; статистика Store (details=false, без вибору етапу) — Node-тест; DOM у браузері — ручна процедура.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_store_story_page_has_no_run_options_or_extra_actions",
+        "tests/web/test_scene_statistics_ui.py::test_statistics_buffer_and_async_guards"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs. Вигляд у зібраному пакеті — крок «Підвал редактора» процедури store-package-install."
+      }
+    },
+    {
+      "id": "STORE-FOOTER-S02",
+      "requirement": "STORE-FOOTER",
+      "scope": "Серверна частина повернення: збереження тексту версії з її форматом і повторне використання ідентичної голови; UI історії Store — браузерний тест у ручній процедурі.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_restore_saves_the_version_format_and_reuses_an_identical_head"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs. Вигляд у зібраному пакеті — крок «Підвал редактора» процедури store-package-install."
+      }
+    },
+    {
+      "id": "STORE-FOOTER-S03",
+      "requirement": "STORE-FOOTER",
+      "scope": "Розмітка повного видання з «Параметрами запуску» й «Додатковими діями», без «Видалити сцену» в підвалі.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_full_story_page_keeps_run_options_and_extra_actions"
+      ]
+    },
+    {
       "id": "DESKTOP-001-S01",
       "requirement": "DESKTOP-001",
       "scope": "Тека даних у профілі користувача (кирилиця в шляху), журнал у файл із ротацією, запуск без stdout/stderr.",
