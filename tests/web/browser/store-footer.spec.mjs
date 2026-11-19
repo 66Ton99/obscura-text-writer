@@ -21,3 +21,32 @@ test('use as prose sits left of the primary action on the draft tab',async({page
   expect(prose.version.content_format).toBe('markdown');
   await expect(primary).toBeVisible();
 });
+
+// STORE-FOOTER-S01: the Store footer keeps the statistics materials, the history and the run controls only.
+test.describe('Store edition footer',()=>{
+  test.afterEach(async({request})=>{await request.post('/test-build-edition',{data:{edition:'full'}})});
+  test('Store footer keeps only what an author needs',async({page,request})=>{
+    const errors=[];page.on('pageerror',error=>errors.push(error.message));
+    await request.post('/test-build-edition',{data:{edition:'store'}});
+    const fixture=await(await request.post('/test-fixture')).json();
+    await page.goto(`/stories/${fixture.story_id}?scene=${fixture.scene_id}&material=draft`);
+    await expect(page.locator('#workspace-primary')).toBeVisible();
+    for(const selector of ['#run-options','.workspace-extra','#generation-controls','#pause-each'])await expect(page.locator(selector)).toHaveCount(0);
+    await expect(page.locator('#workspace-history')).toHaveCount(1);
+    const stats=page.locator('#scene-statistics details');
+    await stats.locator('summary').click();
+    await expect(stats).toContainText(/Current prose: .* whole story\)|Поточна проза: .* весь твір\)/);
+    await expect(stats.locator('select')).toHaveCount(0);
+    await expect(stats.locator('h3')).toHaveCount(1);
+    expect(errors).toEqual([]);
+  });
+  test('full edition keeps run options and extra actions',async({page,request})=>{
+    const fixture=await(await request.post('/test-fixture')).json();
+    await page.goto(`/stories/${fixture.story_id}?scene=${fixture.scene_id}&material=draft`);
+    await expect(page.locator('#run-options')).toHaveCount(1);
+    await expect(page.locator('.workspace-extra #generation-controls')).toHaveCount(1);
+    const stats=page.locator('#scene-statistics details');
+    await stats.locator('summary').click();
+    await expect(stats.locator('select')).toHaveCount(1);
+  });
+});

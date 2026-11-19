@@ -8,7 +8,8 @@ import {state,refresh,loadBuffer,textEditor} from './editor.js';
 import {registerWorkspaceCommand} from './workspace-commands.js';
 import {assertReadyDispatch} from './workspace-state.js';
 import {operationReason,confirmationText,runKind,controlReason,materialReason,editorLoopOperation} from './run-readiness.js';
-const controls=document.querySelector('#generation-controls'),status=document.querySelector('#run-status'),live=document.querySelector('#live-text');
+// STORE-FOOTER: the Store page has no extra actions; their buttons then live in a detached node.
+const controls=document.querySelector('#generation-controls')||document.createElement('div'),status=document.querySelector('#run-status'),live=document.querySelector('#live-text');
 // R20-WORKSPACE: «Текст, що пише модель» opens while a stage runs and closes once its text is in.
 const modelOutput=open=>{const block=live.closest?.('details');if(block)block.open=open};
 const terminal=new Set(['completed','failed','cancelled','interrupted','needs_review','alternative','paused']);
@@ -162,7 +163,7 @@ async function start(mode,stage,options={}){
   if((!options.primary||operation.memory_review)&&!await confirmDialog(confirmationText(operation)))return;
   if(options.signal?.aborted)throw new DOMException('Cancelled','AbortError');
   assertReadyDispatch(state,captured);
-  const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each').checked?['brief','draft','edit','memory']:[]};
+  const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each')?.checked?['brief','draft','edit','memory']:[]};
   if(mode==='stage'&&stage==='memory'&&operation.memory_review)request.memory_approval=operation.memory_review.fingerprint;
   if(usesEditorLoop)request.edit_workflow='loop';
   if(mode==='edit_loop')Object.assign(request,selectedSource(options));
