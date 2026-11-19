@@ -10,6 +10,8 @@ The **Editing** stage follows the draft. The editor suggests changes, and you de
 
 In the version history you can choose a draft or prose version and press **Check the selected version’s language**. The rules find letters from another alphabet, mixed alphabets within a word, repeated neighbouring words and a hyphen instead of a dash in dialogue. The saved version is checked, with no model call.
 
+In the Microsoft Store edition the version history lists only drafts, edits and prose — with the material name and date — and has three buttons. **View version** opens its text. **Compare with the current text** shows how it differs from the current draft or prose. **Restore this version** asks for confirmation and saves its text and formatting as the new current version of the same material; the present text stays in the history. If the text and formatting are already the same, no new version is made and you see "The text is already the same".
+
 ## Book check
 
 When you change early scenes, the outline or the characters, later materials may contradict them. Open the **☰ Story actions → Book check** menu item: the tool opens as a separate page, and **← Back to the story** returns to the editor. The number next to the menu item counts materials waiting for review.

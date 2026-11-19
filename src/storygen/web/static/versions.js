@@ -1,6 +1,7 @@
 import {externalOriginLabel} from './external-origin.js';
 import {confirmDialog} from './dialogs.js';
-import {live,t,msg,labelEntries,getLocale,uiText,uiAttr,uiHTML,diagnostic} from './i18n.js';
+import {live,t,msg,labelEntries,getLocale,uiText,uiAttr,uiHTML,diagnostic,formatDate} from './i18n.js';
+import {isStoreEdition} from './app-info.js';
 import {acceptanceReason,openAcceptance,closeAcceptancePreview} from './acceptance.js';
 import {api,json,notice} from './api.js';
 import {state,textEditor,refresh,saveBuffer,loadBuffer} from './editor.js';
@@ -17,6 +18,10 @@ const memoryTable=installMemoryTable({state,api,json,notice,refresh,loadBuffer})
 const editor=document.querySelector('#editor');
 const labels={get plan(){return t("m_3146141c9367")},get brief(){return t("m_5a2ec5eaf0a1")},get draft(){return t("m_e9d875d4120b")},get review(){return t("m_c2320838b6df")},get prose(){return t("m_9c685577453c")},get memory(){return t("m_aa1cfb48cc30")}};
 let versions=[],updateHistoryControls=()=>{};
+const storeEdition=isStoreEdition();
+// STORE-FOOTER: Store history lists only text versions; restoring makes a new author version of the same material.
+const textKinds=['draft','edited','manual'],materialOf=ref=>ref.kind==='draft'?'draft':'prose';
+const activeRun=()=>[state.workspaceRun,...(state.workspaceRuns||[])].some(run=>['queued','running','pause_requested','cancellation_requested'].includes(run?.state));
 document.addEventListener('editor-state-changed',()=>updateHistoryControls());
 function updateTabs(){
   const buttons=[...document.querySelectorAll('#mode-tabs button')];
@@ -67,20 +72,36 @@ async function render(){
   const tabs=document.querySelector('#mode-tabs');tabs.replaceChildren();
   for(const [mode,label] of labelEntries(labels)){const button=document.createElement('button');button.className='secondary';button.dataset.mode=mode;button.dataset.label=label;uiText(button,"textContent",()=>(label));button.setAttribute('role','tab');button.onclick=()=>show(mode).catch(e=>notice(e.message,'error'));tabs.append(button)}
   updateTabs();
+  const store=await storeEdition;
   const data=await api('/api/scenes/'+state.scene.id+'/versions');versions=data.versions;
   state.workspaceMaterials=Object.fromEntries(['plan','brief','draft','prose','memory'].map(kind=>[kind,versions.find(v=>v.id===liveScene(state.scene,state.view?.scenes).heads[kind])]));
   document.dispatchEvent(new CustomEvent('workspace-statistics'));
   const panel=document.querySelector('#version-panel');panel.replaceChildren();
   const title=document.createElement('h3');uiText(title,"textContent",()=>(t("m_ffb1638b3e7d")));panel.append(title);
   const list=document.createElement('select');list.id='history-version';uiAttr(list,'aria-label',()=>(t("m_f96dd4fff344")));
-  for(const ref of [...versions].reverse()){const opt=document.createElement('option');opt.value=ref.id;uiText(opt,"textContent",()=>(`${ref.kind} · ${ref.created_at.slice(0,19)}${ref.stale?t("m_e9ed25b34a92"):''}${data.acceptances?.some(a=>a.version_id===ref.id)?t("m_96a5e12eeb4f"):''}${externalOriginLabel(ref)?' · '+externalOriginLabel(ref):''}`));list.append(opt)}
+  for(const ref of [...versions].reverse()){if(store&&!textKinds.includes(ref.kind))continue;const opt=document.createElement('option');opt.value=ref.id;if(store){uiText(opt,'textContent',()=>`${t('history.kind.'+ref.kind)} · ${formatDate(ref.created_at)}${ref.stale?t("m_e9ed25b34a92"):''}`);list.append(opt);continue}uiText(opt,"textContent",()=>(`${ref.kind} · ${ref.created_at.slice(0,19)}${ref.stale?t("m_e9ed25b34a92"):''}${data.acceptances?.some(a=>a.version_id===ref.id)?t("m_96a5e12eeb4f"):''}${externalOriginLabel(ref)?' · '+externalOriginLabel(ref):''}`));list.append(opt)}
   const ghostStats=document.createElement('p');ghostStats.className='muted history-ghost-stats';
   panel.append(list,ghostStats);
   const historyActions=[];
-  function updateHistory(){const ref=versions.find(v=>v.id===list.value);ghostStats.hidden=!ref?.ghost_rewrite;uiText(ghostStats,'textContent',()=>ghostStatsText(ref?.ghost_rewrite,t));for(const [b,kind]of historyActions){let reason=kind==='review-acceptance'?acceptanceReason(state,ref):!ref?t("m_718d25e12548"):state.saving?t("m_1322882bbef7"):kind==='select'&&(ref.stale||!ref.complete||!['edited','manual'].includes(ref.kind))?t("m_63721412ce4c"):kind==='accept'&&(ref.stale||!ref.complete||ref.kind!=='brief')?t("m_90486d14b4ce"):kind==='accept-draft'&&(ref.stale||!ref.complete||ref.kind!=='draft')?t("m_38422659d255"):kind==='language'&&(!['draft','edited','manual'].includes(ref.kind)||state.dirty)?t("m_a2fd74d27993"):kind==='compare'&&!state.scene?.heads.draft?t("m_446a5894c84d"):(['select','accept','accept-draft'].includes(kind)&&state.dirty)?t("m_185b792f5bf8"):'';b.disabled=!!reason;uiText(b,"title",()=>(diagnostic(reason)))}}
+  function updateHistory(){const ref=versions.find(v=>v.id===list.value);ghostStats.hidden=!ref?.ghost_rewrite;uiText(ghostStats,'textContent',()=>ghostStatsText(ref?.ghost_rewrite,t));for(const [b,kind]of historyActions){let reason=kind==='review-acceptance'?acceptanceReason(state,ref):!ref?t("m_718d25e12548"):state.saving?t("m_1322882bbef7"):kind==='select'&&(ref.stale||!ref.complete||!['edited','manual'].includes(ref.kind))?t("m_63721412ce4c"):kind==='accept'&&(ref.stale||!ref.complete||ref.kind!=='brief')?t("m_90486d14b4ce"):kind==='accept-draft'&&(ref.stale||!ref.complete||ref.kind!=='draft')?t("m_38422659d255"):kind==='language'&&(!['draft','edited','manual'].includes(ref.kind)||state.dirty)?t("m_a2fd74d27993"):kind==='compare'&&!state.scene?.heads.draft?t("m_446a5894c84d"):kind==='compare-current'&&!state.scene?.heads[materialOf(ref)]?t('history.no_head'):kind==='restore'&&state.dirty?t("m_185b792f5bf8"):kind==='restore'&&activeRun()?t("m_9fafcde1c64a"):kind==='restore'&&!ref.complete?t("m_718d25e12548"):kind==='restore'&&state.scene?.heads[materialOf(ref)]===ref.id?t('history.is_current'):(['select','accept','accept-draft'].includes(kind)&&state.dirty)?t("m_185b792f5bf8"):'';b.disabled=!!reason;uiText(b,"title",()=>(diagnostic(reason)))}}
   list.onchange=updateHistory;updateHistoryControls=updateHistory;
   function action(label,handler,kind='view'){const b=document.createElement('button');b.className='secondary';uiText(b,"textContent",()=>(label));b.onclick=()=>handler().catch(e=>notice(e.message,'error'));historyActions.push([b,kind]);panel.append(b)}
-  action(live(()=>(t("m_08ba5037418f"))),async()=>{if(state.saving)throw new Error(t("m_1322882bbef7"));const epoch=state.bufferEpoch,sceneId=state.scene?.id,previousMode=state.mode;if(!await confirmUnsaved(state,confirmDialog,t("m_1ab822828660")))return;if(state.saving||epoch!==state.bufferEpoch||sceneId!==state.scene?.id||previousMode!==state.mode)return;const v=await api('/api/versions/'+list.value);if(epoch!==state.bufferEpoch)return;const mode=v.version.kind==='memory'?'memory':v.version.kind==='brief'?'brief':v.version.kind==='scene_plan'?'plan':v.version.kind==='draft'?'draft':['edited','manual'].includes(v.version.kind)?'prose':'history';loadBuffer(state.scene,mode,v.text,'history',v.version);uiText(document.querySelector('#current-kind'),"textContent",()=>(t("m_19f94fbf1144")+v.version.kind))});
+  const viewVersion=async()=>{if(state.saving)throw new Error(t("m_1322882bbef7"));const epoch=state.bufferEpoch,sceneId=state.scene?.id,previousMode=state.mode;if(!await confirmUnsaved(state,confirmDialog,t("m_1ab822828660")))return;if(state.saving||epoch!==state.bufferEpoch||sceneId!==state.scene?.id||previousMode!==state.mode)return;const v=await api('/api/versions/'+list.value);if(epoch!==state.bufferEpoch)return;const mode=v.version.kind==='memory'?'memory':v.version.kind==='brief'?'brief':v.version.kind==='scene_plan'?'plan':v.version.kind==='draft'?'draft':['edited','manual'].includes(v.version.kind)?'prose':'history';loadBuffer(state.scene,mode,v.text,'history',v.version);uiText(document.querySelector('#current-kind'),"textContent",()=>(t("m_19f94fbf1144")+v.version.kind))};
+  action(live(()=>(t("m_08ba5037418f"))),viewVersion);
+  if(store){
+    action(live(()=>t('history.compare_current')),async()=>{const ref=versions.find(v=>v.id===list.value),head=ref&&state.scene.heads[materialOf(ref)];if(!head)throw new Error(t('history.no_head'));const pair=await api(`/api/versions/compare?left=${head}&right=${ref.id}`);panel.querySelector('.comparison')?.remove();const container=document.createElement('div');container.className='comparison';for(const text of [pair.left,pair.right,pair.diff]){const pre=document.createElement('pre');uiText(pre,"textContent",()=>(text));container.append(pre)}panel.append(container)},'compare-current');
+    action(live(()=>t('history.restore')),async()=>{
+      const ref=versions.find(v=>v.id===list.value);if(!ref)throw new Error(t("m_718d25e12548"));
+      const material=materialOf(ref),sceneId=state.scene.id,epoch=state.bufferEpoch;
+      if(!await confirmDialog(t('history.restore_confirm')))return;
+      if(state.saving||state.dirty||state.scene?.id!==sceneId||state.bufferEpoch!==epoch)return;
+      const v=await api('/api/versions/'+ref.id),before=state.scene.heads[material];
+      const result=await api(`/api/scenes/${sceneId}/${material}`,json('POST',{text:v.text,expected_revision:state.scene.revision,content_format:v.version.content_format||'plain'}));
+      if(result.version.id===before){notice(t('history.already_same'));return}
+      state.scene=result.scene;await refresh();await show(material);notice(t('history.restored'));
+    },'restore');
+    updateHistory();return;
+  }
   const languageResult=document.createElement('section');languageResult.className='language-warnings';
   action(live(()=>(t("m_1ccbf3066eb3"))),async()=>{const ref=versions.find(v=>v.id===list.value);if(!ref||!['draft','edited','manual'].includes(ref.kind))throw new Error(t("m_83a9f717472d"));const id=ref.id;const result=await api(`/api/versions/${id}/language-warnings`);if(list.value!==id||!panel.contains(languageResult))return;renderLanguageWarnings(languageResult,result)},'language');
   panel.append(languageResult);

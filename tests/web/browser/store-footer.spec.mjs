@@ -40,6 +40,41 @@ test.describe('Store edition footer',()=>{
     await expect(stats.locator('h3')).toHaveCount(1);
     expect(errors).toEqual([]);
   });
+  // STORE-FOOTER-S02: text versions only, three actions; restore saves a new author version in the version's format.
+  test('Store history views, compares and restores text versions',async({page,request})=>{
+    await request.post('/test-build-edition',{data:{edition:'store'}});
+    const fixture=await(await request.post('/test-fixture')).json(),scene=fixture.scene_id;
+    const history=async()=>(await(await request.get(`/api/scenes/${scene}/versions`)).json());
+    const save=async(text,content_format)=>{const {scene:current}=await history();expect((await request.post(`/api/scenes/${scene}/prose`,{data:{text,expected_revision:current.revision,content_format}})).ok()).toBe(true)};
+    await save('Нова **проза**.','markdown');await save('Третя проза.','plain');
+    let data=await history();
+    const markdown=data.versions.find(v=>v.kind==='manual'&&v.content_format==='markdown'),plain=data.versions.find(v=>v.kind==='manual'&&v.id!==data.scene.heads.prose&&v.content_format==='plain');
+    await page.goto(`/stories/${fixture.story_id}?scene=${scene}&material=prose`);
+    await page.locator('#workspace-history summary').click();
+    const list=page.locator('#history-version');
+    const labels=await list.locator('option').allTextContents();
+    expect(labels.length).toBe(data.versions.filter(v=>['draft','edited','manual'].includes(v.kind)).length);
+    for(const label of labels)expect(label).toMatch(/^(Draft|Prose|Edited) · /);
+    const buttons=page.locator('#version-panel > button');
+    await expect(buttons).toHaveText(['View version','Compare with the current text','Restore this version']);
+    const restore=buttons.nth(2);
+    await list.selectOption(data.scene.heads.prose);await expect(restore).toBeDisabled();
+    await list.selectOption(plain.id);await buttons.nth(1).click();
+    await expect(page.locator('#version-panel .comparison')).toBeVisible();
+    await list.selectOption(markdown.id);await restore.click();
+    await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
+    await expect.poll(async()=>(await history()).scene.heads.prose).not.toBe(data.scene.heads.prose);
+    data=await history();
+    const head=await(await request.get(`/api/versions/${data.scene.heads.prose}`)).json();
+    expect(head.text).toBe('Нова **проза**.');expect(head.version.content_format).toBe('markdown');expect(head.version.kind).toBe('manual');
+    const count=data.versions.length;
+    await page.locator('#workspace-history summary').scrollIntoViewIfNeeded();
+    if(!await list.isVisible())await page.locator('#workspace-history summary').click();
+    await list.selectOption(markdown.id);await restore.click();
+    await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
+    await expect(page.locator('#notice')).toContainText('The text is already the same');
+    expect((await history()).versions.length).toBe(count);
+  });
   test('full edition keeps run options and extra actions',async({page,request})=>{
     const fixture=await(await request.post('/test-fixture')).json();
     await page.goto(`/stories/${fixture.story_id}?scene=${fixture.scene_id}&material=draft`);
