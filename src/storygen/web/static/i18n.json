@@ -2633,7 +2633,8 @@
     "workspace.take_as_prose": "Взяти як прозу",
     "workspace.edit_again": "Редагувати",
     "stats.prose_line": "Поточна проза: {p0} / {p1} цільових слів ({p2} / {p3} весь твір)",
-    "stats.summary_store": "Статистика сцени"
+    "stats.summary_store": "Статистика сцени",
+    "workspace.model_text": "Текст, що пише модель"
   },
   "en": {
     "ui.save": "Save",
@@ -5269,6 +5270,7 @@
     "workspace.take_as_prose": "Use as prose",
     "workspace.edit_again": "Edit",
     "stats.prose_line": "Current prose: {p0} / {p1} target words ({p2} / {p3} whole story)",
-    "stats.summary_store": "Scene statistics"
+    "stats.summary_store": "Scene statistics",
+    "workspace.model_text": "Text the model is writing"
   }
 }

@@ -3895,6 +3895,26 @@
       }
     },
     {
+      "id": "R20-WORKSPACE-S06",
+      "requirement": "R20-WORKSPACE",
+      "scope": "Розгортання й згортання блоку «Текст, що пише модель» за подіями потоку на Node-моку EventSource.",
+      "tests": [
+        "tests/web/test_resumed_events.py::test_model_text_block_opens_for_a_stage_and_closes_after_it"
+      ]
+    },
+    {
+      "id": "R20-WORKSPACE-S07",
+      "requirement": "R20-WORKSPACE",
+      "scope": "Підпис «Редагувати» основної дії; розташування й дію «Взяти як прозу» перевіряє браузерний тест у ручній процедурі.",
+      "tests": [
+        "tests/web/test_workspace_route.py::test_workspace_route_save_and_source_regressions"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs."
+      }
+    },
+    {
       "id": "WORKSPACE-TOOLS-S01",
       "requirement": "WORKSPACE-TOOLS",
       "scope": "Розмітка верхнього рядка й меню; клавіатура — у ручній процедурі.",

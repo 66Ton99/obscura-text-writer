@@ -45,6 +45,7 @@ assert.equal(texts[1],tr('review.scene_progress',{p0:2,p1:2}),'progress from ses
 const actions=host.children.find(c=>c.className==='actions');assert.ok(actions,'actions container rendered');
 assert.deepEqual(actions.children.map(c=>c.textContent),[tr('review.cancel')],'needs_review session offers exactly Cancel');
 assert.equal(host.hidden,false,'session host is visible');console.log('review session loads on the short list');process.exit(0)}
+const output={open:false};element('#live-text').closest=selector=>selector==='details'?output:null;
 if(mode==='recover'){store.set('storygen.tab','t1');store.set('storygen.primary.pending.s.t1',JSON.stringify({requestId:'q-r',request:{story_id:'s',mode:'stage'}}))}
 await import(pathToFileURL(root+'/src/storygen/web/static/runs.js'));
 const {state}=await import(pathToFileURL(root+'/src/storygen/web/static/editor.js'));
@@ -68,6 +69,16 @@ if(mode==='stale'){
   while(stale.gates.length)stale.gates.shift()();await tick();
   assert.equal(state.workspaceRun.state,'cancelled','terminal state is drawn');
   assert.equal(source.closed,true,'terminal state closes the stream');
+}else if(mode==='output'){
+  // R20-WORKSPACE: «Текст, що пише модель» opens while a stage runs and closes when its text is in or the run ends.
+  release();await tick();
+  const source=globalThis.EventSource.last;assert.ok(source,'follow opened the event stream');
+  const push=(seq,type,data={})=>source.onmessage({data:JSON.stringify({seq,type,data})});
+  push(1,'stage_started',{stage:'draft',model:'m',provider:'p'});await tick();assert.equal(output.open,true,'opens on stage start');
+  push(2,'delta',{text:'Текст'});push(3,'stage_finished',{usage:{}});await tick();assert.equal(output.open,false,'closes when the stage text is in');
+  push(4,'stage_started',{stage:'edit',model:'m',provider:'p'});await tick();assert.equal(output.open,true,'opens again for the next stage');
+  stale.on=true;stale.state='cancelled';push(5,'state');await tick();while(stale.gates.length)stale.gates.shift()();await tick();
+  assert.equal(output.open,false,'closes when the run ends without stage_finished');
 }else if(mode==='latest'){
   assert.deepEqual(detailCalls(),['/api/runs/r'],'open-story follow targets the last run');
   release();await tick();log.length=0;

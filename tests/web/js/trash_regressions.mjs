@@ -2,7 +2,7 @@ import {installDialogFixture} from './dialog-fixture.mjs';
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 const elements=new Map(),listeners=new Map();
-class Element {dataset={};classes=new Set();classList={add:c=>this.classes.add(c)};after(...items){this.placed=items}remove(){this.removed=true}addEventListener(){}setAttribute(name,value){this[name]=value}children=[];textContent='';disabled=false;hidden=false;append(...items){this.children.push(...items)}replaceChildren(){this.children=[]}}
+class Element {dataset={};after(...items){this.placed=items}remove(){this.removed=true}addEventListener(){}setAttribute(name,value){this[name]=value}children=[];textContent='';disabled=false;hidden=false;append(...items){this.children.push(...items)}replaceChildren(){this.children=[]}}
 const element=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)};
 globalThis.document={querySelector:element,createElement:()=>new Element(),dispatchEvent:()=>{},addEventListener:(name,fn)=>listeners.set(name,fn)};
 globalThis.confirm=()=>true;
@@ -13,7 +13,7 @@ const {installSceneTrash}=await import(pathToFileURL(process.argv[2]+'/src/story
 const state={storyId:'s',scene:{id:'c',revision:3},dirty:true,saving:false};
 installSceneTrash(state,async()=>{refreshed++},()=>{cleared++});
 // STORE-FOOTER: the named button lives under the narrow-screen scene picker, not in the footer.
-const button=element('#scene-select-mobile').placed[0];assert.ok(button.classes.has('scene-delete-mobile'));assert.equal(element('#workspace-scene-actions').children.length,0);
+const button=element('#scene-select-mobile').placed[0];assert.match(button.className,/scene-delete-mobile/);assert.equal(element('#workspace-scene-actions').children.length,0);
 await button.onclick();assert.equal(calls,0,'unsaved text blocks trash');
 state.dirty=false;state.saving=true;await button.onclick();assert.equal(calls,0,'saving blocks trash');
 state.saving=false;await button.onclick();assert.equal(calls,1);assert.equal(cleared,1);assert.equal(refreshed,1);
