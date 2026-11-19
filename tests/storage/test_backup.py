@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 
@@ -183,3 +184,30 @@ def test_backup_skips_env_files_in_any_letter_case(tmp_path):
     (repo.root / 'stories' / story.id / '.ENV').write_text('VENICE_API_KEY=secret', encoding='utf-8')
     backup = create_backup(repo.root, tmp_path / 'backup')
     assert not [path for path in (backup / 'data').rglob('*') if path.name.lower() == '.env']
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_backup_skips_only_the_window_profile_at_the_root(tmp_path):
+    repo, story, _, _ = sample(tmp_path / 'source')
+    (repo.root / '.window' / 'Default').mkdir(parents=True)
+    (repo.root / '.window' / 'Default' / 'Cookies').write_bytes(b'edge profile')
+    nested = repo.root / 'stories' / story.id / '.window'
+    nested.mkdir()
+    (nested / 'note.txt').write_text('kept', encoding='utf-8')
+    backup = create_backup(repo.root, tmp_path / 'backup')
+    copied = [item['path'] for item in json.loads((backup / 'manifest.json').read_text(encoding='utf-8'))['files']]
+    assert not any(path.startswith('.window/') for path in copied)
+    assert f'stories/{story.id}/.window/note.txt' in copied
+
+
+@pytest.mark.req('DESKTOP-001')
+@pytest.mark.skipif(sys.platform != 'win32', reason='a junction is a Windows reparse point')
+def test_integrity_check_ignores_what_edge_keeps_in_the_window_profile(tmp_path):
+    import _winapi
+    repo, _, _, _ = sample(tmp_path / 'source')
+    profile = repo.root / '.window'
+    profile.mkdir()
+    (tmp_path / 'elsewhere').mkdir()
+    _winapi.CreateJunction(str(tmp_path / 'elsewhere'), str(profile / 'junction'))
+    assert check_integrity(repo.root).ok
+    assert create_backup(repo.root, tmp_path / 'backup').is_dir()

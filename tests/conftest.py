@@ -199,3 +199,25 @@ def isolated_codex(tmp_path_factory, monkeypatch):
     monkeypatch.setenv('HOME', str(profile))
     monkeypatch.setenv('CODEX_HOME', str(base / 'codex'))
     monkeypatch.setattr(Path, 'home', classmethod(lambda cls: profile))
+
+
+class _NoEdgeWindows:
+    """DESKTOP-001-S07: tests never look at or start the real Edge; a launch without a stand-in opens nothing."""
+
+    def profile_pids(self, profile):
+        return []
+
+    def visible_windows(self, pid):
+        return []
+
+    def launch(self, args):
+        return None
+
+    def hide_folder(self, path):
+        pass
+
+
+@pytest.fixture(autouse=True)
+def _no_real_edge_windows(monkeypatch):
+    from storygen import app_window
+    monkeypatch.setattr(app_window, 'Win32Windows', _NoEdgeWindows)

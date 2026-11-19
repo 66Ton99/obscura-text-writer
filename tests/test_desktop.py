@@ -36,7 +36,7 @@ class Launch:
         argv = ['--data-dir', str(data_dir), *extra]
         self.thread = threading.Thread(target=self._run, args=(argv, opener or self.opened.append), daemon=True)
 
-    def _tray(self, url, data_dir, backups_dir, stop):
+    def _tray(self, url, data_dir, backups_dir, stop, opener=None):
         self.url, self.tray_args = url, (data_dir, backups_dir)
         self.ready.set()
         self.release.wait(30)
@@ -334,7 +334,7 @@ def test_quit_with_an_open_stream_still_shuts_the_server_down(tmp_path, monkeypa
         return servers[0]
     released, state, result = threading.Event(), {}, {}
 
-    def tray(url, data_dir, backups, stop):
+    def tray(url, data_dir, backups, stop, **kwargs):
         state['stream'] = urllib.request.urlopen(url + '/test-stream', timeout=5)
         state['stream'].read(10)
         state['url'] = url
@@ -449,3 +449,75 @@ def test_launch_refreshes_the_skills_copy_in_the_background(tmp_path, monkeypatc
     assert launch.code == 0
     target, record_written, thread = seen[0]
     assert target == tmp_path / 'data' / 'claude' / 'marketplace' and record_written and thread == 'obscura-skills'
+
+
+class RecordingWindow:
+    """Stands in for app_window.AppWindow: records what the launcher asks of the window."""
+    made = []
+
+    def __init__(self, url, data_dir):
+        self.url, self.data_dir, self.events = url, data_dir, []
+        RecordingWindow.made.append(self)
+
+    def show(self):
+        self.events.append('show')
+
+    def close(self):
+        self.events.append('close')
+
+    def open_external(self, url):
+        self.events.append(('external', url))
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_launch_shows_the_window_and_the_tray_uses_it(tmp_path):
+    RecordingWindow.made = []
+    seen = {}
+    released = threading.Event()
+
+    def tray(url, data_dir, backups_dir, stop, *, opener):
+        seen['url'] = url
+        opener()
+        stop()  # "Quit"
+        released.set()
+    data = tmp_path / 'data'
+    assert desktop.main(['--data-dir', str(data)], window=RecordingWindow, tray=tray) == 0
+    window = RecordingWindow.made[0]
+    assert window.url == seen['url'] and window.data_dir == data.resolve()
+    assert window.events == ['show', 'show', 'close']
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_app_state_holds_the_window_for_the_routes(tmp_path):
+    RecordingWindow.made = []
+    states = []
+
+    def tray(url, data_dir, backups_dir, stop, *, opener):
+        with urllib.request.urlopen(urllib.request.Request(url + '/api/app-window/open-external', method='POST',
+                                                           data=b'{"url": "https://example.org/a"}',
+                                                           headers={'Content-Type': 'application/json'}), timeout=5) as r:
+            states.append(r.status)
+        stop()
+    assert desktop.main(['--data-dir', str(tmp_path / 'data')], window=RecordingWindow, tray=tray) == 0
+    assert states == [204] and ('external', 'https://example.org/a') in RecordingWindow.made[0].events
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_second_launch_shows_the_window_of_the_running_instance(tmp_path):
+    RecordingWindow.made = []
+    data = tmp_path / 'data'
+    with Launch(data, '--no-browser') as first:
+        def no_tray(*args, **kwargs):
+            raise AssertionError('the second launch must not start a server')
+        assert desktop.main(['--data-dir', str(data)], window=RecordingWindow, tray=no_tray) == 0
+        assert [(w.url, w.events) for w in RecordingWindow.made] == [(first.url, ['show'])]
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_no_browser_shows_nothing_but_quit_still_closes(tmp_path):
+    RecordingWindow.made = []
+
+    def tray(url, data_dir, backups_dir, stop, *, opener):
+        stop()
+    assert desktop.main(['--data-dir', str(tmp_path / 'data'), '--no-browser'], window=RecordingWindow, tray=tray) == 0
+    assert [w.events for w in RecordingWindow.made] == [['close']]  # "Quit" closes a window opened later from the tray

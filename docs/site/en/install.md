@@ -80,9 +80,11 @@ The `storygen-desktop` command starts the application without a PowerShell windo
 - The log is `logs\obscura.log` in the stories folder. If the application cannot start, it shows a message with the reason and the path of the log.
 - If port 8765 is busy, the application takes a free one; the address is in the log and in the `server.json` file.
 - Before the database format is upgraded, the application makes a backup into the neighbouring `Obscura-backups` folder and does not start if the backup cannot be made. It never deletes old backups.
-- Launching it again while it is running only opens its page.
+- Launching it again while it is running only shows its window.
 
-On Windows the tray icon appears right away. A left click opens the application, and a right click shows the menu "Open Obscura", "Stories folder", "Quit". On other systems there is no icon: stop the application with Ctrl+C in the terminal.
+On Windows the application opens in a separate Microsoft Edge window, without tabs or an address bar. The window has its own profile in the hidden `.window` folder inside the stories folder: your bookmarks, extensions and site sign-ins are not there, and backups leave this profile out. Links to other sites open from the window in your usual browser. Without Edge the application opens in the browser as an ordinary page.
+
+On Windows the tray icon appears right away. A left click shows the Obscura window: an open window comes to the front and a minimized one is restored; a new one opens only when the previous one is closed. A right click shows the menu "Open Obscura", "Stories folder", "Quit"; "Quit" also closes the window. On other systems there is no icon: stop the application with Ctrl+C in the terminal.
 
 ## Models
 

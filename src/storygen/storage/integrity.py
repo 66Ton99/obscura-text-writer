@@ -52,10 +52,18 @@ def contained_path(root: Path, relative: str) -> Path:
     return candidate
 
 
-def regular_files(root: Path) -> list[Path]:
+# DESKTOP-001-S07: the Edge profile of the Obscura window at the root of the data folder is not user data; Edge keeps
+# whatever it wants there, so integrity checks and backups do not walk into it.
+WINDOW_PROFILE = '.window'
+
+
+def regular_files(root: Path, skip: tuple[str, ...] = ()) -> list[Path]:
+    """Regular files under root; names in `skip` are left out at the top level only."""
     result = []
     def visit(directory):
         for path in directory.iterdir():
+            if directory == root and path.name in skip:
+                continue
             info = path.lstat()
             if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
                 raise ValueError('Посилання/reparse point не підтримується')
@@ -84,7 +92,7 @@ def check_integrity(root: Path) -> IntegrityReport:
         report.add('database_missing', 'storygen.sqlite3', 'База даних відсутня')
         return report
     try:
-        files = regular_files(root)
+        files = regular_files(root, skip=(WINDOW_PROFILE,))
     except (OSError, ValueError):
         report.add('unsafe_path', '.', 'Небезпечне або недоступне дерево файлів')
         return report

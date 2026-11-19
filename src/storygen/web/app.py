@@ -58,7 +58,10 @@ def create_app(settings: AppSettings, *, gateway_factory=None,evaluator_factory=
         # STORE-MCP-001 S07: the Store form preselects «the chat writes».
         from .. import build_edition
         return build_edition.current().edition
-    app.state.templates.env.globals.update(t=ui_translate,ui_locale=request_locale,app_links=app_links,long_prose=long_prose,edition=edition)
+    def app_window():
+        # DESKTOP-001-S08: only the desktop window sends external links to the browser.
+        return getattr(app.state,'app_window',None) is not None
+    app.state.templates.env.globals.update(t=ui_translate,ui_locale=request_locale,app_links=app_links,long_prose=long_prose,edition=edition,app_window=app_window)
     app.mount("/static",StaticFiles(directory=str(root.joinpath("static"))),name="static")
 
     def error_response(request,detail,status_code):
@@ -146,6 +149,8 @@ def create_app(settings: AppSettings, *, gateway_factory=None,evaluator_factory=
     app.include_router(rating_router)
     from .routes_app_info import router as app_info_router
     app.include_router(app_info_router)
+    from .routes_app_window import router as app_window_router
+    app.include_router(app_window_router)
     from .routes_provider_keys import router as provider_keys_router
     app.include_router(provider_keys_router)
     from .routes_role_profiles import router as role_profiles_router

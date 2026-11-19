@@ -335,6 +335,23 @@ def main():
                 build_edition.current=original
             return {'edition': build_edition.current().edition}
 
+        @app.post('/test-app-window')
+        def switch_app_window(body: dict):
+            # DESKTOP-001-S08: the fixture server is not a desktop launch; a spec turns the window on, reads what it was
+            # asked to open and turns it off again.
+            class Window:
+                def __init__(self):
+                    self.external=[]
+
+                def open_external(self,url):
+                    self.external.append(url)
+            if body.get('on') is True:
+                app.state.app_window=Window()
+            elif body.get('on') is False and hasattr(app.state,'app_window'):
+                del app.state.app_window
+            window=getattr(app.state,'app_window',None)
+            return {'on': window is not None, 'external': window.external if window else []}
+
         @app.post('/test-force-story-rating/{story_id}')
         def force_story_rating(story_id: str, body: dict):
             # Data rated in the full edition arrives in a store build unchanged; the API cannot create it there.

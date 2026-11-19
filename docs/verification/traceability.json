@@ -4721,11 +4721,66 @@
     {
       "id": "DESKTOP-001-S06",
       "requirement": "DESKTOP-001",
-      "scope": "Резервна копія не бере жодного .env на будь-якій глибині; файли з .env лише в частині назви копіюються.",
+      "scope": "Резервна копія не бере жодного .env на будь-якій глибині; файли з .env лише в частині назви копіюються; коренева тека профілю вікна .window не копіюється й не перевіряється, однойменна глибше копіюється.",
       "tests": [
         "tests/storage/test_backup.py::test_backup_skips_env_files_at_any_depth",
-        "tests/storage/test_backup.py::test_backup_skips_env_files_in_any_letter_case"
+        "tests/storage/test_backup.py::test_backup_skips_env_files_in_any_letter_case",
+        "tests/storage/test_backup.py::test_backup_skips_only_the_window_profile_at_the_root",
+        "tests/storage/test_backup.py::test_integrity_check_ignores_what_edge_keeps_in_the_window_profile"
       ]
+    },
+    {
+      "id": "DESKTOP-001-S07",
+      "requirement": "DESKTOP-001",
+      "scope": "Вікно Obscura: запуск Edge --app з профілем .window, виведення наперед замість другого вікна, пошук процесу за командним рядком, браузер без Edge, «Вийти» закриває вікно, другий запуск.",
+      "tests": [
+        "tests/test_app_window.py::test_profile_lives_in_the_data_folder",
+        "tests/test_app_window.py::test_first_show_launches_edge_in_app_mode_with_the_profile",
+        "tests/test_app_window.py::test_open_window_is_brought_forward_instead_of_a_second_one",
+        "tests/test_app_window.py::test_minimized_window_is_restored_then_focused",
+        "tests/test_app_window.py::test_profile_process_without_windows_gets_a_new_window",
+        "tests/test_app_window.py::test_window_of_the_process_that_has_one_is_shown",
+        "tests/test_app_window.py::test_without_edge_the_page_opens_in_the_browser",
+        "tests/test_app_window.py::test_failed_launch_falls_back_to_the_browser",
+        "tests/test_app_window.py::test_failed_window_lookup_falls_back_to_the_browser",
+        "tests/test_app_window.py::test_close_closes_every_window_of_the_profile",
+        "tests/test_app_window.py::test_close_never_raises",
+        "tests/test_app_window.py::test_command_line_of_the_profile_matches",
+        "tests/test_app_window.py::test_profile_path_with_a_space_matches",
+        "tests/test_app_window.py::test_other_command_lines_do_not_match",
+        "tests/test_desktop.py::test_launch_shows_the_window_and_the_tray_uses_it",
+        "tests/test_desktop.py::test_second_launch_shows_the_window_of_the_running_instance",
+        "tests/test_desktop.py::test_no_browser_shows_nothing_but_quit_still_closes",
+        "tests/test_app_window.py::test_clicks_while_edge_is_starting_do_not_launch_it_again",
+        "tests/test_app_window.py::test_after_the_start_grace_a_missing_window_is_launched_again",
+        "tests/test_app_window.py::test_edge_that_exits_with_an_error_falls_back_to_the_browser",
+        "tests/test_app_window.py::test_edge_handing_over_or_still_running_is_a_success",
+        "tests/test_app_window.py::test_stale_windows_are_closed_before_the_first_show",
+        "tests/test_app_window.py::test_replace_stale_gives_up_after_its_timeout"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#desktop-launcher",
+        "reason": "Справжній Edge, фокус вікна після кліку по значку й вікно після аварійного завершення автотести не показують: Windows API в них підмінено."
+      }
+    },
+    {
+      "id": "DESKTOP-001-S08",
+      "requirement": "DESKTOP-001",
+      "scope": "Зовнішні посилання з вікна: перехоплення кліку й window.open, лише http/https, відмова іншому сайту й мосту, 404 без вікна.",
+      "tests": [
+        "tests/web/test_app_window_routes.py::test_external_link_goes_to_the_window",
+        "tests/web/test_app_window_routes.py::test_without_the_desktop_window_the_route_does_not_exist",
+        "tests/web/test_app_window_routes.py::test_only_absolute_web_addresses_are_opened",
+        "tests/web/test_app_window_routes.py::test_another_site_cannot_open_links",
+        "tests/web/test_app_window_routes.py::test_the_chat_cannot_open_links_on_the_authors_desktop",
+        "tests/web/test_app_window_routes.py::test_pages_load_the_link_script_only_in_the_window",
+        "tests/test_desktop.py::test_app_state_holds_the_window_for_the_routes",
+        "tests/test_app_window.py::test_external_links_go_to_the_default_browser"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#desktop-launcher",
+        "reason": "Що адресу відкриває саме браузер за замовчуванням поза вікном, видно лише на справжньому робочому столі. check_docs.py індексує лише pytest; Playwright cases tests/web/browser/app-window.spec.mjs (клік, window.open, сторінка без вікна) виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
     },
     {
       "id": "DESKTOP-001-S04",
@@ -4752,7 +4807,8 @@
         "tests/test_desktop_tray.py::test_launcher_without_a_tray_keeps_running_and_logs_it",
         "tests/test_desktop.py::test_no_tray_mode_runs_until_the_server_stops",
         "tests/test_desktop.py::test_quit_with_an_open_stream_still_shuts_the_server_down",
-        "tests/test_desktop_tray.py::test_tray_language_follows_the_windows_ui_language"
+        "tests/test_desktop_tray.py::test_tray_language_follows_the_windows_ui_language",
+        "tests/test_desktop_tray.py::test_run_tray_opens_obscura_with_the_given_opener"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#desktop-launcher",
