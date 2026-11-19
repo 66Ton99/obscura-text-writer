@@ -65,7 +65,7 @@ Spec-review: codex/gpt-6.1-sol @ 51b0468 (author: claude) — 2 findings: 2 fixe
 
 ### 2. Інтерфейс і MCP
 
-- `static/publication.js`: підказка готовності бере `readiness.roles.writer.model`. Текст ключа `m_e0df58ccf3dd` (uk/en) називає модель письменника, а не планувальника; ключ перейменовується на змістовний `publication.suggest.ready_writer`, старий видаляється.
+- `static/publication.js`: підказка готовності бере `readiness.roles.writer.model`. Текст ключа `m_e0df58ccf3dd` («Готово · {p0} · один виклик») роль не називає, тож лишається як є. Нові переклади: «Налаштуйте модель письменника» і дві відмови письменника (`publication.configure_writer`, `publication.refusal_content`, `publication.refusal_unknown`).
 - `mcp/bridge.py`: опис `start_run` не називає роль; `roles` передається як є. Тести моста, що перевіряють `roles.planner`, переходять на `writer`.
 
 ### 3. Сумісність

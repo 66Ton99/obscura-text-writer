@@ -8,7 +8,7 @@ from ..rating.levels import AXES, effective_rating
 
 POLICY_ROLES = ('planner', 'writer', 'editor', 'memory')
 STAGE_POLICY_ROLE = {'prepare': 'planner', 'brief': 'planner', 'impact_delta': 'planner', 'impact_check': 'planner',
-    'impact_part': 'planner', 'review_part': 'planner', 'publication_suggest': 'planner', 'timeline_summary': 'memory', 'draft': 'writer',
+    'impact_part': 'planner', 'review_part': 'planner', 'publication_suggest': 'writer', 'timeline_summary': 'memory', 'draft': 'writer',
     'rewrite': 'writer', 'edit': 'editor', 'classify': 'editor', 'memory': 'memory'}
 # Stages whose material spans several scenes: the request rating also counts the scenes behind `input_refs`.
 MULTI_SCENE_STAGES = frozenset({'impact_delta', 'impact_check', 'impact_part', 'review_part', 'publication_suggest', 'timeline_summary'})

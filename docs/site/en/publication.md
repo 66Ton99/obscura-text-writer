@@ -22,7 +22,7 @@ The card can also be filled in from a [chat client](mcp.md#publishing-from-the-c
 
 ## Synopsis and genre suggestions
 
-**Suggest** asks the planner model to fill in an empty synopsis, genres and keywords from all of the story's prose. Accepted prose for every scene is required, and a cloud model also needs a budget. Review the suggestion, press **Fill empty fields**, edit and **Save card**. Fields you have already filled in are not replaced. If the prose changed, an outdated suggestion is not saved, and the form stays.
+**Suggest** asks the writer model to fill in an empty synopsis, genres and keywords from all of the story's prose. Accepted prose for every scene is required, and a cloud model also needs a budget. Review the suggestion, press **Fill empty fields**, edit and **Save card**. Fields you have already filled in are not replaced. If the prose changed, an outdated suggestion is not saved, and the form stays.
 
 ## Export
 

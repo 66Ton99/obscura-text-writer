@@ -2521,6 +2521,15 @@
       ]
     },
     {
+      "id": "R16-SUGGEST-S06",
+      "requirement": "R16-SUGGEST",
+      "scope": "Пропозицію картки будує профіль письменника: планувальник із малим вікном не заважає, готовність називає writer, без моделі письменника — пояснення.",
+      "tests": [
+        "tests/generation/test_publication_metadata.py::test_suggestion_uses_the_writer_role_not_a_small_planner",
+        "tests/generation/test_publication_metadata.py::test_suggestion_without_a_writer_model_explains_it"
+      ]
+    },
+    {
       "id": "SAVE-UNCHANGED-S01",
       "requirement": "SAVE-UNCHANGED",
       "scope": "Exact bytes reuse з CAS для всіх матеріалів, незмінні metadata/head, stale збережено, зміни інвалідують.",

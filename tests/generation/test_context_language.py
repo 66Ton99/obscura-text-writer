@@ -160,7 +160,7 @@ def test_impact_and_publication_requests_english(tmp_path):
         assert not CYRILLIC.search(texts(context)), stage
     other = Repository(tmp_path / 'publication')
     fresh = other.create_story(StoryCreate(title='Tide', language='en'))
-    save_role_settings(other, fresh.id, 'planner', planner, fresh.revision)
+    save_role_settings(other, fresh.id, 'writer', planner, fresh.revision)
     for title in ['Morning', 'Evening']:
         save_manual_prose(other, other.create_scene(fresh.id, SceneCreate(title=title)).id, f'{title} at the pier.', 0)
     publication = build_publication_context(other, fresh.id)

@@ -248,7 +248,7 @@ async function refreshSuggestions(checkReady=false){
     }
     const last=response.history[0];
     uiText(suggestStatus,"textContent",()=>(activeSuggestion?t("m_f39da1dcdc43",{p0:(activeSuggestion.state),p1:(diagnostic(activeSuggestion.error)?' · '+diagnostic(activeSuggestion.error):'')}):
-      last?.state==='failed'?t("m_7affa0531b8a",{p0:(diagnostic(last.error))}):last?.warnings?.length?t("m_4e5ea3207ea6",{p0:(last.warnings.join(' '))}):readiness?.ready?t("m_e0df58ccf3dd",{p0:(readiness.roles.planner.model)}) :diagnostic(readiness?.reason)||t("m_6e27f6bb226a")));
+      last?.state==='failed'?t("m_7affa0531b8a",{p0:(diagnostic(last.error))}):last?.warnings?.length?t("m_4e5ea3207ea6",{p0:(last.warnings.join(' '))}):readiness?.ready?t("m_e0df58ccf3dd",{p0:(readiness.roles.writer.model)}) :diagnostic(readiness?.reason)||t("m_6e27f6bb226a")));
     clearTimeout(pollTimer);
     if(activeSuggestion&&['queued','running','pause_requested','cancellation_requested'].includes(activeSuggestion.state))pollTimer=setTimeout(()=>void refreshSuggestions(),1500);
   }catch(error){uiText(suggestStatus,"textContent",()=>(diagnostic(error.message)));readiness=null;}
