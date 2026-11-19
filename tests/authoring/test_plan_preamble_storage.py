@@ -64,20 +64,30 @@ def test_unchanged_preamble_creates_no_version(tmp_path):
     assert not result['changed'] and repo.active_source(story.id, 'source_plan').id == before
 
 
-def test_prose_written_with_the_old_preamble_becomes_stale_but_canon_does_not(tmp_path):
+def test_prose_and_prepared_canon_become_stale_cards_do_not(tmp_path):
+    """Owner decision 19.11.2026: canon prepared from the plan goes stale, as after an additive import."""
+    from storygen.storage.snapshots import build_dependency_snapshot
     repo, story = imported(tmp_path)
+    import_sources(repo, story.id, [SourceFile(name='characters.md', raw='## Анна\nДоглядачка маяка'.encode(), kind='source_characters')])
     plan = repo.active_source(story.id, 'source_plan')
     scene = repo.list_scenes(story.id)[0]
-    canon = repo.save_version(story.id, None, 'canon', 'Маяк на скелі.', [plan.id])
+    snapshot = build_dependency_snapshot(repo.context_view(story.id), None, 'prepare', RoleSettings(provider=ProviderSettings(model='fake')), [plan.id])
+    canon = repo.save_version(story.id, None, 'canon', 'Маяк на скелі.', [plan.id], dependency_snapshot=snapshot)
     story = repo.get_story(story.id)
     story.canon_version_id = canon.id
     with repo.db.connection() as db:
         repo._save_story(db, story)
+    cards = story.characters_version_id
     prose = repo.save_version(story.id, scene.id, 'edited', 'Тихий ранок.', [plan.id])
     repo.set_head(scene.id, 'prose', prose.id, repo.get_scene(scene.id).revision)
+    assert not repo.context_view(story.id).is_stale(canon.id)
     replace_plan_preamble(repo, story.id, plan.id, 'Тон: похмурий.')
+    view = repo.context_view(story.id)
     assert repo.get_version(prose.id).stale and repo.get_scene(scene.id).needs_review
-    assert not repo.get_version(canon.id).stale
+    assert view.is_stale(canon.id)
+    assert cards and not view.is_stale(cards)
+    with pytest.raises(ValueError, match='застарілий'):
+        context(repo, scene.id)
 
 
 def test_stale_plan_version_is_a_conflict_and_changes_nothing(tmp_path):

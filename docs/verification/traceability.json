@@ -7039,9 +7039,9 @@
     {
       "id": "PLAN-PREAMBLE-S03",
       "requirement": "PLAN-PREAMBLE",
-      "scope": "Проза з попереднім вступом застаріває, канон ні; контекст етапу бачить новий вступ.",
+      "scope": "Проза й підготовлений канон з попереднім вступом застарівають, картки ні; контекст етапу бачить новий вступ.",
       "tests": [
-        "tests/authoring/test_plan_preamble_storage.py::test_prose_written_with_the_old_preamble_becomes_stale_but_canon_does_not",
+        "tests/authoring/test_plan_preamble_storage.py::test_prose_and_prepared_canon_become_stale_cards_do_not",
         "tests/authoring/test_plan_preamble_storage.py::test_saving_publishes_a_fresh_plan_with_the_same_scenes"
       ]
     },
