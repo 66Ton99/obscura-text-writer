@@ -39,10 +39,17 @@ test('scene field hints open from a "?" button and the flashback checkbox shares
   await page.goto(`/stories/${story_id}?scene=${scene_id}`);
   await openPanel(page);
   const form=page.locator('#scene-settings');
-  for(const id of ['scene-target-help','scene-language-help','scene-flashback-help','scene-cast-help']){
+  const hints={
+    'scene-target-help':'Рекомендовано до 15 000 слів',
+    'scene-language-help':'Зміна мови прози робить чернетку й прозу сцени застарілими.',
+    'scene-flashback-help':'Спогад додає до пам’яті лише факти й не змінює станів персонажів.',
+    'scene-cast-help':'Склад визначається рядком «Персонажі:» або «Хто бере участь:» у плані.',
+  };
+  for(const [id,text] of Object.entries(hints)){
     const tip=form.locator(`#${id}`),help=form.locator(`button.help-tip[aria-describedby="${id}"]`);
     await expect(tip).toBeHidden();
-    await expect(tip).not.toBeEmpty();
+    await expect(tip).toHaveText(text);
+    await expect(help).toHaveAttribute('aria-label','Підказка до поля');
     await help.focus();
     await expect(tip).toBeVisible();
     await help.blur();
