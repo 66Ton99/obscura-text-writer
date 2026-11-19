@@ -29,7 +29,7 @@ from .launch import DEFAULT_URL, Connection, ObscuraUnavailable
 LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
 FALLBACK_CLIENT = 'MCP client'
 TOOLS = ('list_stories', 'get_story', 'get_scene_context', 'get_scene_text', 'import_plan_and_characters', 'save_draft', 'next_steps',
-         'create_story', 'get_templates', 'update_story', 'add_scene', 'update_scene', 'open_ghost_mode',
+         'create_story', 'get_templates', 'update_story', 'update_plan_preamble', 'add_scene', 'update_scene', 'open_ghost_mode',
          'get_publication', 'update_publication', 'add_signature', 'upload_cover', 'generate_cover', 'export_book',
          'get_settings', 'update_settings', 'apply_role_preset', 'get_stage_task', 'save_stage_result', 'start_run', 'get_run', 'get_guide')
 MATERIALS = ('plan', 'brief', 'draft', 'prose', 'memory')
@@ -364,7 +364,13 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
                 'language_locked': data.get('language_locked'), 'revision': story.get('revision'),
                 'content_rating': story.get('content_rating'), 'target_words': story.get('target_words'),
                 'writing_mode': story.get('writing_mode', 'chat'), 'series': story_series(data),
-                'characters': [{'id': key, 'name': value} for key, value in names.items()], 'scenes': scenes}
+                'characters': [{'id': key, 'name': value} for key, value in names.items()], 'scenes': scenes,
+                'plan_preamble': plan_preamble(story['id'])}
+
+    def plan_preamble(story_id: str) -> dict[str, Any]:
+        # PLAN-PREAMBLE: the plan title and text before the first scene, seen by models in every scene.
+        data = request('GET', f'/api/stories/{identifier(story_id)}/plan-preamble')
+        return {key: data.get(key) for key in ('text', 'plan_version_id', 'editable')}
 
     @server.tool()
     def get_scene_context(scene_id: str) -> dict[str, Any]:
@@ -465,6 +471,18 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
             revision = response.json()['revision']
             applied.append(field)
         return {'revision': revision, 'applied': applied}
+
+    @server.tool()
+    def update_plan_preamble(story_id: str, text: str, plan_version_id: str) -> dict[str, Any]:
+        """Замінити вступ плану — назву й текст до першої сцени, які моделі бачать у кожній сцені як глобальні авторські
+        вказівки. Грошей не коштує. plan_version_id — з get_story (plan_preamble.plan_version_id); якщо план змінено після
+        читання, Obscura відповість 409 — перечитайте get_story. Сцени лишаються ті самі; вступ, що змінив би поділ на сцени
+        (заголовок рівня сцен, рядок «Сцена N:»), відхиляється. Після зміни сцени, написані з попереднім вступом,
+        потребують перевірки. Серію змінюють у налаштуваннях твору, не тут."""
+        identifier(plan_version_id)
+        result = request('PUT', f'/api/stories/{identifier(story_id)}/plan-preamble',
+                         json={'text': text, 'expected_plan_version_id': plan_version_id})
+        return {key: result.get(key) for key in ('changed', 'plan_version_id', 'revision')}
 
     @server.tool()
     def add_scene(story_id: str, title: str, plan_markdown: str | None = None, position: int | None = None,
