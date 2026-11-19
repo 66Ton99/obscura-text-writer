@@ -129,3 +129,10 @@ def test_http_read_and_save(tmp_path):
         refused = client.put(f'/api/stories/{story.id}/plan-preamble',
                              json={'text': '## Тон', 'expected_plan_version_id': saved.json()['plan_version_id']})
         assert refused.status_code == 400 and 'поділ' in refused.json()['detail']
+
+
+def test_crlf_plan_reads_as_lf_and_unchanged_save_is_a_no_op(tmp_path):
+    repo, story = imported(tmp_path, PLAN.replace('\n', '\r\n'))
+    data = read_plan_preamble(repo, story.id)
+    assert data['text'] == '# Маяк\n\nТон: тихий.'
+    assert not replace_plan_preamble(repo, story.id, data['plan_version_id'], data['text'])['changed']

@@ -6,13 +6,17 @@ from ..domain import RevisionConflict, Scene
 from ..plan_sections import PreambleError, preamble_editable, replace_preamble, split_plan
 
 
+def _lf(text):
+    return text.replace('\r\n','\n')
+
+
 def read_plan_preamble(repo,story_id):
     ref=repo.active_source(story_id,'source_plan')
     if not ref:
         return {'text':'','plan_version_id':None,'editable':False,'reason':'no_plan'}
     text=repo.read_text(ref.id)
     editable=preamble_editable(text)
-    return {'text':split_plan(text)[0].strip(),'plan_version_id':ref.id,'editable':editable,'reason':None if editable else 'no_scenes'}
+    return {'text':_lf(split_plan(text)[0]).strip(),'plan_version_id':ref.id,'editable':editable,'reason':None if editable else 'no_scenes'}
 
 
 def _series_lines(text):
@@ -29,7 +33,7 @@ def replace_plan_preamble(repo,story_id,expected_plan_version_id,text):
     if previous.id!=expected_plan_version_id:raise RevisionConflict('План твору вже змінено; перечитайте вступ')
     raw=repo.read_text(previous.id)
     old=split_plan(raw)[0]
-    if old.strip()==text.replace('\r\n','\n').strip():
+    if _lf(old).strip()==_lf(text).strip():
         return {'changed':False,'plan_version_id':previous.id,'revision':repo.get_story(story_id).revision}
     if _series_lines(text):raise ValueError('Серію змінюють у налаштуваннях твору, розділ «Серія», а не у вступі плану.')
     candidate,_=replace_preamble(raw,text)
