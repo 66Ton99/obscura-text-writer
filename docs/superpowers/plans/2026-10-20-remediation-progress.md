@@ -2457,4 +2457,6 @@ Inherited whitespace у ліцензійному тексті tokenizers із ma
 
 - Запит власника: вступ плану (назва й текст до першої сцени) після імпорту ніде не редагується. Специфікація `docs/superpowers/specs/2026-11/2026-11-19-plan-preamble-edit-design.md`.
 - Оцінка: власник L, автор M. Перехресне рев'ю codex/gpt-6.1-sol: 2 зауваження, обидва виправлено (вкладена транзакція, `exclude` нової версії в інвалідації).
-- Статус: чекає на затвердження власником; код не змінювався.
+- Власник затвердив специфікацію в чаті: «Затверджую» (панель у «Письмо», канон не застаріває). План основи: `docs/superpowers/plans/2026-11/2026-11-19-plan-preamble-edit-core.md`.
+- Реалізовано: `plan_sections.replace_preamble`, `storage/plan_preamble.py`, `GET/PUT /api/stories/{id}/plan-preamble`, панель у налаштуваннях (uk/en), MCP `get_story.plan_preamble` і `update_plan_preamble`, Requirement PLAN-PREAMBLE (S01–S04), сторінки сайту `imports` і `mcp` (uk/en), ручна процедура `manual.md#plan-preamble-panel`.
+- Браузерна перевірка панелі на тимчасовій теці даних знайшла й виправила втрату введеного тексту після відмови; повідомлення сервера перекладаються через каталог.

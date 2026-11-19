@@ -207,6 +207,7 @@ Ask the chat to create a story: a title, a language (Ukrainian or English) and, 
 - In the Microsoft Store edition a rating above the edition limit is refused, and the story is then not created.
 - The chat rewrites a scene plan only over the plan it has read. If you changed the plan after the chat read it, the write is refused with "План сцени змінено після того, як його прочитали" (the scene plan was changed after it was read) and nothing is saved.
 - The previous plan stays in the scene's version history. A plan from the chat is not marked separately there: it is your authored material.
+- The chat reads the outline preamble (the title and general notes before the first scene) with the story and changes it only over the version it has read, as with a scene plan. The scenes stay the same, and those written with the previous preamble need review.
 - The chat changes several story properties one after another. If one of them is refused (for example, the language is already fixed), the rest are not changed, and the chat reports what it managed to apply.
 - You delete unneeded stories in Obscura: the chat cannot do that.
 
