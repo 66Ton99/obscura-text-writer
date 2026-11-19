@@ -136,3 +136,28 @@ def test_crlf_plan_reads_as_lf_and_unchanged_save_is_a_no_op(tmp_path):
     data = read_plan_preamble(repo, story.id)
     assert data['text'] == '# Маяк\n\nТон: тихий.'
     assert not replace_plan_preamble(repo, story.id, data['plan_version_id'], data['text'])['changed']
+
+
+def test_settings_page_has_the_preamble_panel_in_both_languages(tmp_path):
+    import json
+    from pathlib import Path
+    app = create_app(AppSettings(data_dir=tmp_path))
+    story = app.state.repo.create_story(StoryCreate(title='Маяк'))
+    with TestClient(app, base_url='http://127.0.0.1:8765') as client:
+        page = client.get(f'/stories/{story.id}/settings').text
+    assert 'id="plan-preamble-form"' in page and '/static/plan-preamble.js' in page
+    catalog = json.loads((Path(__file__).parents[2] / 'src/storygen/web/static/i18n.json').read_text(encoding='utf-8'))
+    keys = {k for k in catalog['uk'] if k.startswith('plan_preamble.')}
+    assert keys and keys == {k for k in catalog['en'] if k.startswith('plan_preamble.')}
+
+
+def test_server_messages_are_translated_in_the_browser_catalog():
+    """The browser translates a server message that equals a catalog value (i18n.js exactDiagnostics)."""
+    import json
+    from pathlib import Path
+    catalog = json.loads((Path(__file__).parents[2] / 'src/storygen/web/static/i18n.json').read_text(encoding='utf-8'))['uk']
+    values = set(catalog.values())
+    assert {str(PreambleError('boundary')), str(PreambleError('no_scenes'))} <= values
+    source = (Path(__file__).parents[2] / 'src/storygen/storage/plan_preamble.py').read_text(encoding='utf-8')
+    for key in ['plan_preamble.series', 'plan_preamble.conflict', 'plan_preamble.no_plan']:
+        assert catalog[key] in source
