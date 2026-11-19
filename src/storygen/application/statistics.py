@@ -38,10 +38,10 @@ def memory_statistics(view,scene,memory_id,*,first=False,merged=False):
         return {'available':False,'version_id':ref.id,'stale':ref.stale,'reason':'Журнал не можна порахувати: перевірте структуру та джерела до цієї сцени'}
 
 
-def story_totals(repo,story_id) -> dict:
-    """R18-STATS: words of the selected prose and target words over the active scenes of the story."""
-    scenes=repo.list_scenes(story_id)
-    words=sum(text_statistics(repo.read_text(s.heads['prose']))['words'] for s in scenes if s.heads.get('prose'))
+def story_totals(view,story_id) -> dict:
+    """R18-STATS: words of the selected prose and target words over the active scenes, from the request's view."""
+    scenes=view.list_scenes(story_id)
+    words=sum(text_statistics(view.read_text(s.heads['prose']))['words'] for s in scenes if s.heads.get('prose'))
     return {'prose_words':words,'target_words':sum(s.target_words or 0 for s in scenes),'scenes':len(scenes)}
 
 
@@ -60,7 +60,7 @@ def scene_statistics(repo,scene_id,stage,editor_source_head=None,editor_source_v
             ref=view.get_version(id)
             materials[kind]={'version_id':id,'stale':ref.stale,'complete':ref.complete,**text_statistics(view.read_text(id))}
     result={'scene_id':scene.id,'scene_revision':scene.revision,'target_words':scene.target_words,
-            'materials':materials,'stage':stage,'story_totals':story_totals(repo,scene.story_id)}
+            'materials':materials,'stage':stage,'story_totals':story_totals(view,scene.story_id)}
     if not details:  # STORE-FOOTER: the store edition shows only the materials and the prose line
         return result
     from ..memory.previous import previous_memory

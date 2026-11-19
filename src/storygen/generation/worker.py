@@ -57,8 +57,8 @@ class RunCoordinator:
         if not request_id or len(request_id)>200:
             raise ValueError('Потрібен request_id до 200 символів')
         from .edit_pass import resolve_edit_pass_limit
-        request=resolve_edit_pass_limit(self.repo,request)
         existing=self.repo.find_run_by_request_id(request_id)
+        request=resolve_edit_pass_limit(self.repo,request,existing)
         if existing:
             if existing.request!=request:
                 raise RevisionConflict('request_id уже використано для іншого запиту')
@@ -253,9 +253,9 @@ class RunCoordinator:
         if not request_id or len(request_id)>200 or request.mode not in {'stage','edit_loop'}:
             raise ValueError('Некоректний запит скасування')
         from .edit_pass import resolve_edit_pass_limit
-        request=resolve_edit_pass_limit(self.repo,request)  # the same stored request as a later enqueue of this id
         with self.condition:
             existing=self.repo.find_run_by_request_id(request_id)
+            request=resolve_edit_pass_limit(self.repo,request,existing)  # the same stored request as a later enqueue of this id
             if existing:
                 if existing.request!=request:raise RevisionConflict('request_id уже використано для іншого запиту')
                 return self.cancel(existing.id)

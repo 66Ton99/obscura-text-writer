@@ -1884,7 +1884,8 @@
         "tests/generation/test_edit_pass_settings.py::test_story_without_an_editor_role_gives_five",
         "tests/generation/test_edit_pass_settings.py::test_enqueued_run_stores_the_number",
         "tests/generation/test_edit_pass_settings.py::test_scene_readiness_uses_the_setting",
-        "tests/web/test_runs.py::test_cancel_request_fences_a_late_enqueue"
+        "tests/web/test_runs.py::test_cancel_request_fences_a_late_enqueue",
+        "tests/generation/test_edit_pass_settings.py::test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change"
       ]
     },
     {

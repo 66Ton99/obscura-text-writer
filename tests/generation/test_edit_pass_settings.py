@@ -86,3 +86,15 @@ def test_scene_readiness_uses_the_setting(tmp_path):
     set_editor(repo, story.id, edit_pass_limit=2)
     operation = RunCoordinator(repo).readiness(story.id, scenes[0].id, operation='scene')['operations']['scene']
     assert operation['edit_pass_limit'] == 2
+
+
+@pytest.mark.req('EDIT-LOOP')
+def test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change(tmp_path):
+    repo, story, scenes = seeded(tmp_path)
+    worker = RunCoordinator(repo)
+    request = RunRequest(story_id=story.id, scene_id=scenes[0].id, mode='stage', stage='brief')
+    run = worker.enqueue(request, 'same-id')
+    set_editor(repo, story.id, edit_pass_limit=2)
+    assert worker.enqueue(request, 'same-id').id == run.id
+    assert worker.cancel_request(request, 'same-id').id == run.id
+    assert repo.get_run(run.id).request.edit_pass_limit == 5
