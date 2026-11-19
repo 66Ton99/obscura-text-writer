@@ -514,6 +514,12 @@ body:has(#workspace.focus-mode) #notice { z-index: 30; }
 .rating-axis-head { position: relative; display: flex; align-items: center; gap: 8px; }
 .rating-axis-head label, .panel .rating-axis-head label { margin: 0; }
 .rating-axis select { margin: 6px 0 0; }
+/* Scene settings: a field name with its "?" hint on one row; a checkbox sits on the same row as its name. */
+.field-head { position: relative; display: flex; align-items: center; gap: 8px; margin: 16px 0 0; }
+.field-head label, .panel .field-head label { margin: 0; }
+.field-head + input, .field-head + select { margin: 6px 0 12px; }
+.panel .field-head input[type="checkbox"] { display: inline-block; width: auto; margin: 0; padding: 0; }
+.field-head + #scene-cast { margin: 6px 0 12px; }
 .help-tip { min-height: 24px; width: 24px; height: 24px; padding: 0; border-radius: 50%; border-color: var(--border-color); background: transparent; color: var(--text-secondary); font-size: 13px; line-height: 1; }
 .help-tip:hover, .help-tip:focus-visible { background: var(--accent-soft); border-color: var(--accent-primary); color: var(--accent-text); }
 .help-tip-text { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20; max-width: 420px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-control); background: var(--bg-surface); color: var(--text-primary); font-size: 13px; line-height: 1.5; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
