@@ -11,7 +11,7 @@ If there are many scenes, click the **Scenes** heading with their count: the lis
 - In the scene list, the selected scene has a button with a trash icon: **Delete scene**. The app asks for confirmation and moves the scene to the scene trash; the following scenes will then need review.
 - Save your text first: with unsaved changes the scene is not deleted and the app tells you why.
 - To bring a scene back, expand **Scene trash** under the list and click **Restore**. Scenes are never deleted permanently.
-- On a narrow screen there is no scene list: pick the scene in the selector and click **Delete scene** in the extra actions under the editor.
+- On a narrow screen there is no scene list: pick the scene in the selector and click **Delete scene** under it.
 
 ## Top row
 
@@ -37,6 +37,8 @@ The **Outline → Brief → Draft → Editing → Prose → Memory** tabs show t
 If the planner reports "Significant changes require the author’s decision", the **Brief** tab opens a new proposal with a list of changes. Review it, save your manual edits and press **Accept brief**; **Save** keeps the proposal without accepting it.
 
 Before you press it, the primary button shows the model and the maximum number of calls. Hover over it or reach it with Tab to see details and warnings. If a role is not configured, a button next to it takes you to that role in the settings.
+
+On the **Draft** tab the primary button starts editing: the first time it reads **Save and edit**, and once there is prose it reads **Edit**. To its left, **Use as prose** saves the draft as prose without editing, just as if you copied it into the **Prose** tab. On the **Prose** tab the same place has the **Edit current prose** button.
 
 ## Status row
 

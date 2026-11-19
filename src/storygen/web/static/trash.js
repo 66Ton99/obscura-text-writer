@@ -27,7 +27,8 @@ export function installSceneTrash(state,refresh,clear){
   uiAttr(listButton,'aria-label',()=>t("scenes.delete"));uiText(listButton,'title',()=>t("scenes.delete"));
   listButton.append(icon);listButton.onclick=moveToTrash;holder.append(listButton);
   function place(){const row=state.scene&&document.querySelector('#scene-list .scene-item.active');if(row?.after)row.after(holder);else holder.remove?.()}
-  (document.querySelector('#workspace-scene-actions')||document.querySelector('.editor-toolbar')).append(trash);
+  // STORE-FOOTER: no delete in the footer; a narrow screen has no list, so the named button sits under the scene picker.
+  trash.classList.add('scene-delete-mobile');const picker=document.querySelector('#scene-select-mobile');if(picker?.after)picker.after(trash);
   function availability(){const reason=!state.scene?t("m_f0f1417db6de"):state.saving?t("m_1705600b6470"):state.dirty?t("m_a4c2e86ecc1a"):'';trash.disabled=!!reason;uiText(trash,"title",()=>(diagnostic(reason)));place()}
   for(const event of ['scene-selected','story-refreshed','editor-state-changed'])document.addEventListener(event,availability);availability();
   const details=document.createElement('details'),summary=document.createElement('summary'),list=document.createElement('div');

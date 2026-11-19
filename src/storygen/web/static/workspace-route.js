@@ -61,6 +61,7 @@ function render(){
   uiText(hintInfo,"textContent",()=>(action.target&&state.scene?.heads[action.target]?t("m_44df09bb6ff6"):state.mode==='review'?t("m_34c3cc998162"):state.mode==='memory'?t("m_e310e34e8865"):t("m_93abd76dba4c")));
   uiText(primary,"title",()=>(diagnostic(reason)));
   const repeat=document.querySelector('#workspace-edit-prose');repeat.hidden=state.mode!=='prose';repeat.disabled=busy||isActive()||state.saving;
+  const take=document.querySelector('#workspace-use-draft');take.hidden=state.mode!=='draft'||!state.scene?.heads.draft||state.bufferOrigin==='history';take.disabled=busy||isActive()||state.saving||state.dirty;
   // #105: tab statuses follow the refreshed view even while the buffer keeps the author's text and revision.
   const live=liveScene(state.scene,state.view?.scenes);
   for(const b of document.querySelectorAll('#mode-tabs button')){
@@ -126,7 +127,7 @@ document.querySelector('#workspace-use-draft').onclick=async()=>{
   busy=true;render();
   try{const source=await api('/api/versions/'+id);
     if(state.scene?.id!==scene.id||state.bufferEpoch!==epoch||state.dirty)throw new Error(t("m_7d8d43f3fed7"));
-    await api(`/api/scenes/${scene.id}/prose`,json('POST',{text:source.text,expected_revision:scene.revision}));await refresh();await invokeWorkspaceCommand('show','prose');
+    await api(`/api/scenes/${scene.id}/prose`,json('POST',{text:source.text,expected_revision:scene.revision,content_format:source.version.content_format||'plain'}));await refresh();await invokeWorkspaceCommand('show','prose');
   }catch(error){notice(error.message,'error')}finally{busy=false;render()}
 };
 for(const event of ['editor-state-changed','scene-selected','story-refreshed','workspace-readiness','workspace-review-state','workspace-statistics','brief-review-state','workspace-pending-state'])document.addEventListener(event,render);

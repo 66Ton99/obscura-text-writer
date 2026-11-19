@@ -46,10 +46,27 @@ test('unsaved text keeps the scene: the icon explains instead of deleting',async
   await expect(page.locator('#scene-list .scene-item')).toHaveCount(1);
 });
 
-test('narrow screen keeps the named button under the editor',async({page,request})=>{
+// STORE-FOOTER: the footer has no delete action; a narrow screen gets the named button under the scene picker.
+test('narrow screen shows the named button under the scene picker, not in the footer',async({page,request})=>{
   test.skip(test.info().project.name!=='mobile','desktop uses the list icon');
   const fixture=await(await request.post('/test-fixture')).json();
+  await request.post(`/api/stories/${fixture.story_id}/scenes`,{data:{title:'Друга сцена',beats:'Прогулянка.'}});
   await page.goto(`/stories/${fixture.story_id}`);
-  await expect(page.locator('#workspace-scene-actions button').filter({hasText:'Delete scene'})).toHaveCount(1);
+  await expect(page.locator('.workspace-extra button').filter({hasText:'Delete scene'})).toHaveCount(0);
   await expect(page.locator('#scene-list .scene-delete')).toBeHidden();
+  const named=page.locator('#scene-list-section .scene-delete-mobile');
+  await expect(named).toBeVisible();await expect(named).toHaveText('Delete scene');
+  await named.click();
+  await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
+  await expect(page.locator('#notice')).toContainText('Scene deleted');
+  await expect(page.locator('#scene-select-mobile option')).toHaveCount(1);
+});
+
+test('desktop footer has no delete action',async({page,request})=>{
+  test.skip(test.info().project.name==='mobile','the mobile case is above');
+  const fixture=await(await request.post('/test-fixture')).json();
+  await page.goto(`/stories/${fixture.story_id}`);
+  await expect(page.locator('#scene-list .scene-delete')).toHaveCount(1);
+  await expect(page.locator('.workspace-extra button').filter({hasText:'Delete scene'})).toHaveCount(0);
+  await expect(page.locator('#scene-list-section .scene-delete-mobile')).toBeHidden();
 });

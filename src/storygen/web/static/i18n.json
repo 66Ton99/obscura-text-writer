@@ -2629,7 +2629,9 @@
     "codex.unsafe_install_root": "Небезпечний шлях встановлення: корінь є посиланням або непридатною текою. Перевірте .agents і skills; Obscura їх не змінювала.",
     "codex.current_name": "Уже актуальний: {p0}",
     "codex.install_path_changed": "Шлях встановлення змінився або став непридатним. Перевірте теки, відновлені файли й резервні копії перед повторною спробою.",
-    "settings.edit_pass_limit_hint": "Скільки разів редактор може пройти чернетку за один запуск. Кожен прохід — окремий виклик моделі."
+    "settings.edit_pass_limit_hint": "Скільки разів редактор може пройти чернетку за один запуск. Кожен прохід — окремий виклик моделі.",
+    "workspace.take_as_prose": "Взяти як прозу",
+    "workspace.edit_again": "Редагувати"
   },
   "en": {
     "ui.save": "Save",
@@ -5261,6 +5263,8 @@
     "codex.unsafe_install_root": "Unsafe path: the installation root is a link or an unsuitable folder. Check .agents and skills; Obscura has not changed them.",
     "codex.current_name": "Already current: {p0}",
     "codex.install_path_changed": "The installation path changed or became unsuitable. Review folders, restored files and backups before trying again.",
-    "settings.edit_pass_limit_hint": "How many times the editor may pass over the draft in one run. Each pass is a separate model call."
+    "settings.edit_pass_limit_hint": "How many times the editor may pass over the draft in one run. Each pass is a separate model call.",
+    "workspace.take_as_prose": "Use as prose",
+    "workspace.edit_again": "Edit"
   }
 }
