@@ -27,7 +27,7 @@
 
 ## Редагування вступу плану (PLAN-PREAMBLE)
 
-Гілка `claude/plan-preamble-edit`, commit `b7315977`: повний verify.py — 3858 passed, 0 failed/errors, 2 skipped; `check_docs.py` узгоджено. Перший прогін із теки `.claude/worktrees/…` дав 1321 FileNotFoundError через задовгі шляхи Windows у `artifacts/…/test-tmp`, тому перевірку виконано з `C:	mp\preamble-verify`; другий прогін знайшов застарілу кількість інструментів MCP (27 → 28), виправлено. Ручна процедура `manual.md#plan-preamble-panel` виконана частково в браузері на тимчасовій теці даних: кроки 1–3 (панель, збереження, відмова з перекладом і збереженням тексту в полі) PASS; крок 4 (твір без плану) перевірено лише автоматичним тестом.
+Гілка `claude/plan-preamble-edit`, commit `b7315977`: повний verify.py — 3858 passed, 0 failed/errors, 2 skipped; `check_docs.py` узгоджено. Перший прогін із теки `.claude/worktrees/…` дав 1321 FileNotFoundError через задовгі шляхи Windows у `artifacts/…/test-tmp`, тому перевірку виконано з `C:\tmp\preamble-verify`; другий прогін знайшов застарілу кількість інструментів MCP (27 → 28), виправлено. Ручна процедура `manual.md#plan-preamble-panel` виконана частково в браузері на тимчасовій теці даних: кроки 1–3 (панель, збереження, відмова з перекладом і збереженням тексту в полі) PASS; крок 4 (твір без плану) перевірено лише автоматичним тестом.
 
 ## Ручне B1 та завершення checkout206
 
