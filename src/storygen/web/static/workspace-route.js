@@ -44,7 +44,7 @@ function render(){
   telemetry.hidden=detailsCard.hidden=!modelAction;
   if(modelAction){
     let info=operation;
-    if(info&&action.mode==='edit_loop')try{info=editorLoopOperation(info,Number(document.querySelector('#edit-pass-limit')?.value||5))}catch{info=null}
+    if(info&&action.mode==='edit_loop')info=editorLoopOperation(info);
     const roles=Object.entries(info?.roles||{}),warnings=[...new Set([...(operation?.warnings||[]),operation?.warning].filter(value=>value&&!['Джерело: чернетка.','Джерело: поточна проза.'].includes(value)))];
     const models=roles.map(([role,value])=>`${role}: ${value.provider} / ${value.model}`).join(', ');
     const summary=roles.map(([,value])=>`${value.provider} / ${value.model}`).join(', ');
@@ -130,7 +130,6 @@ document.querySelector('#workspace-use-draft').onclick=async()=>{
   }catch(error){notice(error.message,'error')}finally{busy=false;render()}
 };
 for(const event of ['editor-state-changed','scene-selected','story-refreshed','workspace-readiness','workspace-review-state','workspace-statistics','brief-review-state','workspace-pending-state'])document.addEventListener(event,render);
-document.addEventListener('input',event=>{if(event.target?.id==='edit-pass-limit')render()});
 document.addEventListener('workspace-run-pending',()=>render());
 document.addEventListener('workspace-run-state',event=>{if(event.detail.id===primaryRun&&!activeStates.has(event.detail.state)){primaryRun=null;setActiveId(null);cancelRequested=false}render();void complete(event.detail).catch(e=>notice(e.message,'error'))});
 document.addEventListener('workspace-primary-recovered',event=>{if(activeStates.has(event.detail.state)){primaryRun=event.detail.id;setActiveId(primaryRun)}render()});

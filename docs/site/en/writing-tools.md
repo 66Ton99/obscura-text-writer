@@ -19,6 +19,8 @@ In the settings of the **Editor** role you can choose a mode:
 - **Revision with change review** — the model returns prose, and the application shows each change as "Before / After". Tick the ones you want, press **Preview selected text** and then **Apply selected changes**. If there are no changes, the text becomes prose at once.
 - **Targeted language edits** — see [Editing a scene](revision.md#editing-a-scene).
 
+**Maximum editing passes** (1 to 10, default 5) — how many times the editor may pass over the text in one run. Each pass is a separate model call; the editor stops earlier when there is nothing left to change. The value is kept for each story separately.
+
 Changes to numbers, negations and large parts of the text are flagged with warnings. The **Optional change classifier** is a separate paid call that only advises which changes are stylistic; it ticks nothing.
 
 Every role has a standard prompt for its mode. You can write your own prompt instead; after changing the mode, adapt it and tick **I adapted the custom prompt and assign it to the selected stage and mode**, or press **Restore default prompt**. The application checks only the response format, not the content of your instructions.

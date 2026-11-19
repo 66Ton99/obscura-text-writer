@@ -6,7 +6,7 @@ export function groupRoleFields(form,role){
   form.append(main,details,prompts);
   const vendor=form.querySelector('.venice-options');
   const horizon=form.elements.future_plan_mode?.closest('fieldset');
-  for(const name of ['provider','model','context_tokens','max_output_tokens','temperature','edit_mode','edit_review','memory_mode']){
+  for(const name of ['provider','model','context_tokens','max_output_tokens','temperature','edit_mode','edit_review','edit_pass_limit','memory_mode']){
     const el=form.elements[name];if(el)main.append(el.closest('label'));
   }
   const modelLabel=form.elements.model.closest('label');modelLabel.append(form.querySelector('.discover'));modelLabel.after(form.querySelector('.model-picker'));

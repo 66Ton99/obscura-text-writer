@@ -7,7 +7,6 @@ import {api,json,notice} from './api.js';
 import {state,refresh,loadBuffer,textEditor} from './editor.js';
 import {registerWorkspaceCommand} from './workspace-commands.js';
 import {assertReadyDispatch} from './workspace-state.js';
-import {readEditPassLimit,rememberEditPassLimit} from './edit-pass-limit.js';
 import {operationReason,confirmationText,runKind,controlReason,materialReason,editorLoopOperation} from './run-readiness.js';
 const controls=document.querySelector('#generation-controls'),status=document.querySelector('#run-status'),live=document.querySelector('#live-text');
 const terminal=new Set(['completed','failed','cancelled','interrupted','needs_review','alternative','paused']);
@@ -154,9 +153,8 @@ async function start(mode,stage,options={}){
   if(options.signal?.aborted)throw new DOMException('Cancelled','AbortError');
   assertReadyDispatch(state,captured);
   let operation=readiness?.operations[stage||mode];
-  const passLimit=Number(document.querySelector('#edit-pass-limit')?.value||5);
   const usesEditorLoop=['edit_loop','scene','remaining'].includes(mode);
-  if(usesEditorLoop)operation=editorLoopOperation(operation,passLimit);
+  if(usesEditorLoop)operation=editorLoopOperation(operation);
   const reason=operationReason(state,operation);
   if(reason)throw new Error(reason);
   if((!options.primary||operation.memory_review)&&!await confirmDialog(confirmationText(operation)))return;
@@ -164,7 +162,7 @@ async function start(mode,stage,options={}){
   assertReadyDispatch(state,captured);
   const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each').checked?['brief','draft','edit','memory']:[]};
   if(mode==='stage'&&stage==='memory'&&operation.memory_review)request.memory_approval=operation.memory_review.fingerprint;
-  if(usesEditorLoop){request.edit_pass_limit=passLimit;request.edit_workflow='loop'}
+  if(usesEditorLoop)request.edit_workflow='loop';
   if(mode==='edit_loop')Object.assign(request,selectedSource(options));
   request.budget_limit_usd=document.querySelector('#run-budget')?.value||null;
   const key='storygen.pending.'+(options.primary?tabId+'.':'')+JSON.stringify(request),storage=options.primary?sessionStorage:localStorage;let requestId=storage.getItem(key)||crypto.randomUUID();storage.setItem(key,requestId);
@@ -181,11 +179,7 @@ controls.hidden=false;
 function button(label,fn,operation=null,action=null){const wrapper=document.createElement('span');wrapper.className='run-action';const b=document.createElement('button'),hint=document.createElement('small');hint.id='run-reason-'+actions.length;b.className='secondary';uiText(b,"textContent",()=>(label));const item={button:b,hint,wrapper,operation,action,busy:false};actions.push(item);b.onclick=async()=>{const hadFocus=document.activeElement===b;item.busy=true;updateControls();if(hadFocus){wrapper.tabIndex=-1;wrapper.focus()}try{await fn()}catch(e){notice(e.message,'error')}finally{item.busy=false;updateControls();if(operation)scheduleReadiness()}};wrapper.append(b,hint);(document.querySelector('#run-actions')&&['pause','cancel','resume','repeat','accepted'].includes(action)?document.querySelector('#run-actions'):controls).append(wrapper);updateControls();return wrapper}
 button(liveLabel(()=>(t("m_4c7f8d65f750"))),()=>start('prepare'),'prepare');
 for(const [stage,label] of labelEntries({get brief(){return t("m_27e8e3278f1a")},get draft(){return t("m_a0503ed62ae7")},get edit(){return t("m_c542d0ba7da5")},get memory(){return t("m_05c4218abe15")}})){
-  if(stage==='edit'){
-    const editorAction=button(label,()=>start('edit_loop'),'edit_loop');
-    const passLabel=document.createElement('label');uiHTML(passLabel,"<span data-i18n=\"m_6c1316f99476\">Максимум проходів редактури</span><input id=\"edit-pass-limit\" type=\"number\" min=\"1\" max=\"10\" step=\"1\" value=\"5\">",{});editorAction.append(passLabel);
-    const passInput=document.querySelector('#edit-pass-limit');passInput.value=String(readEditPassLimit(state.storyId));passInput.addEventListener('input',()=>rememberEditPassLimit(state.storyId,Number(passInput.value)));
-  }
+  if(stage==='edit')button(label,()=>start('edit_loop'),'edit_loop');
   else button(label,()=>start('stage',stage),stage);
 }
 button(liveLabel(()=>(t("m_3f2da413a47a"))),()=>start('scene'),'scene');button(liveLabel(()=>(t("m_9d2918521914"))),()=>start('remaining'),'remaining');

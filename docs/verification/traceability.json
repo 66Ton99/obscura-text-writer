@@ -1902,9 +1902,9 @@
     {
       "id": "EDIT-LOOP-REVIEW-S02",
       "requirement": "EDIT-LOOP-REVIEW",
-      "scope": "Вибраний максимум проходів не скидається після перезавантаження. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "scope": "Максимум проходів зберігається в налаштуваннях редактора твору. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
       "tests": [
-        "tests/web/test_edit_pass_limit.py::test_edit_pass_limit_is_remembered_per_story"
+        "tests/web/test_edit_pass_limit_settings.py::test_pass_limit_saved_with_editor_settings_drives_readiness"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#edit-pass-limit-browser",
