@@ -165,7 +165,8 @@ async function start(mode,stage,options={}){
   assertReadyDispatch(state,captured);
   const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each')?.checked?['brief','draft','edit','memory']:[]};
   if(mode==='stage'&&stage==='memory'&&operation.memory_review)request.memory_approval=operation.memory_review.fingerprint;
-  if(usesEditorLoop)request.edit_workflow='loop';
+  // EDIT-LOOP-REVIEW: the run takes the limit the author confirmed, not a later settings value.
+  if(usesEditorLoop){request.edit_workflow='loop';if(Number.isInteger(operation.edit_pass_limit))request.edit_pass_limit=operation.edit_pass_limit}
   if(mode==='edit_loop')Object.assign(request,selectedSource(options));
   request.budget_limit_usd=document.querySelector('#run-budget')?.value||null;
   const key='storygen.pending.'+(options.primary?tabId+'.':'')+JSON.stringify(request),storage=options.primary?sessionStorage:localStorage;let requestId=storage.getItem(key)||crypto.randomUUID();storage.setItem(key,requestId);

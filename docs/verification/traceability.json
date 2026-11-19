@@ -1904,7 +1904,8 @@
       "requirement": "EDIT-LOOP-REVIEW",
       "scope": "Максимум проходів зберігається в налаштуваннях редактора твору. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
       "tests": [
-        "tests/web/test_edit_pass_limit_settings.py::test_pass_limit_saved_with_editor_settings_drives_readiness"
+        "tests/web/test_edit_pass_limit_settings.py::test_pass_limit_saved_with_editor_settings_drives_readiness",
+        "tests/web/test_edit_pass_limit_settings.py::test_edit_loop_readiness_names_the_limit_the_author_confirms"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#edit-pass-limit-browser",

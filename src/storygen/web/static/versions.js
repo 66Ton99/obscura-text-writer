@@ -97,10 +97,14 @@ async function render(){
       if(!await confirmDialog(t('history.restore_confirm')))return;
       if(state.saving||state.dirty||state.scene?.id!==sceneId||state.bufferEpoch!==epoch)return;
       if(activeRun())throw new Error(t("m_9fafcde1c64a"));
-      const v=await api('/api/versions/'+ref.id),before=state.scene.heads[material];
+      const v=await api('/api/versions/'+ref.id);
+      // The author may switch scenes or start typing while the version loads: send nothing then.
+      if(state.saving||state.dirty||state.scene?.id!==sceneId||state.bufferEpoch!==epoch||activeRun())return;
+      const before=state.scene.heads[material];
       const result=await api(`/api/scenes/${sceneId}/${material}`,json('POST',{text:v.text,expected_revision:state.scene.revision,content_format:v.version.content_format||'plain'}));
       if(result.version.id===before){notice(t('history.already_same'));return}
-      state.scene=result.scene;await refresh();await show(material);notice(t('history.restored'));
+      const same=state.scene?.id===sceneId&&state.bufferEpoch===epoch&&!state.dirty;
+      if(same)state.scene=result.scene;await refresh();if(same)await show(material);notice(t('history.restored'));
     },'restore');
     updateHistory();return;
   }

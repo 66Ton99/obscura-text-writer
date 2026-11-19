@@ -106,7 +106,8 @@ def check_base(repo,run):
 def readiness(repo,request,run=None,view=None):
     # A shared view serves the scene and version reads; role settings and billing stay on the repository.
     reader=view if view is not None else repo
-    result=dict(ready=False,reason=None,roles={},calls=request.edit_pass_limit,evaluator=None,warnings=[])
+    # edit_pass_limit: the number the author confirms and the UI sends with the run (EDIT-LOOP-REVIEW).
+    result=dict(ready=False,reason=None,roles={},calls=request.edit_pass_limit,edit_pass_limit=request.edit_pass_limit,evaluator=None,warnings=[])
     try:
         if run and progress(run):
             check_base(repo,run)

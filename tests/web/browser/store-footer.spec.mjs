@@ -73,8 +73,7 @@ test.describe('Store edition footer',()=>{
     const head=await(await request.get(`/api/versions/${data.scene.heads.prose}`)).json();
     expect(head.text).toBe('Нова **проза**.');expect(head.version.content_format).toBe('markdown');expect(head.version.kind).toBe('manual');
     const count=data.versions.length;
-    await page.locator('#workspace-history summary').scrollIntoViewIfNeeded();
-    if(!await list.isVisible())await page.locator('#workspace-history summary').click();
+    await expect(list).toBeVisible();
     await list.selectOption(markdown.id);await restore.click();
     await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
     await expect(page.locator('#notice')).toContainText('The text is already the same');
@@ -95,6 +94,41 @@ test.describe('Store edition footer',()=>{
     data=await history();
     const head=await(await request.get(`/api/versions/${data.scene.heads.draft}`)).json();
     expect(head.version.kind).toBe('draft');expect(head.version.content_format).toBe('markdown');expect(head.text).toContain('Лєра побачила **зорі**.');
+  });
+  test('Store restore sends nothing when the author starts typing while the version loads',async({page,request})=>{
+    await request.post('/test-build-edition',{data:{edition:'store'}});
+    const fixture=await(await request.post('/test-fixture')).json(),scene=fixture.scene_id;
+    const history=async()=>(await(await request.get(`/api/scenes/${scene}/versions`)).json());
+    let data=await history();
+    expect((await request.post(`/api/scenes/${scene}/prose`,{data:{text:'Друга проза.',expected_revision:data.scene.revision,content_format:'plain'}})).ok()).toBe(true);
+    data=await history();
+    const old=data.versions.find(v=>v.kind==='manual'&&v.id!==data.scene.heads.prose);
+    await page.goto(`/stories/${fixture.story_id}?scene=${scene}&material=prose`);
+    await page.locator('#workspace-history summary').click();
+    await page.locator('#history-version').selectOption(old.id);
+    let release;const gate=new Promise(resolve=>{release=resolve});const posts=[];
+    page.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith(`/api/scenes/${scene}/prose`))posts.push(r.url())});
+    await page.route(`**/api/versions/${old.id}`,async route=>{await gate;await route.continue()});
+    await page.locator('#version-panel > button').nth(2).click();
+    await page.locator('dialog[open] .app-dialog-actions button:not(.secondary)').click();
+    await page.locator('#workspace-material .ProseMirror').click();
+    await page.keyboard.type('Нове речення. ');
+    release();
+    await page.waitForTimeout(500);
+    expect(posts).toEqual([]);
+    expect((await history()).scene.heads.prose).toBe(data.scene.heads.prose);
+  });
+  test('focus mode hides the moved secondary actions',async({page,request})=>{
+    const fixture=await(await request.post('/test-fixture')).json();
+    await page.goto(`/stories/${fixture.story_id}?scene=${fixture.scene_id}&material=draft`);
+    await expect(page.locator('#workspace-use-draft')).toBeVisible();
+    await page.locator('#workspace-focus').click();
+    await expect(page.locator('#workspace-use-draft')).toBeHidden();
+    await page.keyboard.press('Escape');
+    await page.locator('[data-mode="prose"]').click();
+    await expect(page.locator('#workspace-edit-prose')).toBeVisible();
+    await page.locator('#workspace-focus').click();
+    await expect(page.locator('#workspace-edit-prose')).toBeHidden();
   });
   test('full edition keeps run options and extra actions',async({page,request})=>{
     const fixture=await(await request.post('/test-fixture')).json();

@@ -28,3 +28,16 @@ def test_pass_limit_saved_with_editor_settings_drives_readiness(client):
     other = repo.create_story(StoryCreate(title='Інший'))
     other_url = f'/api/stories/{other.id}/settings'
     assert client.get(other_url).json()['roles'].get('editor', {}).get('edit_pass_limit', 5) == 5
+
+
+@pytest.mark.req('EDIT-LOOP-REVIEW')
+def test_edit_loop_readiness_names_the_limit_the_author_confirms(client):
+    """The confirmation shows this number and the run is sent with it, so a later settings change cannot raise it."""
+    repo = client.app.state.repo
+    story = repo.create_story(StoryCreate(title='Маяк'))
+    scene = repo.create_scene(story.id, SceneCreate(title='Сцена', beats='План'))
+    url = f'/api/stories/{story.id}/settings'
+    editor = RoleSettings(provider=ProviderSettings(model='editor'), edit_mode='patches', edit_pass_limit=2)
+    assert client.put(url, json={'expected_revision': client.get(url).json()['story']['revision'], 'role': 'editor', 'settings': editor.model_dump()}).status_code == 200
+    op = client.get(f'/api/stories/{story.id}/readiness?scene_id={scene.id}&operation=edit_loop').json()['operations']['edit_loop']
+    assert op['edit_pass_limit'] == 2
