@@ -260,3 +260,30 @@ def test_suggestion_without_a_writer_model_explains_it(tmp_path):
     repo=Repository(tmp_path);story=repo.create_story(StoryCreate(title='Назва'))
     scene=repo.create_scene(story.id,SceneCreate(title='Сцена',beats='План'));save_manual_prose(repo,scene.id,'Проза.',0)
     with pytest.raises(ValueError,match='Налаштуйте модель письменника'):build_publication_context(repo,story.id)
+
+
+@pytest.mark.req('R16-SUGGEST')
+def test_suggestion_consent_and_refusal_belong_to_the_writer(tmp_path):
+    """R16-SUGGEST-S06 / MODEL-003: planner consent does not authorize the proposal; writer consent does, and a refusal marks the writer."""
+    import threading
+    from storygen.domain import ContentRating
+    from storygen.generation.stages import execute_stage
+    from storygen.providers.policy import ModelPolicyBlocked
+    repo,story=seeded(tmp_path)
+    cloud=ProviderSettings(provider='openrouter',model='x/writer',response_mode='json_schema')
+    writer=RoleSettings(provider=cloud,context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
+    save_role_settings(repo,story.id,'writer',writer,repo.get_story(story.id).revision)
+    first=repo.list_scenes(story.id)[0]
+    repo.update_scene_rating(first.id,ContentRating(sexual=2,violence=0,themes=0),repo.get_scene(first.id).revision)
+    context=build_publication_context(repo,story.id)
+    repo.model_policy('set_consent',role='planner',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    with pytest.raises(ModelPolicyBlocked) as blocked:
+        execute_stage(repo,None,'publication_suggest',context,Gateway('{}'),threading.Event(),lambda _:None)
+    assert blocked.value.kind=='consent' and 'Письменник' in str(blocked.value)
+    repo.model_policy('set_consent',role='writer',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    class Refusing:
+        def stream(self,*args):
+            yield GenerationEvent(type='terminal',finish_reason='content_filter',usage={'prompt_tokens':1,'completion_tokens':0})
+    execute_stage(repo,None,'publication_suggest',context,Refusing(),threading.Event(),lambda _:None)
+    assert repo.model_policy('get_refusal',role='writer',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    assert repo.model_policy('get_refusal',role='planner',provider='openrouter',base_url=cloud.base_url,model='x/writer') is None
