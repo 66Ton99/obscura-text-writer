@@ -27,8 +27,15 @@ def _refuse(request: Request, text: str, status: int) -> JSONResponse:
 
 
 def web_address(url: str) -> bool:
-    parts = urlsplit(url)
-    return parts.scheme in {'http', 'https'} and bool(parts.netloc)
+    """An absolute http(s) address with a host name and, if any, a numeric port; nothing the browser would guess at."""
+    if not url or any(character.isspace() or ord(character) < 32 for character in url):
+        return False
+    try:
+        parts = urlsplit(url)
+        parts.port  # raises ValueError for a port that is not a number
+    except ValueError:
+        return False
+    return parts.scheme in {'http', 'https'} and bool(parts.hostname)
 
 
 @router.post('/api/app-window/open-external')

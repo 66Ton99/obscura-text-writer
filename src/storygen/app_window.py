@@ -10,6 +10,8 @@ import ntpath
 import os
 import re
 import subprocess
+import threading
+import time
 import webbrowser
 from pathlib import Path
 from typing import Callable
@@ -19,6 +21,9 @@ from .storage.integrity import WINDOW_PROFILE as PROFILE_NAME  # one name for th
 logger = logging.getLogger(__name__)
 
 _ARGUMENT = re.compile(r'(")?--user-data-dir=')
+LAUNCH_GRACE = 15.0  # seconds Edge may take to show its window; clicks meanwhile do not start it again
+LAUNCH_CHECK = 10.0  # an Edge that exits with an error within this time is a failed launch
+STALE_TIMEOUT = 5.0  # how long a window left from an earlier run may take to close
 
 
 def profile_dir(data_dir: Path) -> Path:
@@ -74,6 +79,7 @@ class AppWindow:
                  fallback: Callable[[str], object] = webbrowser.open):
         self.url, self.profile = url, profile_dir(data_dir)
         self._api, self._edge, self._fallback = api, edge, fallback
+        self._launched_at, self._watcher = None, None
 
     @property
     def api(self):
@@ -97,12 +103,54 @@ class AppWindow:
                     self.api.restore(hwnd)
                 self.api.focus(hwnd)
                 return
+            now = time.monotonic()
+            if self._launched_at is not None and now - self._launched_at < LAUNCH_GRACE:
+                return  # Edge is still starting: a second launch would open a second window
             self.profile.mkdir(parents=True, exist_ok=True)
             self.api.hide_folder(self.profile)
-            self.api.launch(launch_args(edge, self.profile, self.url))
+            process = self.api.launch(launch_args(edge, self.profile, self.url))
+            self._launched_at = now
+            if process is not None:
+                self._watcher = threading.Thread(target=self._check_launch, args=(process,), name='obscura-window',
+                                                 daemon=True)
+                self._watcher.start()
         except Exception as error:  # noqa: BLE001 - the browser is the fallback for any failure of the window
             logger.warning('Вікно Obscura не відкрилося (%s); сторінка відкривається у браузері', type(error).__name__)
             self._fallback(self.url)
+
+    def _check_launch(self, process) -> None:
+        """Edge exits with 0 when it hands the address to a running process; another code means no window."""
+        try:
+            code = process.wait(LAUNCH_CHECK)
+        except subprocess.TimeoutExpired:
+            return
+        if code:
+            self._launched_at = None
+            logger.warning('Edge завершився з кодом %s без вікна; сторінка відкривається у браузері', code)
+            self._fallback(self.url)
+
+    def wait_launch(self) -> None:
+        """Tests: wait for the check of the last launch."""
+        if self._watcher is not None:
+            self._watcher.join()
+
+    def replace_stale(self) -> None:
+        """At the start of a server: a window left from an earlier run may show an old address, so it is closed and
+        the next show() opens a fresh one."""
+        try:
+            if self._edge() is None or not self._windows():
+                return
+            logger.info('Закривається вікно Obscura, що лишилося від попереднього запуску')
+            for hwnd in self._windows():
+                self.api.close_window(hwnd)
+            deadline = time.monotonic() + STALE_TIMEOUT
+            while self._windows():
+                if time.monotonic() >= deadline:
+                    logger.warning('Вікно попереднього запуску не закрилося за %s с', int(STALE_TIMEOUT))
+                    return
+                time.sleep(0.2)
+        except Exception as error:  # noqa: BLE001 - a stale window must not stop the start
+            logger.warning('Вікно попереднього запуску не перевірено: %s', type(error).__name__)
 
     def close(self) -> None:
         try:
@@ -235,9 +283,9 @@ class Win32Windows:
     def close_window(self, hwnd) -> None:
         self.user32.PostMessageW(hwnd, self.WM_CLOSE, 0, 0)
 
-    def launch(self, args: list[str]) -> None:
-        subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         close_fds=True)
+    def launch(self, args: list[str]):
+        return subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                close_fds=True)
 
     def hide_folder(self, path: Path) -> None:
         attributes = self.kernel32.GetFileAttributesW(str(path))

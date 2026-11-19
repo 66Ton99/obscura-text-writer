@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 
@@ -200,6 +201,7 @@ def test_backup_skips_only_the_window_profile_at_the_root(tmp_path):
 
 
 @pytest.mark.req('DESKTOP-001')
+@pytest.mark.skipif(sys.platform != 'win32', reason='a junction is a Windows reparse point')
 def test_integrity_check_ignores_what_edge_keeps_in_the_window_profile(tmp_path):
     import _winapi
     repo, _, _, _ = sample(tmp_path / 'source')

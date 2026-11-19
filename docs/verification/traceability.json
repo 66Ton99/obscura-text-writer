@@ -4750,7 +4750,13 @@
         "tests/test_app_window.py::test_other_command_lines_do_not_match",
         "tests/test_desktop.py::test_launch_shows_the_window_and_the_tray_uses_it",
         "tests/test_desktop.py::test_second_launch_shows_the_window_of_the_running_instance",
-        "tests/test_desktop.py::test_no_browser_shows_nothing_but_quit_still_closes"
+        "tests/test_desktop.py::test_no_browser_shows_nothing_but_quit_still_closes",
+        "tests/test_app_window.py::test_clicks_while_edge_is_starting_do_not_launch_it_again",
+        "tests/test_app_window.py::test_after_the_start_grace_a_missing_window_is_launched_again",
+        "tests/test_app_window.py::test_edge_that_exits_with_an_error_falls_back_to_the_browser",
+        "tests/test_app_window.py::test_edge_handing_over_or_still_running_is_a_success",
+        "tests/test_app_window.py::test_stale_windows_are_closed_before_the_first_show",
+        "tests/test_app_window.py::test_replace_stale_gives_up_after_its_timeout"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#desktop-launcher",

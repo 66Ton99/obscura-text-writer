@@ -40,7 +40,8 @@ def test_without_the_desktop_window_the_route_does_not_exist(tmp_path):
 
 @pytest.mark.req('DESKTOP-001')
 @pytest.mark.parametrize('url', ['ftp://example.org/x', '/stories', 'javascript:alert(1)', 'file:///C:/Windows',
-                                 'https://', 'mailto:a@b.c', ''])
+                                 'https://', 'mailto:a@b.c', '', 'http://@/', 'http://:80/', 'https://example.org:bad/',
+                                 'https://[bad/', 'https://exa mple.org/'])
 def test_only_absolute_web_addresses_are_opened(tmp_path, url):
     window = Window()
     with client(tmp_path, window) as c:

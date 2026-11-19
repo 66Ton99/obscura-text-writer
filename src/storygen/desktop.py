@@ -285,6 +285,10 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
         wrote_record = True
         threading.Thread(target=_refresh_skills, args=(data_dir,), name='obscura-skills', daemon=True).start()
         logger.info('Сервер працює: %s; тека даних: %s', url, data_dir)
+        # DESKTOP-001-S07: a window left by a crashed run may show an old address; it gives way to a fresh one.
+        replace_stale = getattr(window, 'replace_stale', None)
+        if replace_stale:
+            replace_stale()
         if not args.no_browser:
             window.show()
         if not args.no_tray:

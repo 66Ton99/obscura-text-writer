@@ -42,6 +42,7 @@ class FakeApi:
         if self.launch_error:
             raise self.launch_error
         self.calls.append(('launch', args))
+        return None
 
     def hide_folder(self, path):
         self.calls.append(('hide', path))
@@ -194,3 +195,80 @@ def test_launch_args_are_exactly_the_documented_flags(tmp_path):
 def test_edge_path_is_none_outside_windows(monkeypatch):
     monkeypatch.setattr(app_window.os, 'name', 'posix')
     assert app_window.edge_path() is None
+
+
+class Process:
+    def __init__(self, code):
+        self.code = code
+
+    def wait(self, timeout):
+        if self.code is None:
+            import subprocess
+            raise subprocess.TimeoutExpired('msedge', timeout)
+        return self.code
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_clicks_while_edge_is_starting_do_not_launch_it_again(tmp_path):
+    api = FakeApi()
+    window, _ = make(tmp_path, api)
+    window.show()
+    window.show()
+    assert [call[0] for call in actions(api)].count('launch') == 1
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_after_the_start_grace_a_missing_window_is_launched_again(tmp_path, monkeypatch):
+    api = FakeApi()
+    window, _ = make(tmp_path, api)
+    clock = iter([100.0, 100.0 + app_window.LAUNCH_GRACE + 1])
+    monkeypatch.setattr(app_window.time, 'monotonic', lambda: next(clock))
+    window.show()
+    window.show()
+    assert [call[0] for call in actions(api)].count('launch') == 2
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_edge_that_exits_with_an_error_falls_back_to_the_browser(tmp_path, caplog):
+    api = FakeApi()
+    api.launch = lambda args: Process(3)
+    window, opened = make(tmp_path, api)
+    window.show()
+    window.wait_launch()
+    assert opened == [URL] and 'кодом 3' in caplog.text
+
+
+@pytest.mark.req('DESKTOP-001')
+@pytest.mark.parametrize('code', [0, None])
+def test_edge_handing_over_or_still_running_is_a_success(tmp_path, code):
+    api = FakeApi()
+    api.launch = lambda args: Process(code)
+    window, opened = make(tmp_path, api)
+    window.show()
+    window.wait_launch()
+    assert opened == []
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_stale_windows_are_closed_before_the_first_show(tmp_path):
+    api = FakeApi({41: [7]})
+
+    def close_window(hwnd):
+        api.calls.append(('close', hwnd))
+        api.processes = {}
+    api.close_window = close_window
+    window, _ = make(tmp_path, api)
+    window.replace_stale()
+    window.show()
+    assert [call[0] for call in actions(api)] == ['close', 'hide', 'launch']
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_replace_stale_gives_up_after_its_timeout(tmp_path, monkeypatch):
+    api = FakeApi({41: [7]})
+    window, _ = make(tmp_path, api)
+    clock = iter([0.0, 0.1, app_window.STALE_TIMEOUT + 1])
+    monkeypatch.setattr(app_window.time, 'monotonic', lambda: next(clock))
+    monkeypatch.setattr(app_window.time, 'sleep', lambda seconds: None)
+    window.replace_stale()
+    assert ('close', 7) in actions(api)
