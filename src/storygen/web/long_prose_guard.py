@@ -34,6 +34,7 @@ ALLOWED = {
     ('PUT', '/api/provider-keys/{name}'): 'налаштування застосунку, не твору',
     ('DELETE', '/api/provider-keys/{name}'): 'налаштування застосунку, не твору',
     ('POST', '/api/role-profiles/import'): 'профілі ролей застосунку, не твору',
+    ('POST', '/api/app-window/open-external'): 'відкриває зовнішнє посилання у браузері, не змінює твору (DESKTOP-001-S08)',
     ('POST', '/api/connect/claude-desktop'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/connect/claude-desktop/bundle'): 'підключення Claude стосується застосунку, не твору',
     ('POST', '/api/connect/claude-desktop/restart'): 'підключення Claude стосується застосунку, не твору',

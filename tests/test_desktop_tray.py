@@ -122,3 +122,16 @@ def test_tray_language_follows_the_windows_ui_language(monkeypatch):
     monkeypatch.setattr(desktop_tray, '_windows_ui_langid', lambda: 0x0422)
     monkeypatch.setattr(desktop_tray.locale, 'getlocale', lambda: ('English_United States', 'cp1252'))
     assert desktop_tray.system_locale() == 'uk'
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_run_tray_opens_obscura_with_the_given_opener(tmp_path, monkeypatch):
+    RecordingIcon.made = []
+    monkeypatch.setattr(desktop_tray.os, 'name', 'nt')
+    monkeypatch.setattr(desktop_tray, '_api_factory', lambda: 'api')
+    monkeypatch.setattr(win_tray, 'NotifyIcon', RecordingIcon)
+    monkeypatch.setattr(desktop_tray, 'system_locale', lambda: 'uk')
+    opened = []
+    run_tray('http://127.0.0.1:1', tmp_path, tmp_path / 'none', lambda: None, opener=opened.append)
+    RecordingIcon.made[0].items[0][1]()
+    assert opened == ['http://127.0.0.1:1']

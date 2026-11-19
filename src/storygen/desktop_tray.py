@@ -78,7 +78,7 @@ def icon_png(size: int) -> bytes:
 _api_factory = win_tray.Win32Api
 
 
-def run_tray(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], None]) -> None:
+def run_tray(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], None], *, opener=webbrowser.open) -> None:
     """Show the icon and block until "Quit"; raises TrayUnavailable when there is no tray to show."""
     if os.name != 'nt':
         raise TrayUnavailable()
@@ -90,6 +90,6 @@ def run_tray(url: str, data_dir: Path, backups_dir: Path, stop: Callable[[], Non
         stopped.append(True)
         stop()
         holder['icon'].close()
-    items = menu_items(url, data_dir, backups_dir, quit_application, locale=system_locale())
+    items = menu_items(url, data_dir, backups_dir, quit_application, opener=opener, locale=system_locale())
     holder['icon'] = win_tray.NotifyIcon(_api_factory(), 'Obscura', icon_png, items)
     holder['icon'].run()

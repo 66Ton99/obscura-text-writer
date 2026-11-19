@@ -8,7 +8,7 @@ from pathlib import Path
 
 from ..domain import now
 from .files import FileStore
-from .integrity import check_integrity, contained_path, readonly_database, regular_files
+from .integrity import WINDOW_PROFILE, check_integrity, contained_path, readonly_database, regular_files
 from .locking import AppInstanceLock
 
 
@@ -54,10 +54,10 @@ def create_backup(source: Path, destination: Path) -> Path:
     if (source / '.restore-incomplete.json').exists():
         raise ValueError('Незавершене відновлення не може бути джерелом резерву')
     destination = new_destination(source, destination)
-    regular_files(source)  # Reject links, including worker.lock, before opening it.
+    regular_files(source, skip=(WINDOW_PROFILE,))  # Reject links, including worker.lock, before opening it.
     with AppInstanceLock(source):
         require_integrity(source)
-        source_files = regular_files(source)
+        source_files = regular_files(source, skip=(WINDOW_PROFILE,))
         destination.mkdir()
         manifest = {'format_version': 1, 'status': 'incomplete', 'created_at': now(), 'files': []}
         write_manifest(destination, manifest)

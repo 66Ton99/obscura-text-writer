@@ -14,9 +14,10 @@ import webbrowser
 from pathlib import Path
 from typing import Callable
 
+from .storage.integrity import WINDOW_PROFILE as PROFILE_NAME  # one name for the window and for backups
+
 logger = logging.getLogger(__name__)
 
-PROFILE_NAME = '.window'
 _ARGUMENT = re.compile(r'(")?--user-data-dir=')
 
 

@@ -12,7 +12,6 @@ import socket
 import sys
 import threading
 import time
-import webbrowser
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -154,9 +153,11 @@ def _already_running(data_dir: Path, seconds: float) -> str | None:
         time.sleep(0.5)
 
 
-def main(argv=None, *, opener=webbrowser.open, tray=None, serve=None, alert=None) -> int:
+def main(argv=None, *, opener=None, window=None, tray=None, serve=None, alert=None) -> int:
     """Exit codes: 0 — ran or already running, 2 — invalid build edition marker, 3 — no backup before a migration,
-    4 — the server did not start. A refused start is reported through `alert` with the path of the log."""
+    4 — the server did not start. A refused start is reported through `alert` with the path of the log.
+    `window(url, data_dir)` makes the Obscura window (DESKTOP-001-S07, default `AppWindow`); a plain `opener(url)`
+    stands in for it in tests."""
     parser = argparse.ArgumentParser(description='Obscura Text Writer')
     parser.add_argument('--data-dir', type=Path, default=None)
     parser.add_argument('--env-file', type=Path, default=None, help='file with provider keys; default: .env in the data folder')
@@ -178,7 +179,7 @@ def main(argv=None, *, opener=webbrowser.open, tray=None, serve=None, alert=None
         alert(f'Obscura не може створити теку даних {data_dir}: {type(error).__name__}')
         return 4
     try:
-        code, reason = _run(args, data_dir, opener, tray, serve or uvicorn_server)
+        code, reason = _run(args, data_dir, _window_factory(opener, window, data_dir), tray, serve or uvicorn_server)
     except Exception:
         logger.exception('Запуск зупинено через непередбачену помилку')
         code, reason = 4, 'Запуск зупинено через непередбачену помилку.'
@@ -201,7 +202,34 @@ def _refresh_skills(data_dir: Path) -> None:
         logger.exception('Скіли Claude: оновлення копії не вдалося')
 
 
-def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
+class _OpenerWindow:
+    """A window that is only a call to `opener`: nothing to bring forward or to close."""
+
+    def __init__(self, url, opener):
+        self.url, self._opener = url, opener
+
+    def show(self):
+        self._opener(self.url)
+
+    def close(self):
+        pass
+
+    def open_external(self, url):
+        self._opener(url)
+
+
+def _window_factory(opener, window, data_dir: Path):
+    def make(url):
+        if window is not None:
+            return window(url, data_dir)
+        if opener is not None:
+            return _OpenerWindow(url, opener)
+        from .app_window import AppWindow
+        return AppWindow(url, data_dir)
+    return make
+
+
+def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | None]:
     from . import build_edition
     try:
         build_edition.current()
@@ -211,8 +239,9 @@ def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
         return 2, str(error)
 
     def open_page(url):
+        # DESKTOP-001-S07: a second launch finds the window of the first one by its Edge profile and brings it forward.
         if not args.no_browser:
-            opener(url)
+            make_window(url).show()
     url = running_server(data_dir)
     if url:
         logger.info('Сервер цієї теки даних уже працює: %s', url)
@@ -232,6 +261,8 @@ def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
     port = choose_port()
     env_file = args.env_file.resolve() if args.env_file else data_dir / '.env'
     app = create_app(AppSettings(data_dir=data_dir, env_file=env_file, port=port))
+    window = make_window(f'{LOOPBACK}{port}')
+    app.state.app_window = window  # DESKTOP-001-S08: the page sends external links here
     server = serve(app, port)
     thread = threading.Thread(target=_serve, args=(server,), name='obscura-server', daemon=True)
     thread.start()
@@ -254,13 +285,17 @@ def _run(args, data_dir: Path, opener, tray, serve) -> tuple[int, str | None]:
         wrote_record = True
         threading.Thread(target=_refresh_skills, args=(data_dir,), name='obscura-skills', daemon=True).start()
         logger.info('Сервер працює: %s; тека даних: %s', url, data_dir)
-        open_page(url)
+        if not args.no_browser:
+            window.show()
         if not args.no_tray:
             from .desktop_tray import TrayUnavailable, run_tray
             from .storage.pre_migration import backups_dir
             try:
                 # Blocks until "Quit"; a stand-in is injected by tests.
-                (tray or run_tray)(url, data_dir, backups_dir(data_dir), stop)
+                def quit_application():
+                    window.close()  # the server stops, so the window would be dead
+                    stop()
+                (tray or run_tray)(url, data_dir, backups_dir(data_dir), quit_application, opener=lambda *_: window.show())
                 return 0, None
             except TrayUnavailable:
                 logger.warning('Значок у треї недоступний; застосунок працює без нього, доки процес не зупинять')
