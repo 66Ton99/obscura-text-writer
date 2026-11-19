@@ -16,7 +16,9 @@ export function primaryAction(state){
     prose:{mode:'stage',stage:'memory',target:'memory',get name(){return t("m_d84ffc519180")},get label(){return t("m_a87ddd66760f")}},
     memory:{action:'next',get label(){return t("m_c37ec3213bd7")}}};
   const result={...definitions[state.mode]};
-  if(result.target&&state.scene?.heads[result.target])result.label=save+(state.dirty?t("m_7375d1ec2b7c"):t("m_0a68d6b25fce"))+t("m_85718479f450")+result.name;
+  // R20-WORKSPACE: the repeat on the draft tab is a short «Редагувати».
+  if(state.mode==='draft'&&state.scene?.heads.prose)result.label=state.dirty?t("m_71957284c5de"):t('workspace.edit_again');
+  else if(result.target&&state.scene?.heads[result.target])result.label=save+(state.dirty?t("m_7375d1ec2b7c"):t("m_0a68d6b25fce"))+t("m_85718479f450")+result.name;
   return result;
 }
 export async function performPrimary({state,save,run,show,accept,next}){

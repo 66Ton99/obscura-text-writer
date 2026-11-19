@@ -30,12 +30,12 @@ assert.equal(materialReason('proposal',{},[{request:{mode:'prepare'},state:'comp
 assert.ok(materialReason('apply',{mode:'plan'},[]));
 assert.equal(materialReason('apply',{mode:'blueprint',dirty:true},[]),'');
 console.log('Run readiness and feedback regressions passed');
-const loop=editorLoopOperation({ready:true,calls:5,roles:{editor:{provider:'local',model:'editor-model'}},warnings:[]},3);
+// EDIT-LOOP: the server fills the pass limit from the editor settings, so the call count comes as is.
+const loop=editorLoopOperation({ready:true,calls:3,roles:{editor:{provider:'local',model:'editor-model'}},warnings:[]});
 assert.equal(loop.calls,3);assert.match(confirmationText(loop),/до 3 модельних/);
 assert.match(confirmationText(loop),/один підсумковий перегляд/);
 assert.doesNotMatch(confirmationText(loop),/writer|memory/);
-for(const limit of [0,11,2.5,NaN])assert.throws(()=>editorLoopOperation(loop,limit),/1 до 10/);
-const remaining=editorLoopOperation({ready:true,calls:16,edit_loop_scenes:2,edit_pass_limit:5,roles:{editor:{provider:'local',model:'editor'}}},1);
+const remaining=editorLoopOperation({ready:true,calls:8,edit_loop_scenes:2,edit_pass_limit:3,roles:{editor:{provider:'local',model:'editor'}}});
 assert.equal(remaining.calls,8);
 assert.match(confirmationText(remaining),/для кожної сцени/);
 {

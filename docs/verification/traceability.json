@@ -1873,6 +1873,25 @@
       ]
     },
     {
+      "id": "EDIT-LOOP-S02",
+      "requirement": "EDIT-LOOP",
+      "scope": "Ліміт проходів редактури з налаштувань ролі редактора для запиту без ліміту.",
+      "tests": [
+        "tests/generation/test_edit_pass_settings.py::test_role_settings_default_and_bounds",
+        "tests/generation/test_edit_pass_settings.py::test_old_editor_settings_read_as_five",
+        "tests/generation/test_edit_pass_settings.py::test_request_without_limit_takes_the_editor_setting",
+        "tests/generation/test_edit_pass_settings.py::test_explicit_limit_wins",
+        "tests/generation/test_edit_pass_settings.py::test_story_without_an_editor_role_gives_five",
+        "tests/generation/test_edit_pass_settings.py::test_enqueued_run_stores_the_number",
+        "tests/generation/test_edit_pass_settings.py::test_scene_readiness_uses_the_setting",
+        "tests/web/test_runs.py::test_cancel_request_fences_a_late_enqueue",
+        "tests/generation/test_edit_pass_settings.py::test_repeated_request_id_keeps_its_stored_limit_after_a_settings_change",
+        "tests/generation/test_edit_pass_settings.py::test_context_fingerprint_does_not_depend_on_the_pass_limit",
+        "tests/generation/test_edit_pass_settings.py::test_impact_manifest_stamp_ignores_the_pass_limit",
+        "tests/impact/test_reference_wire.py::test_legacy_fixture_replay"
+      ]
+    },
+    {
       "id": "EDIT-LOOP-REVIEW-S01",
       "requirement": "EDIT-LOOP-REVIEW",
       "scope": "Єдиний окремий запуск редактора. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -1883,9 +1902,10 @@
     {
       "id": "EDIT-LOOP-REVIEW-S02",
       "requirement": "EDIT-LOOP-REVIEW",
-      "scope": "Вибраний максимум проходів не скидається після перезавантаження. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
+      "scope": "Максимум проходів зберігається в налаштуваннях редактора твору. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
       "tests": [
-        "tests/web/test_edit_pass_limit.py::test_edit_pass_limit_is_remembered_per_story"
+        "tests/web/test_edit_pass_limit_settings.py::test_pass_limit_saved_with_editor_settings_drives_readiness",
+        "tests/web/test_edit_pass_limit_settings.py::test_edit_loop_readiness_names_the_limit_the_author_confirms"
       ],
       "manual": {
         "procedure": "docs/verification/manual.md#edit-pass-limit-browser",
@@ -2537,6 +2557,16 @@
       "tests": [
         "tests/generation/test_scene_statistics.py::test_context_breakdown_exact_body_and_overflow",
         "tests/generation/test_scene_statistics.py::test_editor_preview_uses_actual_working_source_and_schema",
+        "tests/web/test_scene_statistics_api.py::test_statistics_get_has_no_writes_or_dispatch"
+      ]
+    },
+    {
+      "id": "R18-STATS-S04",
+      "requirement": "R18-STATS",
+      "scope": "Підсумок прози за твір і відповідь без розбору контексту.",
+      "tests": [
+        "tests/web/test_scene_statistics_api.py::test_story_totals_sum_the_active_scenes",
+        "tests/web/test_scene_statistics_api.py::test_details_false_skips_memory_context_and_usage",
         "tests/web/test_scene_statistics_api.py::test_statistics_get_has_no_writes_or_dispatch"
       ]
     },
@@ -3866,6 +3896,26 @@
       }
     },
     {
+      "id": "R20-WORKSPACE-S06",
+      "requirement": "R20-WORKSPACE",
+      "scope": "Розгортання й згортання блоку «Текст, що пише модель» за подіями потоку на Node-моку EventSource.",
+      "tests": [
+        "tests/web/test_resumed_events.py::test_model_text_block_opens_for_a_stage_and_closes_after_it"
+      ]
+    },
+    {
+      "id": "R20-WORKSPACE-S07",
+      "requirement": "R20-WORKSPACE",
+      "scope": "Підпис «Редагувати» основної дії; розташування й дію «Взяти як прозу» перевіряє браузерний тест у ручній процедурі.",
+      "tests": [
+        "tests/web/test_workspace_route.py::test_workspace_route_save_and_source_regressions"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs."
+      }
+    },
+    {
       "id": "WORKSPACE-TOOLS-S01",
       "requirement": "WORKSPACE-TOOLS",
       "scope": "Розмітка верхнього рядка й меню; клавіатура — у ручній процедурі.",
@@ -4332,7 +4382,8 @@
       "scope": "GET /api/app-info віддає лише видання, межу, версію й адреси посилань.",
       "tests": [
         "tests/web/test_app_info.py::test_app_info_full_edition",
-        "tests/web/test_app_info.py::test_app_info_store_edition"
+        "tests/web/test_app_info.py::test_app_info_store_edition",
+        "tests/web/test_app_info_edition.py::test_is_store_edition_helper"
       ]
     },
     {
@@ -4653,6 +4704,39 @@
       "scope": "Твір із сексуальним рівнем 2, записаний поза виданням store, експортується в ньому з позначкою 18+.",
       "tests": [
         "tests/web/test_long_prose_guard.py::test_store_exports_a_level_two_story"
+      ]
+    },
+    {
+      "id": "STORE-FOOTER-S01",
+      "requirement": "STORE-FOOTER",
+      "scope": "Розмітка сторінки твору у виданні store без «Параметрів запуску» й «Додаткових дій»; статистика Store (details=false, без вибору етапу) — Node-тест; DOM у браузері — ручна процедура.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_store_story_page_has_no_run_options_or_extra_actions",
+        "tests/web/test_scene_statistics_ui.py::test_statistics_buffer_and_async_guards"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs. Вигляд у зібраному пакеті — крок «Підвал редактора» процедури store-package-install."
+      }
+    },
+    {
+      "id": "STORE-FOOTER-S02",
+      "requirement": "STORE-FOOTER",
+      "scope": "Серверна частина повернення: збереження тексту версії з її форматом і повторне використання ідентичної голови; UI історії Store — браузерний тест у ручній процедурі.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_restore_saves_the_version_format_and_reuses_an_identical_head"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#store-footer-browser",
+        "reason": "Playwright store-footer запускається окремим runner; check_docs.py індексує лише pytest IDs. Вигляд у зібраному пакеті — крок «Підвал редактора» процедури store-package-install."
+      }
+    },
+    {
+      "id": "STORE-FOOTER-S03",
+      "requirement": "STORE-FOOTER",
+      "scope": "Розмітка повного видання з «Параметрами запуску» й «Додатковими діями», без «Видалити сцену» в підвалі.",
+      "tests": [
+        "tests/web/test_store_footer.py::test_full_story_page_keeps_run_options_and_extra_actions"
       ]
     },
     {

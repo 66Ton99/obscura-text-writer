@@ -12,7 +12,8 @@ globalThis.fetch=async(url,options={})=>{if(options.method){assert.equal(state.s
 const {installSceneTrash}=await import(pathToFileURL(process.argv[2]+'/src/storygen/web/static/trash.js'));
 const state={storyId:'s',scene:{id:'c',revision:3},dirty:true,saving:false};
 installSceneTrash(state,async()=>{refreshed++},()=>{cleared++});
-const button=element('#workspace-scene-actions').children[0];
+// STORE-FOOTER: the named button lives under the narrow-screen scene picker, not in the footer.
+const button=element('#scene-select-mobile').placed[0];assert.match(button.className,/scene-delete-mobile/);assert.equal(element('#workspace-scene-actions').children.length,0);
 await button.onclick();assert.equal(calls,0,'unsaved text blocks trash');
 state.dirty=false;state.saving=true;await button.onclick();assert.equal(calls,0,'saving blocks trash');
 state.saving=false;await button.onclick();assert.equal(calls,1);assert.equal(cleared,1);assert.equal(refreshed,1);

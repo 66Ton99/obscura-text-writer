@@ -19,6 +19,8 @@ In the settings of the **Editor** role you can choose a mode:
 - **Revision with change review** — the model returns prose, and the application shows each change as "Before / After". Tick the ones you want, press **Preview selected text** and then **Apply selected changes**. If there are no changes, the text becomes prose at once.
 - **Targeted language edits** — see [Editing a scene](revision.md#editing-a-scene).
 
+**Maximum editing passes** (1 to 10, default 5) — how many times the editor may pass over the text in one run. Each pass is a separate model call; the editor stops earlier when there is nothing left to change. The value is kept for each story separately.
+
 Changes to numbers, negations and large parts of the text are flagged with warnings. The **Optional change classifier** is a separate paid call that only advises which changes are stylistic; it ticks nothing.
 
 Every role has a standard prompt for its mode. You can write your own prompt instead; after changing the mode, adapt it and tick **I adapted the custom prompt and assign it to the selected stage and mode**, or press **Restore default prompt**. The application checks only the response format, not the content of your instructions.
@@ -37,4 +39,4 @@ The **Voice sample** field in the **Writing profile** takes a passage of up to 3
 
 ## Scene statistics
 
-Below the editor you see the word and character count of the current text. Expand **Scene and context statistics** to see the size of saved materials, the prose compared with the word target, and what makes up the request of the chosen stage: outline, memory, characters, reserve. Tokens here are an estimate, not a count by the model's tokenizer. **Refresh statistics** recalculates without a model call.
+Below the editor you see the word and character count of the current text. Expand **Scene and context statistics** to see the size of saved materials, the prose compared with the word target, and what makes up the request of the chosen stage: outline, memory, characters, reserve. The **Current prose** line shows the scene's prose words against its target, and in brackets the same for the whole story. Only the current prose of each active scene counts: earlier versions, alternatives and scenes in the trash are not added up, and a scene without prose or without a target counts as 0. In the Microsoft Store edition the section is called **Scene statistics** and shows only the materials table and the prose line. Tokens here are an estimate, not a count by the model's tokenizer. **Refresh statistics** recalculates without a model call.

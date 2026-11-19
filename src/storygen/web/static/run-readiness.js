@@ -7,10 +7,9 @@ export function operationReason(state,operation){
   if(!operation)return t("m_a8900573fc3e");
   return operation.ready||operation.can_confirm?'':operation.reason||t("m_1ff0aee46b1d");
 }
-export function editorLoopOperation(operation,limit){
-  if(!Number.isInteger(limit)||limit<1||limit>10)throw new Error(t("m_7a3edd75b937"));
-  const calls=operation?.edit_loop_scenes?operation.calls+(limit-operation.edit_pass_limit)*operation.edit_loop_scenes:limit;
-  return {...operation,calls,warnings:[...(operation?.warnings||[]),msg("m_61c8ee57393c")]};
+// EDIT-LOOP: the server fills the pass limit from the editor settings and counts the calls with it.
+export function editorLoopOperation(operation){
+  return {...operation,warnings:[...(operation?.warnings||[]),msg("m_61c8ee57393c")]};
 }
 export function confirmationText(operation){
   const roles=Object.entries(operation.roles).map(([role,c])=>`${role}: ${c.provider} / ${c.model}`);

@@ -7,9 +7,11 @@ import {api,json,notice} from './api.js';
 import {state,refresh,loadBuffer,textEditor} from './editor.js';
 import {registerWorkspaceCommand} from './workspace-commands.js';
 import {assertReadyDispatch} from './workspace-state.js';
-import {readEditPassLimit,rememberEditPassLimit} from './edit-pass-limit.js';
 import {operationReason,confirmationText,runKind,controlReason,materialReason,editorLoopOperation} from './run-readiness.js';
-const controls=document.querySelector('#generation-controls'),status=document.querySelector('#run-status'),live=document.querySelector('#live-text');
+// STORE-FOOTER: the Store page has no extra actions; their buttons then live in a detached node.
+const controls=document.querySelector('#generation-controls')||document.createElement('div'),status=document.querySelector('#run-status'),live=document.querySelector('#live-text');
+// R20-WORKSPACE: «Текст, що пише модель» opens while a stage runs and closes once its text is in.
+const modelOutput=open=>{const block=live.closest?.('details');if(block)block.open=open};
 const terminal=new Set(['completed','failed','cancelled','interrupted','needs_review','alternative','paused']);
 const names={get queued(){return t("m_eb3c78969040")},get running(){return t("m_b4232dd37ccb")},get pause_requested(){return t("m_7b3ff291c3da")},get paused(){return t("m_914a1d354f3b")},get cancellation_requested(){return t("m_4037d1b317aa")},get cancelled(){return t("m_7c3f9efa92f8")},get completed(){return t("m_016bc923f7ff")},get failed(){return t("m_57467fc4b91f")},get interrupted(){return t("m_e8bcb6c8f22e")},get needs_review(){return t("m_f2898eb5c9bf")},get alternative(){return t("m_ea160912aa6f")}};
 let active=null,source=null,last=0,started=Date.now(),followEpoch=0;
@@ -135,11 +137,11 @@ async function follow(run){
   source=new EventSource(`/api/runs/${run.id}/events`);
   const reader=source;
   source.onmessage=async message=>{try{if(epoch!==followEpoch)return;const event=JSON.parse(message.data);last=event.seq;
-    if(event.type==='stage_started'){if(event.created_at)started=Date.parse(event.created_at);uiText(live,"textContent",()=>(''));const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>((event.data.edit_loop_pass?t("m_9a029cc4638c",{p0:(event.data.edit_loop_pass),p1:(event.data.edit_loop_limit)}):'')+`${event.data.stage} · ${event.data.model} · ${event.data.provider}`));status.append(p);waitingWhole=event.data.streaming===false;if(waitingWhole)uiText(live,"textContent",()=>t('run.waiting_whole_answer'))}
+    if(event.type==='stage_started'){modelOutput(true);if(event.created_at)started=Date.parse(event.created_at);uiText(live,"textContent",()=>(''));const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>((event.data.edit_loop_pass?t("m_9a029cc4638c",{p0:(event.data.edit_loop_pass),p1:(event.data.edit_loop_limit)}):'')+`${event.data.stage} · ${event.data.model} · ${event.data.provider}`));status.append(p);waitingWhole=event.data.streaming===false;if(waitingWhole)uiText(live,"textContent",()=>t('run.waiting_whole_answer'))}
     if(event.type==='delta'){if(waitingWhole){waitingWhole=false;uiText(live,"textContent",()=>'')}live.textContent+=event.data.text}
-    if(event.type==='stage_finished'){if(Object.keys(event.data.usage||{}).length){runCosts=addRunCost(runCosts,run.id,event.data.attempt_id,event.data.usage);if(active?.id===run.id&&summaryNode?.isConnected){summaryNode.replaceWith(summaryButton(active));applyExpanded(active)}}else{const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>(t("m_59303d743463")));status.append(p)}await refresh({fresh:true})}
+    if(event.type==='stage_finished'){modelOutput(false);if(Object.keys(event.data.usage||{}).length){runCosts=addRunCost(runCosts,run.id,event.data.attempt_id,event.data.usage);if(active?.id===run.id&&summaryNode?.isConnected){summaryNode.replaceWith(summaryButton(active));applyExpanded(active)}}else{const p=document.createElement('p');p.className='run-detail';uiText(p,"textContent",()=>(t("m_59303d743463")));status.append(p)}await refresh({fresh:true})}
     if(event.type==='evaluation_warning'||event.type==='evaluation_skipped'){notice(event.data.failure?.message||event.data.reason||event.data.reasons?.join('; ')||t("m_8c627045acd1"),'warning');document.dispatchEvent(new CustomEvent('evaluation-policy-changed'))}
-    if(event.type==='state'||event.type==='context_warning'){const stamp=++stateFetch,current=await api('/api/runs/'+run.id,{fresh:true});if(epoch!==followEpoch||stamp!==stateFetch)return;draw(current.run);if(terminal.has(current.run.state)){uiText(live,"textContent",()=>(current.partial));reader.close();followEpoch++;notice(names[current.run.state]+(current.run.error||current.run.warning?': '+(current.run.error||current.run.warning):''),current.run.warning&&current.run.state!=='failed'?'warning':runKind(current.run.state));await refresh({fresh:true})}}
+    if(event.type==='state'||event.type==='context_warning'){const stamp=++stateFetch,current=await api('/api/runs/'+run.id,{fresh:true});if(epoch!==followEpoch||stamp!==stateFetch)return;draw(current.run);if(terminal.has(current.run.state)){modelOutput(false);uiText(live,"textContent",()=>(current.partial));reader.close();followEpoch++;notice(names[current.run.state]+(current.run.error||current.run.warning?': '+(current.run.error||current.run.warning):''),current.run.warning&&current.run.state!=='failed'?'warning':runKind(current.run.state));await refresh({fresh:true})}}
     }catch(error){notice(error.message,'error')}
   };
   source.onerror=()=>{if(epoch===followEpoch&&active&&!terminal.has(active.state))notice(msg("m_0907c7c982d4"),'warning')};
@@ -154,17 +156,17 @@ async function start(mode,stage,options={}){
   if(options.signal?.aborted)throw new DOMException('Cancelled','AbortError');
   assertReadyDispatch(state,captured);
   let operation=readiness?.operations[stage||mode];
-  const passLimit=Number(document.querySelector('#edit-pass-limit')?.value||5);
   const usesEditorLoop=['edit_loop','scene','remaining'].includes(mode);
-  if(usesEditorLoop)operation=editorLoopOperation(operation,passLimit);
+  if(usesEditorLoop)operation=editorLoopOperation(operation);
   const reason=operationReason(state,operation);
   if(reason)throw new Error(reason);
   if((!options.primary||operation.memory_review)&&!await confirmDialog(confirmationText(operation)))return;
   if(options.signal?.aborted)throw new DOMException('Cancelled','AbortError');
   assertReadyDispatch(state,captured);
-  const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each').checked?['brief','draft','edit','memory']:[]};
+  const request={story_id:state.storyId,scene_id:mode==='prepare'?null:state.scene.id,mode,stage:stage||null,pause_after:document.querySelector('#pause-each')?.checked?['brief','draft','edit','memory']:[]};
   if(mode==='stage'&&stage==='memory'&&operation.memory_review)request.memory_approval=operation.memory_review.fingerprint;
-  if(usesEditorLoop){request.edit_pass_limit=passLimit;request.edit_workflow='loop'}
+  // EDIT-LOOP-REVIEW: the run takes the limit the author confirmed, not a later settings value.
+  if(usesEditorLoop){request.edit_workflow='loop';if(Number.isInteger(operation.edit_pass_limit))request.edit_pass_limit=operation.edit_pass_limit}
   if(mode==='edit_loop')Object.assign(request,selectedSource(options));
   request.budget_limit_usd=document.querySelector('#run-budget')?.value||null;
   const key='storygen.pending.'+(options.primary?tabId+'.':'')+JSON.stringify(request),storage=options.primary?sessionStorage:localStorage;let requestId=storage.getItem(key)||crypto.randomUUID();storage.setItem(key,requestId);
@@ -181,11 +183,7 @@ controls.hidden=false;
 function button(label,fn,operation=null,action=null){const wrapper=document.createElement('span');wrapper.className='run-action';const b=document.createElement('button'),hint=document.createElement('small');hint.id='run-reason-'+actions.length;b.className='secondary';uiText(b,"textContent",()=>(label));const item={button:b,hint,wrapper,operation,action,busy:false};actions.push(item);b.onclick=async()=>{const hadFocus=document.activeElement===b;item.busy=true;updateControls();if(hadFocus){wrapper.tabIndex=-1;wrapper.focus()}try{await fn()}catch(e){notice(e.message,'error')}finally{item.busy=false;updateControls();if(operation)scheduleReadiness()}};wrapper.append(b,hint);(document.querySelector('#run-actions')&&['pause','cancel','resume','repeat','accepted'].includes(action)?document.querySelector('#run-actions'):controls).append(wrapper);updateControls();return wrapper}
 button(liveLabel(()=>(t("m_4c7f8d65f750"))),()=>start('prepare'),'prepare');
 for(const [stage,label] of labelEntries({get brief(){return t("m_27e8e3278f1a")},get draft(){return t("m_a0503ed62ae7")},get edit(){return t("m_c542d0ba7da5")},get memory(){return t("m_05c4218abe15")}})){
-  if(stage==='edit'){
-    const editorAction=button(label,()=>start('edit_loop'),'edit_loop');
-    const passLabel=document.createElement('label');uiHTML(passLabel,"<span data-i18n=\"m_6c1316f99476\">Максимум проходів редактури</span><input id=\"edit-pass-limit\" type=\"number\" min=\"1\" max=\"10\" step=\"1\" value=\"5\">",{});editorAction.append(passLabel);
-    const passInput=document.querySelector('#edit-pass-limit');passInput.value=String(readEditPassLimit(state.storyId));passInput.addEventListener('input',()=>rememberEditPassLimit(state.storyId,Number(passInput.value)));
-  }
+  if(stage==='edit')button(label,()=>start('edit_loop'),'edit_loop');
   else button(label,()=>start('stage',stage),stage);
 }
 button(liveLabel(()=>(t("m_3f2da413a47a"))),()=>start('scene'),'scene');button(liveLabel(()=>(t("m_9d2918521914"))),()=>start('remaining'),'remaining');

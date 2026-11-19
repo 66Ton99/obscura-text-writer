@@ -8,8 +8,6 @@ test('draft displays editor and planned calls before starting',async({page,reque
   await expect(telemetry).not.toContainText('⚠');
   await page.locator('[data-ui-locale="uk"]').click();await expect(telemetry).toHaveText('local / synthetic-no-changes · до 5 викл.');
   await page.locator('[data-ui-locale="en"]').click();await expect(telemetry).toHaveText('local / synthetic-no-changes · up to 5 calls');
-  await page.locator('#edit-pass-limit').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
-  await expect(telemetry).toHaveText('local / synthetic-no-changes · up to 3 calls');
   await page.locator('#workspace-primary').focus();
   await expect(page.locator('#workspace-telemetry-details')).toBeVisible();
   await page.screenshot({path:testInfo.outputPath('telemetry.png')});

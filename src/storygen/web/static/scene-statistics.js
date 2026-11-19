@@ -5,16 +5,17 @@ const labels={get plan(){return t("m_3146141c9367")},get brief(){return t("m_5a2
 const groups={get system(){return t("m_cfd2384225f6")},get plans(){return t("m_3b55c2af5527")},get characters(){return t("m_fda6febf7bc7")},get memory(){return t("m_aa1cfb48cc30")},get previous_tail(){return t("m_cfeb3b7c3dc9")},get brief(){return t("m_5a2ec5eaf0a1")},get draft(){return t("m_50c3770dbdf6")},get prose(){return t("m_9c685577453c")},get other(){return t("m_2ba58492f61e")},get response_schema(){return t("m_477ae4bbd201")},get protocol(){return t("m_bcac9d5b1d6f")}};
 const categories={get facts(){return t("m_d7faf80a1479")},get character_states(){return t("m_eda54a73a727")},get open_threads(){return t("m_2d082c022b82")},get timeline(){return t("m_208c38963ff5")}};
 
-export function installSceneStatistics({state,api,document}){
+// STORE-FOOTER: `store` shows only the materials table and the prose line and asks for the light response.
+export function installSceneStatistics({state,api,document,store=false}){
   const host=document.querySelector('#scene-statistics');if(!host)return;
   const textEditor=createTextEditor(document.querySelector('#editor'));
   const node=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)uiText(n,"textContent",()=>(String(text)));return n;};
-  const compact=node('p'),details=node('details'),summary=node('summary',msg("m_7ab2ade83e6e"));
+  const compact=node('p'),details=node('details'),summary=node('summary',store?msg('stats.summary_store'):msg("m_7ab2ade83e6e"));
   const stage=node('select');uiAttr(stage,'aria-label',()=>(t("m_e100ff24e7e6")));
   for(const [value,label] of [['brief',msg("m_27e8e3278f1a")],['draft',msg("m_a0503ed62ae7")],['edit',msg("m_c542d0ba7da5")],['memory',msg("m_05c4218abe15")]]){const option=node('option',live(()=>(label)));option.value=value;stage.append(option);}
   stage.value='draft';
   const reload=node('button',msg("m_0d5314e02813"));reload.type='button';reload.className='secondary';
-  const controls=node('div');controls.className='actions';controls.append(stage,reload);
+  const controls=node('div');controls.className='actions';if(store)controls.append(reload);else controls.append(stage,reload);
   const status=node('p');status.setAttribute('role','status');const body=node('div');
   details.append(summary,controls,status,body);host.append(compact,details);
   let epoch=0;
@@ -35,7 +36,8 @@ export function installSceneStatistics({state,api,document}){
   function render(data){
     body.replaceChildren();body.append(node('h3',msg("m_36d1ede72ecf")));
     table([msg("m_bb1bd3087adb"),msg("m_6aed0c4d8e9f"),msg("m_43faaa884006"),msg("m_5333d2e9fcf4")],Object.entries(data.materials).map(([key,m])=>[live(()=>labels[key]),m?.words,m?.characters,live(()=>!m?t("m_d382957ff069"):!m.complete?t("m_95b192576ae2"):m.stale?t("m_8f11db75e9e9"):m.version_id?t("m_3a3b72738467"):t("m_f414d7717fc7"))]));
-    const prose=data.materials.prose;body.append(node('p',live(()=>(t("m_9e4e840556de",{p0:(prose?prose.words:'—'),p1:(data.target_words)})))));
+    const prose=data.materials.prose,totals=data.story_totals;body.append(node('p',live(()=>(t('stats.prose_line',{p0:(prose?prose.words:'—'),p1:(data.target_words),p2:(totals?.prose_words??'—'),p3:(totals?.target_words??'—')})))));
+    if(store)return;
     for(const [key,title] of [['previous',msg("m_c6cecc869f8a")],['through_scene',msg("m_80a7d9ba02de")]]){
       const m=data.memory[key];body.append(node('h3',live(()=>(title))));
       if(!m?.available){body.append(node('p',live(()=>(diagnostic(m?.reason)||t("m_e3b740479858")))));continue;}
@@ -63,15 +65,15 @@ export function installSceneStatistics({state,api,document}){
     uiText(status,"textContent",()=>(t("m_a307b67d11c5")));body.replaceChildren();
     try{
       const sourceHead=stage.value==='edit'&&['draft','prose'].includes(state.mode)?state.mode:null;
-      const query=new URLSearchParams({stage:stage.value});
-      if(sourceHead&&state.scene.heads?.[sourceHead]){query.set('editor_source_head',sourceHead);query.set('editor_source_version_id',state.scene.heads[sourceHead]);}
+      const query=new URLSearchParams(store?{details:'false'}:{stage:stage.value});
+      if(!store&&sourceHead&&state.scene.heads?.[sourceHead]){query.set('editor_source_head',sourceHead);query.set('editor_source_version_id',state.scene.heads[sourceHead]);}
       const result=await api(`/api/scenes/${id}/statistics?${query}`);
       state.workspaceMaterials=result.materials;if(document.dispatchEvent)document.dispatchEvent(new CustomEvent('workspace-statistics'));
       if(stamp!==epoch||state.scene?.id!==id)return;
       render(result);uiText(status,"textContent",()=>(t("m_e639137a54f5",{p0:(result.scene_revision)})));
     }catch(error){if(stamp===epoch&&state.scene?.id===id)uiText(status,"textContent",()=>(diagnostic(error.message)));}
   }
-  details.addEventListener('toggle',()=>void load());stage.addEventListener('change',()=>void load());reload.addEventListener('click',()=>void load());
+  details.addEventListener('toggle',()=>void load());if(!store)stage.addEventListener('change',()=>void load());reload.addEventListener('click',()=>void load());
   document.addEventListener('editor-state-changed',buffer);
   for(const event of ['scene-selected','story-refreshed'])document.addEventListener(event,()=>{buffer();void load();});
   buffer();return {compact,details,body,load};

@@ -84,6 +84,7 @@ class RoleSettings(DomainModel):
     memory_mode: Literal['evidence_delta'] = 'evidence_delta'
     edit_mode: Literal['prose', 'patches', 'diff'] = 'prose'
     edit_review: Literal['auto', 'review'] = 'auto'
+    edit_pass_limit: int = Field(default=5,ge=1,le=10)  # EDIT-LOOP: passes of a run whose request has no limit
     classification: ClassificationSettings | None = None
     stop_sequences: list[Annotated[str,Field(min_length=1,max_length=200)]] = Field(default_factory=list,max_length=4)
     low_rating_variant: RoleVariant | None = None

@@ -18,7 +18,7 @@ class RunRequest(DomainModel):
     impact_plan_fingerprint: str | None = Field(default=None,pattern=r'^[a-f0-9]{64}$')
     impact_protocol: Literal[3] | None = None
     review_contract_version: Literal[3,4] | None = None
-    edit_pass_limit: int = Field(default=5,ge=1,le=10,strict=True)
+    edit_pass_limit: int | None = Field(default=None,ge=1,le=10,strict=True)  # None: the editor settings decide
     edit_workflow: Literal['single','loop'] = 'single'
     editor_source_head: Literal['draft','prose'] | None = None
     editor_source_version_id: str | None = Field(default=None,min_length=1)

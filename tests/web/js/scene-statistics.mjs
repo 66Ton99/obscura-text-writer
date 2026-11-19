@@ -37,4 +37,23 @@ const texts=ui.body.children.map(n=>String(n.textContent));
 assert.ok(texts.some(t=>/Відбір пам’яті: вибрано 4 з 9, відкинуто 5 \(пошук за планом: 3, хронологія: 2\)/.test(t)),texts.join('|'));
 const narrowed=ui.load();release({scene_id:'b',scene_revision:3,materials:{},memory:{previous:{available:false},through_scene:{available:false}},context:{...context,memory_selection:undefined,memory_narrow:{hidden:7}},target_words:800,last_usage:null});await narrowed;
 assert.ok(ui.body.children.some(n=>/Каталог пам’яті звужено: не показано моделі 7/.test(String(n.textContent))));
+// R18-STATS: the prose line carries the whole-story totals; the counting rule lives in the instructions, not here.
+const full=ui.load();release({scene_id:'b',scene_revision:4,materials:{prose:{words:3,characters:9,complete:true,stale:false,version_id:'v'}},memory:{previous:{available:false},through_scene:{available:false}},context:{available:false},target_words:400,story_totals:{prose_words:24200,target_words:30000,scenes:12},last_usage:null});await full;
+const lines=ui.body.children.map(n=>String(n.textContent));
+assert.ok(lines.includes('Поточна проза: 3 / 400 цільових слів (24200 / 30000 весь твір)'),lines.join('|'));
+assert.ok(!lines.some(t=>/не підсумовуються/.test(t)));
+// STORE-FOOTER-S01: Store asks for the light response and shows only materials and the prose line.
+{
+  const host=new Node(),doc={querySelector:id=>id==='#scene-statistics'?host:nodes.get(id),createElement:()=>new Node(),addEventListener:()=>{}};
+  const urls=[];let done;const storeApi=url=>{urls.push(url);return new Promise(resolve=>done=resolve)};
+  const store=installSceneStatistics({state:{scene:{id:'s1',heads:{}},mode:'draft',dirty:false,bufferOrigin:'current'},api:storeApi,document:doc,store:true});
+  const walk=node=>[node,...(node.children||[]).flatMap(walk)];
+  assert.ok(!walk(host).some(n=>n.children&&n.value==='draft'),'no stage select in Store');
+  store.details.open=true;const loading=store.load();
+  done({scene_id:'s1',scene_revision:1,materials:{prose:{words:3,characters:9,complete:true,stale:false,version_id:'v'}},target_words:400,story_totals:{prose_words:3,target_words:400,scenes:1}});await loading;
+  assert.match(urls[0],/details=false/);assert.doesNotMatch(urls[0],/stage=/);
+  const shown=store.body.children.map(n=>String(n.textContent));
+  assert.ok(shown.includes('Поточна проза: 3 / 400 цільових слів (3 / 400 весь твір)'),shown.join('|'));
+  assert.equal(store.body.children.filter(n=>n.children.length===0&&/Контекст|Пам’ять|виклик/i.test(String(n.textContent))).length,0,shown.join('|'));
+}
 console.log('statistics UI guards passed');

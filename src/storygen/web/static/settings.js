@@ -32,6 +32,7 @@ async function load(onlyRole=null){
     if(role==='planner')uiInsertHTML(form,'beforeend',"<label><span data-i18n=\"m_d3594f6b0020\">Окремий промпт підготовки структури</span><textarea name=\"prepare_prompt_text\" rows=\"4\" placeholder=\"Стандартний промпт підготовки\" data-i18n-attrs='{\"placeholder\":\"m_ddd756ac7c81\"}'></textarea></label>");
     if(role==='editor')uiInsertHTML(form,'beforeend',"<label><span data-i18n=\"m_1957022cf52c\">Режим редактора</span><select name=\"edit_mode\"><option value=\"prose\" data-i18n=\"m_237991f9d28d\">Повна літературна версія</option><option value=\"patches\" data-i18n=\"m_fb139d04582b\">Точкові мовні правки</option><option value=\"diff\" data-i18n=\"m_44f181c12a60\">Редактура з переглядом змін</option></select></label><p><span data-i18n=\"m_65dbe06c0d53\">Режим перегляду повертає звичайний текст без JSON Schema. Програма виділяє зміни й завжди чекає авторського рішення.</span></p>");
     if(role==='editor')uiInsertHTML(form,'beforeend',"<label><span data-i18n=\"m_9306e22d8bfb\">Застосування точкових правок</span><select name=\"edit_review\"><option value=\"auto\" data-i18n=\"m_a45a12fa5f5a\">Автоматично після перевірки</option><option value=\"review\" data-i18n=\"m_fe373cb07534\">Спочатку перегляд автором</option></select></label><p><span data-i18n=\"m_6bbd41ee0dce\">Перегляд стосується точкових правок. Workflow чекатиме на вибір і явне продовження.</span></p>");
+    if(role==='editor')uiInsertHTML(form,'beforeend',"<label><span data-i18n=\"m_6c1316f99476\">Максимум проходів редактури</span><input name=\"edit_pass_limit\" type=\"number\" min=\"1\" max=\"10\" step=\"1\" required><small class=\"settings-hint\"><span data-i18n=\"settings.edit_pass_limit_hint\">Скільки разів редактор може пройти чернетку за один запуск. Кожен прохід — окремий виклик моделі.</span></small></label>");
     if(role==='memory')uiInsertHTML(form,'beforeend',"<label><span data-i18n=\"m_839c80ab7eef\">Режим пам’яті</span><select name=\"memory_mode\"><option value=\"evidence_delta\" data-i18n=\"memory.mode.evidence_delta_v4\">Операції пам’яті v4 за доказами</option></select><small class=\"settings-hint\"><span data-i18n=\"memory.mode.schema_hint\">Для моделей, що підтримують схему, оберіть режим відповіді json_schema — він унеможливлює більшість помилок формату.</span></small></label>");
     if(role==='editor'||role==='memory'){const hint=document.createElement('p');uiText(hint,"textContent",()=>(t("m_2a38a1b3e96e")));form.append(hint);}
     const horizonControls=mountHorizonControls(form,role,config);
@@ -50,6 +51,7 @@ async function load(onlyRole=null){
     uiText(form.querySelector('h2'),"textContent",()=>(name));
     if(role==='editor')form.elements.edit_mode.value=config.edit_mode||'prose';
     if(role==='editor')form.elements.edit_review.value=config.edit_review||'auto';
+    if(role==='editor')form.elements.edit_pass_limit.value=String(config.edit_pass_limit??5);
     if(role==='memory')form.elements.memory_mode.value=config.memory_mode||'evidence_delta';
     for(const field of ['context_tokens','max_output_tokens','max_input_chars','temperature'])form.elements[field].value=config[field];
     for(const field of ['provider','base_url','model','timeout','key_env','response_mode'])form.elements[field].value=config.provider[field];
@@ -90,6 +92,7 @@ async function load(onlyRole=null){
         const settings={...config,...horizonControls.read(),provider:provider(),stop_sequences:form.elements.stop_sequences.value.split(/\r?\n/).filter(value=>value.length>0)};for(const field of ['context_tokens','max_output_tokens','max_input_chars','temperature'])settings[field]=Number(form.elements[field].value);
         if(role==='editor')settings.edit_mode=form.elements.edit_mode.value;
         if(role==='editor')settings.edit_review=form.elements.edit_review.value;
+        if(role==='editor')settings.edit_pass_limit=Number(form.elements.edit_pass_limit.value);
         if(role==='editor')settings.classification=classification.read();
         if(role==='memory')settings.memory_mode=form.elements.memory_mode.value;
         if(role==='writer')settings.low_rating_variant=variant.read();

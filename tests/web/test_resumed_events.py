@@ -25,3 +25,7 @@ def test_short_run_latest_and_proposal_buttons_target_the_right_runs():_runs_fol
 def test_short_run_keeps_state_when_the_detail_fetch_fails():_runs_follow('failure')
 def test_review_session_picks_the_protocol_3_run_from_the_short_list():_runs_follow('review')
 def test_server_event_refetch_does_not_join_an_older_run_request():_runs_follow('stale')
+
+
+@pytest.mark.req('R20-WORKSPACE')
+def test_model_text_block_opens_for_a_stage_and_closes_after_it():_runs_follow('output')

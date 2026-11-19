@@ -2639,7 +2639,23 @@
     "codex.install_busy": "Інший установник працює або залишив замок після збою. Зачекайте; перед ручним вилученням замка переконайтеся, що установник завершився.",
     "codex.unsafe_install_root": "Небезпечний шлях встановлення: корінь є посиланням або непридатною текою. Перевірте .agents і skills; Obscura їх не змінювала.",
     "codex.current_name": "Уже актуальний: {p0}",
-    "codex.install_path_changed": "Шлях встановлення змінився або став непридатним. Перевірте теки, відновлені файли й резервні копії перед повторною спробою."
+    "codex.install_path_changed": "Шлях встановлення змінився або став непридатним. Перевірте теки, відновлені файли й резервні копії перед повторною спробою.",
+    "settings.edit_pass_limit_hint": "Скільки разів редактор може пройти чернетку за один запуск. Кожен прохід — окремий виклик моделі.",
+    "workspace.take_as_prose": "Взяти як прозу",
+    "workspace.edit_again": "Редагувати",
+    "stats.prose_line": "Поточна проза: {p0} / {p1} цільових слів ({p2} / {p3} весь твір)",
+    "stats.summary_store": "Статистика сцени",
+    "workspace.model_text": "Текст, що пише модель",
+    "history.kind.draft": "Чернетка",
+    "history.kind.edited": "Редактура",
+    "history.kind.manual": "Проза",
+    "history.compare_current": "Порівняти з поточним текстом",
+    "history.restore": "Повернути цю версію",
+    "history.restore_confirm": "Зберегти текст цієї версії як нову поточну версію? Нинішній текст лишиться в історії.",
+    "history.already_same": "Текст уже такий самий",
+    "history.restored": "Версію повернуто",
+    "history.no_head": "Немає поточного тексту цього матеріалу",
+    "history.is_current": "Це вже поточна версія"
   },
   "en": {
     "ui.save": "Save",
@@ -5281,6 +5297,22 @@
     "codex.install_busy": "Another installer is running or left a lock after a crash. Wait; before removing the lock manually, confirm the installer has stopped.",
     "codex.unsafe_install_root": "Unsafe path: the installation root is a link or an unsuitable folder. Check .agents and skills; Obscura has not changed them.",
     "codex.current_name": "Already current: {p0}",
-    "codex.install_path_changed": "The installation path changed or became unsuitable. Review folders, restored files and backups before trying again."
+    "codex.install_path_changed": "The installation path changed or became unsuitable. Review folders, restored files and backups before trying again.",
+    "settings.edit_pass_limit_hint": "How many times the editor may pass over the draft in one run. Each pass is a separate model call.",
+    "workspace.take_as_prose": "Use as prose",
+    "workspace.edit_again": "Edit",
+    "stats.prose_line": "Current prose: {p0} / {p1} target words ({p2} / {p3} whole story)",
+    "stats.summary_store": "Scene statistics",
+    "workspace.model_text": "Text the model is writing",
+    "history.kind.draft": "Draft",
+    "history.kind.edited": "Edited",
+    "history.kind.manual": "Prose",
+    "history.compare_current": "Compare with the current text",
+    "history.restore": "Restore this version",
+    "history.restore_confirm": "Save the text of this version as the new current version? The present text stays in the history.",
+    "history.already_same": "The text is already the same",
+    "history.restored": "Version restored",
+    "history.no_head": "There is no current text of this material",
+    "history.is_current": "This is already the current version"
   }
 }

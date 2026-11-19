@@ -289,9 +289,9 @@ WORKSPACE-TOOLS-S05. Автоматична частина — Playwright `tests
 MODEL-005-S03. Автоматична частина — Playwright case «limits above the chosen model caps block the save until fixed» у `tests/web/browser/model-picker.spec.mjs` (поле резерву відповіді отримує `max` з каталогу, значення понад межу показує пояснення й не надсилає PUT, допустиме значення зберігається): `node frontend/node_modules/@playwright/test/cli.js test tests/web/browser/model-picker.spec.mjs --config frontend/playwright.config.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
 
 <a id="edit-pass-limit-browser"></a>
-## Максимум проходів редактури після перезавантаження
+## Максимум проходів редактури в налаштуваннях редактора
 
-EDIT-LOOP-REVIEW-S02. Автоматична частина — Playwright `tests/web/browser/edit-pass-limit.spec.mjs` (значення 3 зберігається після переходу на сторінку налаштувань і назад; інший твір показує типове 5): `node frontend/node_modules/@playwright/test/cli.js test tests/web/browser/edit-pass-limit.spec.mjs --config frontend/playwright.config.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
+EDIT-LOOP-REVIEW-S02. Автоматична частина — Playwright `tests/web/browser/edit-pass-limit.spec.mjs` (поле «Максимум проходів редактури» видиме у формі редактора на сторінці налаштувань, типово 5; збережене значення 3 повертає API налаштувань, а оцінка біля основної дії на вкладці «Чернетка» показує до 3 викликів; поля в робочій області немає): `node frontend/node_modules/@playwright/test/cli.js test tests/web/browser/edit-pass-limit.spec.mjs --config frontend/playwright.config.mjs`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
 
 <a id="model-policy-browser"></a>
 ## Згода й позначка відмови в браузері
@@ -353,8 +353,9 @@ PACKAGING-001, DESKTOP-001, STORE-MCP-001 наживо. Не виконано. �
 3. **Приватний тестовий випуск у Partner Center.** Подати пакет у приватний (private audience) випуск, додати свій обліковий запис Microsoft до аудиторії, встановити застосунок за посиланням зі Store. Такий пакет підписує Microsoft, і Smart App Control його пропускає.
 4. **Перевірки встановленого застосунку.** Застосунок запускається з меню «Пуск» без консолі й відкриває окреме вікно Obscura (без вкладок); лівий клік по значку виводить те саме вікно наперед; у `%USERPROFILE%\Obscura\.window` лежить профіль вікна, а в `%LOCALAPPDATA%\Packages\<пакет>\LocalCache` профілю немає; у треї є значок, меню мовою інтерфейсу Windows (українська — українською, інакше англійською), «Вийти» зупиняє застосунок; у налаштуваннях підключення можна зберегти й видалити тестовий ключ (не справжній) у сховищі Windows; назва змінної `venice_api_key` зберігається як `VENICE_API_KEY`; твори лежать у `%USERPROFILE%\Obscura`; рівень 2 сексуального змісту недоступний для запису, а твір із ним, відновлений з копії, експортується з позначкою `18+`.
 5. **Чат-клієнти.** «Підключити Claude Code» реєструє міст і встановлює скіли: у новій сесії Claude Code `/obscura:start-story` доступний, `obscura-mcp.exe --self-check` друкує `guide: ok`. «Скіли для Claude Desktop» кладе п’ять ZIP у `%USERPROFILE%\Obscura\claude\skills`; один із них завантажується в Claude Desktop (Customize → Skills → Upload a skill).
-6. **WACK.** Windows App Certification Kit для встановленого пакета без помилок; попередження записати.
-7. Після видалення застосунку (`Remove-AppxPackage`) тека творів лишається.
+6. **Підвал редактора (STORE-FOOTER).** У сцені з прозою під матеріалом немає «Параметрів запуску» й «Додаткових дій та автоматичного режиму»; «Статистика сцени» показує таблицю матеріалів і рядок «Поточна проза: … (… весь твір)»; «Історія та альтернативні версії» має три кнопки, а «Повернути цю версію» для старішої прози робить її поточною; на вкладці «Чернетка» ліворуч від основної дії є «Взяти як прозу».
+7. **WACK.** Windows App Certification Kit для встановленого пакета без помилок; попередження записати.
+8. Після видалення застосунку (`Remove-AppxPackage`) тека творів лишається.
 
 <a id="series-browser"></a>
 ## Серії книг у браузері
@@ -483,6 +484,11 @@ Store: C:/tmp/obscura-codex-store-20261118, чинний build_store.py --editio
 ### B1 — завершене checkout-приймання18.11.2026
 
 B1 виконано 18.11.2026, запуск 20261118-164659-b6b2f8 (15:46:59–15:49:25 UTC, 16:46–16:49 Europe/Warsaw), checkout027434b. Штатний установник встановив усі п’ять скілів у C:/Users/Test/.agents/skills; MCP configured у Test/.codex/config.toml зі штатною копією. CLI0.166.0 та app backend0.169.0-alpha.11.1 підтвердили ті самі п’ять user-scope шляхів, discovery_errors=0,27tools incl get_guide, list_stories=[] без помилки; model_turns=0. Власник підтвердив у GUI всі п’ять скілів і enabled obscura. Загальний automatic/status=PASS. Доказ: docs/verification/evidence/2026-11-18-codex-b1.json (копія без Windows SID, SHA-256 оригіналу збережено). Це закриває checkout B1, але не доводить Store runtime/license чи літературну якість. Тестову Obscura після перевірки зупинено; її збережений у Test MCP URL належить цьому завершеному тестовому запуску.
+
+<a id="store-footer-browser"></a>
+## Підвал редактора й основна панель (STORE-FOOTER)
+
+R20-WORKSPACE-S07, STORE-FOOTER-S01, STORE-FOOTER-S02. Автоматична частина — Playwright `tests/web/browser/store-footer.spec.mjs` (на вкладці «Чернетка» «Взяти як прозу» стоїть ліворуч від основної дії й зберігає чернетку як прозу з її форматом; у виданні Store немає «Параметрів запуску», «Додаткових дій» і розбору контексту; історія Store показує лише текстові версії й повертає версію з її форматом) і `tests/web/browser/scene-delete.spec.mjs` (у підвалі немає «Видалити сцену»): `node frontend/node_modules/@playwright/test/cli.js test tests/web/browser/store-footer.spec.mjs tests/web/browser/scene-delete.spec.mjs --config frontend/playwright.config.mjs`. Браузерний сервер імпортує пакет із `PYTHONPATH`, тож у worktree задайте `PYTHONPATH=<worktree>/src`. Цей зв’язок не є доказом виконання; фактичний запуск фіксується окремо.
 
 <a id="plan-preamble-panel"></a>
 ## Панель «Загальні вказівки з плану»

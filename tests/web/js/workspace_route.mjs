@@ -10,6 +10,11 @@ await performPrimary(deps);
 assert.equal(calls[0],'save');assert.equal(calls[1].editor_source_head,'draft');assert.equal(calls[1].editor_source_version_id,'d');
 state.mode='prose';state.scene.heads.memory='m';
 assert.match(primaryAction(state).label,/новий варіант пам/);
+// R20-WORKSPACE: the repeat action on the draft tab is a short «Редагувати».
+{const repeat={scene:{id:'c',heads:{draft:'d',prose:'p'}},mode:'draft',dirty:false};
+assert.equal(primaryAction(repeat).label,'Редагувати');
+assert.equal(primaryAction({...repeat,dirty:true}).label,'Зберегти й редагувати');
+assert.equal(primaryAction({...repeat,scene:{id:'c',heads:{draft:'d'}}}).label,'Зберегти й редагувати');}
 state.mode='draft';state.dirty=true;calls.length=0;
 await assert.rejects(performPrimary({...deps,save:async()=>{throw Error('CAS')}}),/CAS/);assert.deepEqual(calls,[]);
 await assert.rejects(performPrimary({...deps,save:async()=>{state.bufferEpoch++;state.dirty=false}}),/зміни/);assert.deepEqual(calls,[]);
