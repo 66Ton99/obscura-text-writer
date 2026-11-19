@@ -33,3 +33,34 @@ test('a slow scene settings save does not pull the selection back to its scene',
   await expect(form.locator('input[name="title"]')).toHaveValue('Друга сцена');
   expect((await view(request,story_id)).scenes.find(s=>s.id===scene_id).title).toBe('Перейменована сцена');
 });
+
+test('scene field hints open from a "?" button and the flashback checkbox shares a row with its name',async({page,request})=>{
+  const {story_id,scene_id}=await(await request.post('/test-fixture')).json();
+  await page.goto(`/stories/${story_id}?scene=${scene_id}`);
+  await openPanel(page);
+  const form=page.locator('#scene-settings');
+  const hints={
+    'scene-target-help':'Рекомендовано до 15 000 слів',
+    'scene-language-help':'Зміна мови прози робить чернетку й прозу сцени застарілими.',
+    'scene-flashback-help':'Спогад додає до пам’яті лише факти й не змінює станів персонажів.',
+    'scene-cast-help':'Склад визначається рядком «Персонажі:» або «Хто бере участь:» у плані.',
+  };
+  for(const [id,text] of Object.entries(hints)){
+    const tip=form.locator(`#${id}`),help=form.locator(`button.help-tip[aria-describedby="${id}"]`);
+    await expect(tip).toBeHidden();
+    await expect(tip).toHaveText(text);
+    await expect(help).toHaveAttribute('aria-label','Підказка до поля');
+    await help.focus();
+    await expect(tip).toBeVisible();
+    await help.blur();
+  }
+  await expect(form.locator('small')).toHaveCount(0);
+  // The help buttons are not the labelled controls: the field names still name their inputs.
+  await expect(form.getByLabel('Орієнтир, слів')).toHaveAttribute('name','target_words');
+  await expect(form.getByLabel('Мова прози')).toHaveAttribute('name','prose_language');
+  const box=await form.locator('input[name="flashback"]').boundingBox(),name=await form.locator('label[for="scene-flashback"]').boundingBox();
+  expect(Math.abs((box.y+box.height/2)-(name.y+name.height/2))).toBeLessThan(4);
+  expect(name.x).toBeGreaterThan(box.x);
+  await form.locator('label[for="scene-flashback"]').click();
+  await expect(form.locator('input[name="flashback"]')).toBeChecked();
+});
