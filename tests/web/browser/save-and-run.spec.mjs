@@ -18,6 +18,8 @@ for(const mode of ['brief','draft'])test(`save and run dispatches after editing 
   await expect(page.locator(`#mode-tabs [data-mode="${mode}"]`)).toHaveAttribute('aria-selected','true');
   const text=mode==='brief'?JSON.stringify({objective:'Помітити нове сузір’я.',beats:['Вечір у парку.'],constraints:[],proposed_changes:[]}):'Лєра побачила нове сузір’я.';
   const editor=page.locator(mode==='brief'?'#editor':'.rich-text-surface .ProseMirror');
+  // BRIEF-FORM: the brief is typed as JSON in the advanced view.
+  if(mode==='brief')await page.locator('#brief-advanced').click();
   await expect(editor).toBeEditable();await editor.fill(text);
   await expect(page.locator('#save-state')).toContainText(/Незбережені|Unsaved/);
   await page.locator('#workspace-primary').click();

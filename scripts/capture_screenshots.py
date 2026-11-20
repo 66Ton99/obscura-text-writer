@@ -21,11 +21,11 @@ OUT=ROOT/'docs/images/site'
 
 STORIES={
     'uk':{'title':'Маяк на пристані','scenes':['Ранок у селищі','Лист без підпису','Шторм','Повернення'],'hero':'Анна',
-          'brief':'{"objective":"Анна знаходить лист","beats":["Анна знаходить лист"],"constraints":[],"proposed_changes":[]}',
+          'brief':'{"objective":"Анна знаходить лист і вирішує його прочитати","beats":["Анна відчиняє скриньку на пристані","Усередині лежить конверт без підпису","Вітер з моря ледь не вириває папір"],"constraints":["Без флешбеків"],"proposed_changes":[]}',
           'draft':'Анна відчинила скриньку на пристані й побачила конверт без підпису. Вітер з моря шарпав папір.',
           'characters':'## Анна\nДоглядачка маяка, уважна до дрібниць.\n\n## Петро\nРибалка, давній друг родини.\n'},
     'en':{'title':'Lighthouse pier','scenes':['Morning in the village','An unsigned letter','The storm','Coming back'],'hero':'Anna',
-          'brief':'{"objective":"Anna finds the letter","beats":["Anna finds the letter"],"constraints":[],"proposed_changes":[]}',
+          'brief':'{"objective":"Anna finds the letter and decides to read it","beats":["Anna opens the box on the pier","Inside lies an envelope with no signature","The sea wind almost tears the paper away"],"constraints":["No flashbacks"],"proposed_changes":[]}',
           'draft':'Anna opened the box on the pier and found an envelope with no signature. The sea wind tugged at the paper.',
           'characters':'## Anna\nThe lighthouse keeper, attentive to small things.\n\n## Peter\nA fisherman and an old friend of the family.\n'},
 }
@@ -106,6 +106,10 @@ def capture(base,ids,languages):
                         page.goto(base+'/');page.wait_for_load_state('networkidle');shot(page,folder/'library-desktop.png',shots)
                     page.goto(f'{base}/stories/{story}?scene={scene}&material=draft');page.wait_for_load_state('networkidle')
                     page.locator('#workspace-scene-status').wait_for();shot(page,folder/f'workspace-{suffix}.png',shots)
+                    if suffix=='desktop':
+                        # BRIEF-FORM: the writer's brief as a form.
+                        page.goto(f'{base}/stories/{story}?scene={scene}&material=brief');page.wait_for_load_state('networkidle')
+                        page.locator('#brief-form').wait_for(state='visible');shot(page,folder/'brief-form-desktop.png',shots)
                     page.locator('#story-menu-toggle').click();page.locator('#story-menu').wait_for();shot(page,folder/f'story-menu-{suffix}.png',shots)
                     if suffix=='desktop':
                         for path,name in [(f'/stories/{story}/revision','revision'),(f'/stories/{story}/characters','characters'),

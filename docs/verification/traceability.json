@@ -4207,6 +4207,54 @@
       }
     },
     {
+      "id": "BRIEF-FORM-S01",
+      "requirement": "BRIEF-FORM",
+      "scope": "Точне збереження біта з лапками й переносом; introduced і решта полів без змін.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S02",
+      "requirement": "BRIEF-FORM",
+      "scope": "Вставка, переміщення й видалення перенумеровують мітки, не змінюючи текстів бітів.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S03",
+      "requirement": "BRIEF-FORM",
+      "scope": "Розширений JSON зберігає незбережені правки; зіпсований JSON не дає повернутися до форми.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S04",
+      "requirement": "BRIEF-FORM",
+      "scope": "Номери планувальника приховано без зміни буфера; без біта збереження неактивне, порожні біти відкидаються; історія лише для читання.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "UI-APP-DIALOGS-S01",
       "requirement": "UI-APP-DIALOGS",
       "scope": "Спільний діалог і відсутність браузерних confirm/prompt.",
