@@ -58,7 +58,7 @@ Keep personal stories in a separate folder outside the application folder:
 ./scripts/start.ps1 -DataDir "$env:LOCALAPPDATA/ObscuraTextWriter/data"
 ```
 
-The browser opens `http://127.0.0.1:8765`. The server listens only on your computer. The `-Port` parameter sets another port, for example `-Port 8770`. Stop it with `Ctrl+C` in the PowerShell window.
+The browser opens `http://127.0.0.1:8760`. The server listens only on your computer. The Store application uses port 8765 by default, so both can run at the same time. The `-Port` parameter sets another port, for example `-Port 8770`. Stop it with `Ctrl+C` in the PowerShell window.
 
 If running PowerShell scripts is not allowed, use the direct command:
 

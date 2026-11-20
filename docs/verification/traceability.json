@@ -6235,7 +6235,8 @@
         "tests/mcp/test_bridge_launch.py::test_nothing_happens_before_the_first_tool_call",
         "tests/mcp/test_bridge_launch.py::test_explicit_url_never_starts_obscura",
         "tests/mcp/test_bridge_launch.py::test_checkout_without_arguments_keeps_the_old_address",
-        "tests/mcp/test_bridge_launch.py::test_installed_bridge_and_explicit_folder_search_the_record"
+        "tests/mcp/test_bridge_launch.py::test_installed_bridge_and_explicit_folder_search_the_record",
+        "tests/mcp/test_bridge_launch.py::test_checkout_port_differs_from_the_installed_app"
       ]
     },
     {
