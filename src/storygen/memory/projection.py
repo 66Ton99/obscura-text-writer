@@ -89,8 +89,37 @@ def candidate_claim_ids(journal) -> set[str]:
     return set(replay_memory(journal))|{e.claim_id for e in _timeline_events(journal)}
 
 
+def earlier_today(journal: MemoryJournal, current, source_scene_numbers: dict[str,int], scene_day: str | None,
+        source_days: dict[int,str | None]):
+    """CONTEXT-002-S07: the last value of the same slot before the current one, set by a scene of the same story day and
+    different from the current value; a retire of the slot (also an unknown decision) resets the history."""
+    if not scene_day:return None
+    owner=current.character_ids[0]
+    history=[]
+    for event in journal.events:
+        if event.slot!=current.slot or not event.character_ids or event.character_ids[0]!=owner:continue
+        if event.event_id==current.event_id:break
+        if event.operation=='retire':history=[];continue
+        history.append(event)
+    for event in reversed(history):
+        scene=source_scene_numbers.get(event.source_version_id)
+        if scene is None or not source_days.get(scene) or source_days.get(scene)!=scene_day:continue
+        if event.text.strip()!=current.text.strip():return event
+    return None
+
+
+def same_day_source_ids(journal: MemoryJournal, tracked) -> list[str]:
+    """Prose versions whose scenes can date an earlier-today value (CONTEXT-002-S08): sources of slot events of tracked
+    characters for the slots with same_day_history, in journal order."""
+    from .core import SLOTS
+    slots={s.name for s in SLOTS if s.same_day_history}
+    return list(dict.fromkeys(e.source_version_id for e in journal.events
+        if e.slot in slots and e.character_ids and e.character_ids[0] in set(tracked)))
+
+
 def memory_items(journal: MemoryJournal, character_ids: list[str], source_scene_numbers: dict[str,int], *, hidden_claim_ids=(),
-        forwarded_claim_ids=(), tracked=(), names=None, language='uk') -> tuple[list[MemoryItem],dict]:
+        forwarded_claim_ids=(), tracked=(), names=None, language='uk', scene_day: str | None = None,
+        source_days: dict[int,str | None] | None = None) -> tuple[list[MemoryItem],dict]:
     from .core import SLOTS
     from .forwarding import effective_hidden
     active=replay_memory(journal)
@@ -104,7 +133,10 @@ def memory_items(journal: MemoryJournal, character_ids: list[str], source_scene_
         for slot in SLOTS:
             event=slots.get((cid,slot.name))
             if event is None or event.claim_id in hidden:continue
-            items.append(item(event,'core',f'{slot.label_en if language=="en" else slot.label_uk}: {event.text}'+reader_unknown(event,language),cid));core_lines+=1
+            line=f'{slot.label_en if language=="en" else slot.label_uk}: {event.text}'+reader_unknown(event,language)
+            earlier=earlier_today(journal,event,source_scene_numbers,scene_day,source_days or {}) if slot.same_day_history else None
+            if earlier:line+=label('memory_core_earlier_today',language,value=earlier.text+reader_unknown(earlier,language))
+            items.append(item(event,'core',line,cid));core_lines+=1
     for category in CATEGORIES:
         if category=='timeline':
             entries=_timeline_events(journal)
@@ -141,9 +173,10 @@ def render_memory(items, tracked, names=None, *, timeline_note: str | None = Non
 
 
 def project_memory(journal: MemoryJournal, character_ids: list[str], source_scene_numbers: dict[str,int], *, hidden_claim_ids=(),
-        forwarded_claim_ids=(), tracked=(), names=None, language='uk') -> MemoryProjection:
+        forwarded_claim_ids=(), tracked=(), names=None, language='uk', scene_day: str | None = None,
+        source_days: dict[int,str | None] | None = None) -> MemoryProjection:
     items,metrics=memory_items(journal,character_ids,source_scene_numbers,hidden_claim_ids=hidden_claim_ids,
-        forwarded_claim_ids=forwarded_claim_ids,tracked=tracked,names=names,language=language)
+        forwarded_claim_ids=forwarded_claim_ids,tracked=tracked,names=names,language=language,scene_day=scene_day,source_days=source_days)
     text=render_memory(items,tracked,names,language=language)
     return MemoryProjection(text,{'projection_version':'memory-uk-v3','journal_chars':metrics['journal_chars'],
         'event_count':metrics['event_count'],'active_claim_count':metrics['active_claim_count'],

@@ -123,8 +123,10 @@ def _manual_snapshot(repo,scene,head,*,day_selectors=False):
         select('scene',scene.id,'flashback',True)
     if day_selectors:
         # An MCP draft was written from writing-context with its day_change note; the author's own text was not.
-        from ..storage.snapshots import memory_core_selectors, narrator_selector
+        from ..storage.snapshots import memory_core_selectors, narrator_selector, same_day_selectors
         memory_core_selectors(view,story,scene,view.list_scenes(scene.story_id),select)
+        # CONTEXT-002-S08: writing-context also showed the clothing worn earlier the same day.
+        same_day_selectors(view,story,scene,view.list_scenes(scene.story_id),select,selectors)
         # SCENE-NARRATOR: writing-context showed the narrator section; the author's own text does not depend on it.
         narrator_selector(view,story,scene,select)
     return DependencySnapshot(scope='author_text',selectors=selectors,refs=refs,ref_baselines=baselines,scene_order=[s.id for s in previous]+[scene.id])
