@@ -37,6 +37,17 @@ def test_catalog_narrowing_keeps_a_fact_by_an_earlier_name():
 
 
 @pytest.mark.req('CHARACTER-NAMES')
+def test_an_added_name_keeps_the_inflected_mentions_of_the_card_name():
+    event = _add_event('facts', 'Олени ключ лежить у шухляді', 'p1', 'ключ', 0)
+    journal = MemoryJournal(schema_version=3, source_prose_ids=['p1'], events=[event])
+    for names in ({'h': 'Олена'}, {'h': 'Олена, Бос'}):
+        assert event.claim_id in narrow_catalog(journal, ['h'], [], names, '', 9, {'p1': 1}).keep
+    item = MemoryItem('c1', 'facts', None, '- Олени ключ', 'Олени ключ', (), None, 1)
+    inp = SelectionInput((item,), 's', 9, ('h',), (), {'h': 'Олена'}, match_names={'h': 'Олена, Бос'})
+    assert [i.claim_id for i in classify(inp)['facts']] == ['c1']
+
+
+@pytest.mark.req('CHARACTER-NAMES')
 def test_requests_match_every_name_available_in_the_scene(tmp_path):
     repo, scenes = setup(tmp_path)
     story = repo.get_story(scenes[0].story_id)
@@ -67,6 +78,16 @@ def recard(repo, story_id, other_name, age='Вік: 40'):
 
 def stale_fields(repo, ref):
     return [r.selector.field for r in resolve_freshness(repo.context_view(ref.story_id), ref.id).reasons if r.selector]
+
+
+@pytest.mark.req('CHARACTER-NAMES')
+def test_memory_snapshot_has_no_names_selector_without_other_names(tmp_path):
+    repo, scenes = setup(tmp_path)
+    plain = [{'schema_version': 2, 'id': 'j', 'name': 'Юлія', 'entries': [entry('j1', 'Протагоністка')]},
+             {'schema_version': 2, 'id': 'h', 'name': 'Хазяїн', 'entries': [entry('h1', 'Вік: 40')]}]
+    save_character_material(repo, scenes[0].story_id, plain, repo.get_story(scenes[0].story_id).revision)
+    memory = memory_of(repo, [repo.get_scene(s.id) for s in scenes])
+    assert 'character_names' not in [s.field for s in memory.dependency_snapshot.selectors]
 
 
 @pytest.mark.req('CHARACTER-NAMES')

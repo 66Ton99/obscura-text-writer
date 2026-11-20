@@ -3908,7 +3908,9 @@
         "tests/memory/test_character_names_memory.py::test_writer_selection_finds_a_fact_by_an_earlier_name",
         "tests/memory/test_character_names_memory.py::test_catalog_narrowing_keeps_a_fact_by_an_earlier_name",
         "tests/memory/test_character_names_memory.py::test_requests_match_every_name_available_in_the_scene",
-        "tests/memory/test_character_names_memory.py::test_name_change_stales_the_memory_of_the_scene"
+        "tests/memory/test_character_names_memory.py::test_name_change_stales_the_memory_of_the_scene",
+        "tests/memory/test_character_names_memory.py::test_an_added_name_keeps_the_inflected_mentions_of_the_card_name",
+        "tests/memory/test_character_names_memory.py::test_memory_snapshot_has_no_names_selector_without_other_names"
       ]
     },
     {

@@ -73,7 +73,8 @@ def _norm(text: str) -> str:
 def name_stems(name: str) -> tuple[str,...]:
     # Same rule as the retrieval bench: drop one inflection letter of longer words, keep stems of 3+ letters.
     stems=[]
-    for word in _norm(name).split():
+    # CHARACTER-NAMES: several names come comma separated; a comma never belongs to a word.
+    for word in _norm(name).replace(',',' ').split():
         stem=word[:-1] if len(word)>4 else word
         if len(stem)>=3:stems.append(stem)
     return tuple(stems)

@@ -192,9 +192,13 @@ def character_names_value(view,story,scene,scenes):
 
 
 def character_names_selector(view,story,scene,scenes,select):
-    # The memory snapshot tracks no cards: a changed name of a character in its request must stale it (snapshots taken
-    # before carry no such selector and stay fresh).
-    select('scene',scene.id,'character_names',character_names_value(view,story,scene,scenes))
+    # The memory snapshot tracks no cards: a changed name of a character in its request must stale it. Only a scene whose
+    # characters have other names gets the selector, so stories without markers keep their snapshots and fingerprints
+    # (a snapshot taken without it stays fresh when a marker is added later).
+    value=character_names_value(view,story,scene,scenes)
+    plain={card.id:card.name for card in core_cards(view,story)}
+    if any(names!=plain.get(id) for id,names in value.items()):
+        select('scene',scene.id,'character_names',value)
 
 
 def same_day_selectors(view,story,scene,scenes,select,selectors):

@@ -66,8 +66,7 @@ def test_brief_before_and_after_the_rename(tmp_path):
     later = build_context(repo, scenes[1].id, 'brief', role()).user_text
     assert 'ПЕРСОНАЖ: Джон (також: Хазяїн, Бос)\n' in later
     assert 'Третя особа через героя: Джон' in later
-    block = later.split('ЗНАЙОМСТВА')[1].split('\n\n')[0] if 'ЗНАЙОМСТВА' in later else ''
-    assert 'Джон' in block and 'Хазяїн' not in block
+    assert 'ЗНАЙОМСТВА ГОЛОВНОГО ГЕРОЯ — Юлія\nЗнайомі: Джон (зі сцени 1)\n' in later
 
 
 @pytest.mark.req('CHARACTER-NAMES')
