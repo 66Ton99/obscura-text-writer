@@ -121,6 +121,34 @@ def uvicorn_server(app, port: int):
                                          timeout_graceful_shutdown=GRACEFUL_SHUTDOWN))
 
 
+# R26-CLI-LANG-S02: the alert text when the catalog or the Windows language cannot be read.
+ALERT_FALLBACK = {
+    'desktop.alert.data_dir': 'Obscura cannot create the data folder {p0} ({p1}).',
+    'desktop.alert.edition': 'This Obscura build is damaged: its edition file cannot be read. Reinstall the app.',
+    'desktop.alert.backup': 'No backup could be made before updating the database, so the database was not changed.',
+    'desktop.alert.start': 'Obscura could not start.',
+    'desktop.alert.unexpected': 'The start was stopped by an unexpected error.',
+    'desktop.alert.log': 'Details in the log: {p0}',
+}
+
+
+def _alert_text(key: str, *values) -> str:
+    """R26-CLI-LANG-S02: a refused start speaks the Windows display language, like the tray menu; never fails."""
+    params = {f'p{index}': str(value) for index, value in enumerate(values)}
+    try:
+        from .desktop_tray import system_locale
+        from .web.localization import translate
+        text = translate(key, system_locale(), **params)
+        if text != key:
+            return text
+    except Exception:  # noqa: BLE001 - the alert is the last word of a failed start: it must always be shown
+        pass
+    text = ALERT_FALLBACK[key]
+    for name, value in params.items():
+        text = text.replace('{' + name + '}', value)
+    return text
+
+
 def _default_alert(text: str) -> None:
     """Tell the person why nothing opened: a message box for a windowed process, stderr for a console one."""
     try:
@@ -176,17 +204,17 @@ def main(argv=None, *, opener=None, window=None, tray=None, serve=None, alert=No
     try:
         log = configure_logging(data_dir)
     except OSError as error:
-        alert(f'Obscura не може створити теку даних {data_dir}: {type(error).__name__}')
+        alert(_alert_text('desktop.alert.data_dir', data_dir, type(error).__name__))
         return 4
     try:
         code, reason = _run(args, data_dir, _window_factory(opener, window, data_dir), tray, serve or uvicorn_server)
     except Exception:
-        logger.exception('Запуск зупинено через непередбачену помилку')
-        code, reason = 4, 'Запуск зупинено через непередбачену помилку.'
+        logger.exception('The start was stopped by an unexpected error')
+        code, reason = 4, 'desktop.alert.unexpected'
     finally:
         close_logging()
     if code:
-        alert(f'{reason}\n\nПодробиці в журналі: {log}')
+        alert(_alert_text(reason) + '\n\n' + _alert_text('desktop.alert.log', log))
     return code
 
 
@@ -236,7 +264,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
     except ValueError as error:
         # BUILD-EDITION-001-S04: nothing but the log is created for a build with a broken marker.
         logger.error('%s', error)
-        return 2, str(error)
+        return 2, 'desktop.alert.edition'
 
     def open_page(url):
         # DESKTOP-001-S07: a second launch finds the window of the first one by its Edge profile and brings it forward.
@@ -255,7 +283,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
     except PreMigrationBackupFailed as error:
         # DESKTOP-001-S03: without a verified copy the database is not opened, so it is not migrated.
         logger.error('%s', error)
-        return 3, str(error)
+        return 3, 'desktop.alert.backup'
     if copy is not None:
         logger.info('Перед оновленням бази створено резервну копію: %s', copy)
     port = choose_port()
@@ -279,7 +307,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
                 open_page(url)
                 return 0, None
             logger.error('Сервер не стартував на порту %s', port)
-            return 4, 'Obscura не вдалося запустити.'
+            return 4, 'desktop.alert.start'
         url = f'{LOOPBACK}{port}'
         write_server_record(data_dir, url, app.state.instance_id)
         wrote_record = True
