@@ -14,7 +14,7 @@ class PreMigrationBackupFailed(ValueError):
     """Author-facing: the reason is a code-owned backup diagnostic, never story text."""
 
     def __init__(self, reason: str):
-        super().__init__('Резервну копію перед оновленням бази не створено, тому базу не змінено: ' + reason)
+        super().__init__('No backup was created before the database upgrade, so the database was not changed: ' + reason)
 
 
 def backups_dir(data_dir: Path) -> Path:
@@ -45,7 +45,7 @@ def _reason(error: Exception) -> str:
     if isinstance(error, OSError):
         return f'{type(error).__name__} [{error.errno}]'  # no path: it may name a story file
     if isinstance(error, sqlite3.Error):
-        return f'базу не вдалося прочитати ({type(error).__name__})'
+        return f'the database could not be read ({type(error).__name__})'
     return str(error)
 
 

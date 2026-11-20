@@ -68,7 +68,7 @@ def choose_port(preferred: int = PREFERRED_PORT) -> int:
             except OSError:
                 continue
             return probe.getsockname()[1]
-    raise OSError('Немає вільного порту на 127.0.0.1')
+    raise OSError('No free port on 127.0.0.1')
 
 
 def write_server_record(data_dir: Path, url: str, instance_id: str) -> None:
@@ -227,7 +227,7 @@ def _refresh_skills(data_dir: Path) -> None:
                                                   checkout=Path(__file__).resolve().parents[2])
         claude_connect.refresh_marketplace(source, claude_connect.marketplace_target(data_dir), project_version())
     except Exception:  # noqa: BLE001 - a background helper: the log is the only place for it
-        logger.exception('Скіли Claude: оновлення копії не вдалося')
+        logger.exception('Claude skills: updating the copy failed')
 
 
 class _OpenerWindow:
@@ -272,7 +272,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
             make_window(url).show()
     url = running_server(data_dir)
     if url:
-        logger.info('Сервер цієї теки даних уже працює: %s', url)
+        logger.info('A server for this data folder is already running: %s', url)
         open_page(url)
         return 0, None
     from .application.settings import AppSettings
@@ -285,7 +285,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
         logger.error('%s', error)
         return 3, 'desktop.alert.backup'
     if copy is not None:
-        logger.info('Перед оновленням бази створено резервну копію: %s', copy)
+        logger.info('A backup was created before the database upgrade: %s', copy)
     port = choose_port()
     env_file = args.env_file.resolve() if args.env_file else data_dir / '.env'
     app = create_app(AppSettings(data_dir=data_dir, env_file=env_file, port=port))
@@ -303,16 +303,16 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
             # Most often another launch of this very folder won the race for the data folder lock: open that one.
             url = _already_running(data_dir, 5.0)
             if url:
-                logger.info('Сервер цієї теки даних уже працює: %s', url)
+                logger.info('A server for this data folder is already running: %s', url)
                 open_page(url)
                 return 0, None
-            logger.error('Сервер не стартував на порту %s', port)
+            logger.error('The server did not start on port %s', port)
             return 4, 'desktop.alert.start'
         url = f'{LOOPBACK}{port}'
         write_server_record(data_dir, url, app.state.instance_id)
         wrote_record = True
         threading.Thread(target=_refresh_skills, args=(data_dir,), name='obscura-skills', daemon=True).start()
-        logger.info('Сервер працює: %s; тека даних: %s', url, data_dir)
+        logger.info('Server running: %s; data folder: %s', url, data_dir)
         # DESKTOP-001-S07: a window left by a crashed run may show an old address; it gives way to a fresh one.
         replace_stale = getattr(window, 'replace_stale', None)
         if replace_stale:
@@ -330,7 +330,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
                 (tray or run_tray)(url, data_dir, backups_dir(data_dir), quit_application, opener=lambda *_: window.show())
                 return 0, None
             except TrayUnavailable:
-                logger.warning('Значок у треї недоступний; застосунок працює без нього, доки процес не зупинять')
+                logger.warning('The tray icon is unavailable; the app runs without it until the process is stopped')
         while thread.is_alive():
             thread.join(0.5)
         return 0, None
@@ -343,16 +343,16 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
         if wrote_record:
             remove_server_record(data_dir)
         if thread.is_alive():
-            logger.error('Сервер не завершився за %s с; процес завершується примусово', int(STOP_TIMEOUT))
+            logger.error('The server did not stop within %s s; terminating the process', int(STOP_TIMEOUT))
         else:
-            logger.info('Сервер зупинено')
+            logger.info('Server stopped')
 
 
 def _serve(server) -> None:
     try:
         server.run()
     except BaseException:  # uvicorn exits the thread with SystemExit when it cannot bind
-        logger.exception('Сервер завершився з помилкою')
+        logger.exception('The server exited with an error')
 
 
 if __name__ == '__main__':

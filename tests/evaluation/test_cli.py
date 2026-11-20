@@ -77,14 +77,14 @@ def test_revision_regression_keeps_preservation_failures(sample_case, good_repor
     assert compare_reports(base, changed)["status"] == "non_comparable"
 
 
-def test_cli_ukrainian_help_under_windows_legacy_encoding(tmp_path):
+def test_cli_help_under_windows_legacy_encoding(tmp_path):
     import os
     import subprocess
     import sys
     env = dict(os.environ, PYTHONIOENCODING="cp1250")
     result = subprocess.run([sys.executable,"-m","storygen.evaluation.cli","--help"],cwd=tmp_path,env=env,capture_output=True)
     assert result.returncode == 0
-    assert "української" in result.stdout.decode("utf-8")
+    assert "Ukrainian prose" in result.stdout.decode("utf-8")
 
 
 def test_accounted_cli_respects_root_lock_and_dry_run(tmp_path,sample_case,monkeypatch):

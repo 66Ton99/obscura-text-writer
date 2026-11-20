@@ -22,7 +22,7 @@ def test_checks_pass_in_the_development_environment():
     assert report['frozen'] is False and report['edition'] == 'full'
     assert report['max_rating'] == {'sexual': 2, 'violence': 2, 'themes': 2}
     assert isinstance(report['version'], str) and report['version']
-    assert by_name(report)['licenses']['detail'] == 'не заморожена збірка'
+    assert by_name(report)['licenses']['detail'] == 'not a frozen build'
 
 
 def test_broken_tls_is_reported_not_raised(monkeypatch):
@@ -51,7 +51,7 @@ def test_invalid_edition_marker_fails_the_check(monkeypatch):
     from storygen import build_edition
 
     def broken():
-        raise ValueError('Некоректний файл видання build_edition.json: невідоме видання або зайві поля')
+        raise ValueError('Invalid edition file build_edition.json: unknown edition or extra fields')
     monkeypatch.setattr(build_edition, 'current', broken)
     report = run_checks()
     assert report['ok'] is False and report['edition'] is None and by_name(report)['edition_marker']['ok'] is False
@@ -118,12 +118,12 @@ def test_frozen_package_data_is_checked_file_by_file_against_the_build_manifest(
     good = {'version': '9.9.9', 'files': {'web/static/i18n.json': hashlib.sha256(real).hexdigest()}}
     monkeypatch.setattr(build_manifest, 'load', lambda: good)
     report = run_checks()
-    assert by_name(report)['package_data'] == {'name': 'package_data', 'ok': True, 'detail': '1 файлів за маніфестом збірки'}
+    assert by_name(report)['package_data'] == {'name': 'package_data', 'ok': True, 'detail': '1 files per the build manifest'}
     assert report['version'] == '9.9.9'
     monkeypatch.setattr(build_manifest, 'load', lambda: {'version': '9.9.9', 'files': {'web/static/i18n.json': '0' * 64}})
-    assert by_name(run_checks())['package_data']['detail'] == 'файл відрізняється від робочої копії: web/static/i18n.json'
+    assert by_name(run_checks())['package_data']['detail'] == 'file differs from the working copy: web/static/i18n.json'
     monkeypatch.setattr(build_manifest, 'load', lambda: {'version': '9.9.9', 'files': {'web/templates/absent.html': '0' * 64}})
-    assert by_name(run_checks())['package_data']['detail'] == 'немає файла web/templates/absent.html'
+    assert by_name(run_checks())['package_data']['detail'] == 'missing file web/templates/absent.html'
 
 
 def test_foreign_lookup_errors_do_not_leak_their_text(monkeypatch, tmp_path):

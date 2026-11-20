@@ -6,7 +6,7 @@ from .local_profiles import register,activate,deactivate,metadata
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(description='Кваліфікований локальний tokenizer; без модельних викликів')
+    parser=argparse.ArgumentParser(description='Qualified local tokenizer; no model calls')
     parser.add_argument('--data-dir',type=Path,default=Path('data'))
     parser.add_argument('action',choices=['register','activate','deactivate','show'])
     parser.add_argument('--id');parser.add_argument('--endpoint',default='http://localhost:1235/v1')
@@ -26,7 +26,7 @@ def main(argv=None):
             result={'activate':activate,'deactivate':deactivate,'show':metadata}[args.action](args.data_dir,args.id)
         print(json.dumps(result,ensure_ascii=False,indent=2));return 0
     except (ValueError,KeyError,OSError,TypeError):
-        print('Кваліфікацію або активацію tokenizer не виконано: перевірте файли, контрольні суми, формат і usage. Тексти не виводяться.');return 2
+        print('The tokenizer was not qualified or activated: check the files, checksums, format and usage. Texts are not printed.');return 2
 
 
 if __name__=='__main__':raise SystemExit(main())

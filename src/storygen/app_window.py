@@ -115,7 +115,7 @@ class AppWindow:
                                                  daemon=True)
                 self._watcher.start()
         except Exception as error:  # noqa: BLE001 - the browser is the fallback for any failure of the window
-            logger.warning('Вікно Obscura не відкрилося (%s); сторінка відкривається у браузері', type(error).__name__)
+            logger.warning('The Obscura window did not open (%s); opening the page in the browser', type(error).__name__)
             self._fallback(self.url)
 
     def _check_launch(self, process) -> None:
@@ -126,7 +126,7 @@ class AppWindow:
             return
         if code:
             self._launched_at = None
-            logger.warning('Edge завершився з кодом %s без вікна; сторінка відкривається у браузері', code)
+            logger.warning('Edge exited with code %s without a window; opening the page in the browser', code)
             self._fallback(self.url)
 
     def wait_launch(self) -> None:
@@ -140,17 +140,17 @@ class AppWindow:
         try:
             if self._edge() is None or not self._windows():
                 return
-            logger.info('Закривається вікно Obscura, що лишилося від попереднього запуску')
+            logger.info('Closing the Obscura window left over from a previous launch')
             for hwnd in self._windows():
                 self.api.close_window(hwnd)
             deadline = time.monotonic() + STALE_TIMEOUT
             while self._windows():
                 if time.monotonic() >= deadline:
-                    logger.warning('Вікно попереднього запуску не закрилося за %s с', int(STALE_TIMEOUT))
+                    logger.warning('The window from the previous launch did not close within %s s', int(STALE_TIMEOUT))
                     return
                 time.sleep(0.2)
         except Exception as error:  # noqa: BLE001 - a stale window must not stop the start
-            logger.warning('Вікно попереднього запуску не перевірено: %s', type(error).__name__)
+            logger.warning('The window from the previous launch was not checked: %s', type(error).__name__)
 
     def close(self) -> None:
         try:
@@ -159,7 +159,7 @@ class AppWindow:
             for hwnd in self._windows():
                 self.api.close_window(hwnd)
         except Exception as error:  # noqa: BLE001 - "Quit" must finish even if the window cannot be closed
-            logger.warning('Вікно Obscura не закрилося: %s', type(error).__name__)
+            logger.warning('The Obscura window did not close: %s', type(error).__name__)
 
     def open_external(self, url: str) -> None:
         self._fallback(url)

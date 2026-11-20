@@ -31,4 +31,4 @@ def check_billing(report, db, stories):
             elif key.startswith('billing_run:'):
                 assert item['limit_nanos'] is None or type(item['limit_nanos']) is int and item['limit_nanos']>=0
         except (ValueError,TypeError,KeyError,AssertionError):
-            report.add('invalid_billing',key,'Пошкоджений формат або власність бюджетного запису')
+            report.add('invalid_billing',key,'Damaged format or ownership of a budget record')

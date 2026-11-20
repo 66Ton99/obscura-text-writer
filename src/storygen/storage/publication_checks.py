@@ -10,7 +10,7 @@ def check_publications(db,report,stories,verify_file,root):
             item=PublicSignature.model_validate_json(payload)
             if (item.id,item.revision,item.archived_at)!=(id,revision,archived):raise ValueError()
             signatures[id]=item
-        except (ValueError,TypeError):report.add('invalid_publication',id,'Невірний публічний підпис або ревізія')
+        except (ValueError,TypeError):report.add('invalid_publication',id,'Invalid public signature or revision')
     for row in db.execute('SELECT id,story_id,sha256,relative_path,mime_type,width,height,payload FROM publication_assets'):
         try:
             item=CoverAsset.model_validate_json(row[-1])
@@ -21,15 +21,15 @@ def check_publications(db,report,stories,verify_file,root):
             from ..publication.covers import image_info
             try:
                 info=image_info(contained_path(root,item.relative_path).read_bytes())
-                if info!=(item.mime_type,item.width,item.height):raise ValueError('Невірні розміри/тип')
+                if info!=(item.mime_type,item.width,item.height):raise ValueError('Invalid dimensions/type')
             except ValueError as exc:
-                if 'Pillow' in str(exc):report.limitations.append('Обкладинки: не перевірено декодування без Pillow; хеші перевірені.')
+                if 'Pillow' in str(exc):report.limitations.append('Covers: decoding not checked without Pillow; hashes verified.')
                 else:raise
-        except (ValueError,TypeError,OSError):report.add('invalid_publication',str(row[0]),'Некоректний ресурс обкладинки')
+        except (ValueError,TypeError,OSError):report.add('invalid_publication',str(row[0]),'Invalid cover resource')
     for story_id,revision,payload in db.execute('SELECT story_id,revision,payload FROM story_publications'):
         try:
             item=PublicationCard.model_validate_json(payload)
             if item.story_id!=story_id or item.revision!=revision or story_id not in stories:raise ValueError()
             if set(item.author_ids+item.translator_ids)-set(signatures):raise ValueError()
             if item.cover_id and (item.cover_id not in assets or assets[item.cover_id].story_id!=story_id):raise ValueError()
-        except (ValueError,TypeError):report.add('invalid_publication',story_id,'Некоректна картка або власність її посилань')
+        except (ValueError,TypeError):report.add('invalid_publication',story_id,'Invalid card or ownership of its references')

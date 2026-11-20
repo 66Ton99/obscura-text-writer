@@ -70,11 +70,11 @@ def test_backup_failure_blocks_the_migration(tmp_path, monkeypatch):
     data = old_schema_dir(tmp_path)
 
     def failing(source, destination):
-        raise ValueError('Перевірка цілісності не пройдена: missing_file')
+        raise ValueError('Integrity check failed: missing_file')
     monkeypatch.setattr(pre_migration, 'create_backup', failing)
     with pytest.raises(PreMigrationBackupFailed) as error:
         backup_before_migration(data)
-    assert 'Резервну копію перед оновленням бази не створено' in str(error.value) and version(data) == 4
+    assert 'No backup was created before the database upgrade' in str(error.value) and version(data) == 4
 
 
 def test_existing_destination_is_a_failure_not_an_overwrite(tmp_path):

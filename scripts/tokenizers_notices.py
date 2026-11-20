@@ -83,7 +83,7 @@ def crates_from_sbom(sbom: dict) -> list[Crate]:
             sha = next((h['content'] for h in item.get('hashes', []) if h.get('alg') == 'SHA-256'), '')
             found.append(Crate(item['name'], item['version'], sha, _licence(item)))
     if not found:
-        raise ValueError('У SBOM немає жодного crate зі scope=required з crates.io: перелік неповний або SBOM пошкоджений')
+        raise ValueError('The SBOM has no crate with scope=required from crates.io: the list is incomplete or the SBOM is damaged')
     return sorted(found)
 
 
@@ -95,7 +95,7 @@ def path_crates(sbom: dict) -> list[tuple[str, str, str]]:
 
 def verified(data: bytes, sha256: str, label: str) -> bytes:
     if hashlib.sha256(data).hexdigest() != sha256.lower():
-        raise ValueError(f'Контрольна сума архіву не збігається з SBOM: {label}')
+        raise ValueError(f'The archive checksum does not match the SBOM: {label}')
     return data
 
 
@@ -117,7 +117,7 @@ def section_texts(name: str, version: str, texts: dict[str, str], *, manual=MANU
     if name in manual:
         text, reason = manual[name]
         return {f'manual: {reason}': text}
-    raise ValueError(f'Немає файлів ліцензії в архіві й запису в MANUAL: {name} {version}')
+    raise ValueError(f'No licence files in the archive and no MANUAL entry: {name} {version}')
 
 
 def render(root_licence: str, sections) -> str:
@@ -145,7 +145,7 @@ def _installed_sbom() -> tuple[str, dict]:
     dist = distribution('tokenizers')
     files = [item for item in dist.files or [] if '/sboms/' in str(item).replace('\\', '/')]
     if len(files) != 1:
-        raise ValueError('У встановленому tokenizers немає рівно одного SBOM')
+        raise ValueError('The installed tokenizers does not have exactly one SBOM')
     return dist.version, json.loads(Path(dist.locate_file(files[0])).read_text(encoding='utf-8'))
 
 

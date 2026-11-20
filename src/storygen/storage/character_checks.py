@@ -12,15 +12,15 @@ def check_character_versions(report,root,versions,scenes,stories):
                 for entry in card.entries:
                     if entry.availability=='from_scene':
                         anchor=scenes.get(entry.available_from_scene_id)
-                        if not anchor or anchor.story_id!=ref.story_id:raise ValueError('Невірна сцена доступності')
+                        if not anchor or anchor.story_id!=ref.story_id:raise ValueError('Invalid availability scene')
                         story=stories.get(ref.story_id)
                         if anchor.trashed_at and story and not story.trashed_at and story.characters_version_id==ref.id:
-                            report.limitations.append(ref.id+': archived_character_anchor: сцена доступності в кошику; виправте поточні картки перед генерацією.')
+                            report.limitations.append(ref.id+': archived_character_anchor: the availability scene is in the trash; fix the current cards before generation.')
                     for citation in entry.sources:
                         source=versions.get(citation.version_id)
                         if not source or source.story_id!=ref.story_id or source.kind not in {'source_plan','source_characters','character_cards'} or not source.complete:
-                            raise ValueError('Невірне джерело картки')
+                            raise ValueError('Invalid card source')
                         if citation.quote not in contained_path(root,source.relative_path).read_bytes().decode('utf-8'):
-                            raise ValueError('Цитата відсутня у джерелі')
+                            raise ValueError('The quote is missing from the source')
         except (ValueError,KeyError,OSError,TypeError):
-            report.add('invalid_characters',ref.id,'Некоректні картки, джерела або сцена доступності')
+            report.add('invalid_characters',ref.id,'Invalid cards, sources or availability scene')
