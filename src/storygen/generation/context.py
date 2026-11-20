@@ -400,6 +400,12 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         if profile.tone_sample.strip() and stage in {'draft','rewrite','edit'}:
             # STYLE-SAMPLE-001: only the stages that write prose hear the voice; edit here is the full rewrite (patches/diff returned above).
             sections.append(label('tone_sample',language)+'\n'+profile.tone_sample)
+    # SCENE-NARRATOR: right after the style it replaces point_of_view of; nothing at all without an override.
+    from ..narration import narrator_section
+    from ..characters.models import load_characters
+    narrator_text,narrator_warnings=narrator_section(scene,load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else [],language)
+    if narrator_text:sections.append(narrator_text)
+    warnings.extend(narrator_warnings)
     if story.canon_version_id:
         add(label('canon',language),story.canon_version_id)
         warnings.append(OTHER_MATERIAL_WARNING)

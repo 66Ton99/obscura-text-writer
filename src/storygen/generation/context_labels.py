@@ -36,6 +36,13 @@ LABELS: dict[str, dict[str, str]] = {
     'canon': {'uk': 'АВТОРСЬКИЙ КАНОН', 'en': 'AUTHOR CANON'},
     'global_notes': {'uk': 'ГЛОБАЛЬНІ АВТОРСЬКІ ВКАЗІВКИ', 'en': 'GLOBAL AUTHOR NOTES'},
     'future_plan': {'uk': 'МАЙБУТНІ ПОДІЇ — ПЛАН СЦЕНИ {number}', 'en': 'FUTURE EVENTS — PLAN OF SCENE {number}'},
+    # SCENE-NARRATOR (narration.py).
+    'narrator': {'uk': 'ОПОВІДАЧ СЦЕНИ — ДЛЯ ЦІЄЇ СЦЕНИ ЗАМІНЯЄ point_of_view ЗІ СТИЛЮ',
+                 'en': 'SCENE NARRATOR — FOR THIS SCENE REPLACES point_of_view FROM THE STYLE'},
+    'narrator_first': {'uk': 'Перша особа: розповідає {name}.', 'en': 'First person: told by {name}.'},
+    'narrator_third_limited': {'uk': 'Третя особа через героя: {name} (лише його сприйняття й знання).',
+                               'en': 'Third person through a character: {name} (only their perception and knowledge).'},
+    'narrator_third_omniscient': {'uk': 'Третя особа, всезнаючий оповідач.', 'en': 'Third person, omniscient narrator.'},
     'tone_sample': {'uk': 'ЗРАЗОК ЗВУЧАННЯ — НЕ СЮЖЕТ: ПЕРЕЙМИ РИТМ, ЛЕКСИКУ Й БУДОВУ РЕЧЕНЬ; НЕ БЕРИ ПОДІЙ, ІМЕН ЧИ СВІТУ',
                     'en': 'VOICE SAMPLE — NOT PLOT: TAKE ITS RHYTHM, VOCABULARY AND SENTENCE STRUCTURE; NOT ITS EVENTS, NAMES OR WORLD'},
     'ending_goal': {'uk': 'АВТОРСЬКИЙ ОРІЄНТИР ФІНАЛУ — ЗАДУМ, НЕ ЗДІЙСНЕНІ ПОДІЇ',

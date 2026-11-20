@@ -96,6 +96,18 @@ class Story(StoryCreate):
     created_at: str = Field(default_factory=now)
 
 
+class SceneNarrator(DomainModel):
+    """SCENE-NARRATOR (#214): who tells this scene; first person and limited third person need a hero, omniscient has none."""
+    person: Literal['first','third_limited','third_omniscient']
+    character_id: str | None = Field(default=None,min_length=1,max_length=200)
+
+    @model_validator(mode='after')
+    def hero_matches_person(self):
+        if (self.person=='third_omniscient')!=(self.character_id is None):
+            raise ValueError('Перша особа й третя особа через героя потребують героя; всезнаючий оповідач — без героя')
+        return self
+
+
 class SceneCreate(DomainModel):
     author_scene_number: int | None = Field(default=None,ge=0)
     title: str = Field(min_length=1,max_length=300)
@@ -107,6 +119,8 @@ class SceneCreate(DomainModel):
     prose_language: Literal['uk','en'] | None = None
     # STORY-TIME: a scene that remembers the past; the «(спогад)» mark in «Початок:» makes one too (is_flashback).
     flashback: bool = False
+    # SCENE-NARRATOR: None follows point_of_view of the story style; a «Оповідач:» line of the plan wins over it.
+    narrator: SceneNarrator | None = None
 
 
 class Scene(SceneCreate):
