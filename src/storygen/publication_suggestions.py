@@ -92,7 +92,7 @@ def text_refusal(text):
         r"\s*(?:I (?:cannot|can't|am unable to) (?:generate|create|write|provide|suggest)|(?:Я )?не можу (?:створити|написати|згенерувати|запропонувати|надати))\b",normalized,re.I))
     if not denied:return None
     detail=refusal_detail(normalized).model_dump(mode='json')
-    detail['message']=detail['message'].replace('Оцінювач','Планувальник')
+    detail['message']=detail['message'].replace('Оцінювач','Письменник')
     return detail
 
 

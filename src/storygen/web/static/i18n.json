@@ -2673,7 +2673,12 @@
     "brief_form.advanced": "Розширений JSON",
     "brief_form.simple": "Звичайний вигляд",
     "brief_form.broken": "JSON зіпсовано: {p0}. Виправте його або скасуйте зміни.",
-    "brief_form.need_beat": "Додайте хоча б один біт"
+    "brief_form.need_beat": "Додайте хоча б один біт",
+    "publication.configure_writer": "Налаштуйте модель письменника",
+    "publication.refusal_content": "Письменник відмовився через контент.",
+    "publication.refusal_unknown": "Письменник відмовився; причина не встановлена.",
+    "publication.writer_timeout": "Перевищено час очікування відповіді письменника.",
+    "publication.writer_connection": "Не вдалося встановити з’єднання з письменником."
   },
   "en": {
     "ui.save": "Save",
@@ -5349,6 +5354,11 @@
     "brief_form.advanced": "Advanced JSON",
     "brief_form.simple": "Simple view",
     "brief_form.broken": "The JSON is broken: {p0}. Fix it or discard the changes.",
-    "brief_form.need_beat": "Add at least one beat"
+    "brief_form.need_beat": "Add at least one beat",
+    "publication.configure_writer": "Configure the writer model",
+    "publication.refusal_content": "The writer refused because of the content.",
+    "publication.refusal_unknown": "The writer refused; the reason is unknown.",
+    "publication.writer_timeout": "The writer's response timed out.",
+    "publication.writer_connection": "Could not connect to the writer."
   }
 }

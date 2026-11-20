@@ -1,4 +1,4 @@
-"""One queued planner call for the complete publication source snapshot."""
+"""One queued writer call for the complete publication source snapshot (R16-SUGGEST, R-38)."""
 import json
 from importlib.resources import files
 from ..authoring.blueprints import get_role_settings
@@ -23,21 +23,22 @@ def build_publication_context(repo,story_id):
     eligible=eligible_fields(captured.publication)
     if not eligible:raise ValueError('Немає порожніх полів, які може запропонувати модель')
     stamp=source_stamp(captured)
-    planner=get_role_settings(repo,story_id).get('planner')
-    if not planner or not planner.provider.model.strip():raise ValueError('Налаштуйте модель планувальника')
+    # R-38: the writer gets the long-prose model and window; a cheap planner may not fit the whole book.
+    writer=get_role_settings(repo,story_id).get('writer')
+    if not writer or not writer.provider.model.strip():raise ValueError('Налаштуйте модель письменника')
     from ..language import load_prompt
     system=load_prompt('publication_metadata_v1',captured.story.language)
     sections=[{'title':scene.title,'text':repo.files.read(ref.relative_path,ref.sha256).decode('utf-8')} for scene,ref in captured.scenes]
     user=json.dumps({'title':captured.story.title,'eligible_fields':eligible,
         'genre_catalog':catalog_for(captured.story.language) if 'genres' in eligible else {},'scenes':sections},ensure_ascii=False)
-    body=generation_request('publication_suggest',planner,system,user,{})
-    prediction=token_estimate(repo,planner.provider.provider,planner.provider.base_url,body)
+    body=generation_request('publication_suggest',writer,system,user,{})
+    prediction=token_estimate(repo,writer.provider.provider,writer.provider.base_url,body)
     chars=len(json.dumps(body,ensure_ascii=False,separators=(',',':')))
-    limit=planner.context_tokens-planner.max_output_tokens
-    if prediction['input_tokens']>limit or chars>planner.max_input_chars:
-        raise ContextOverflow(prediction['input_tokens'],limit,chars,max_input_chars=planner.max_input_chars)
+    limit=writer.context_tokens-writer.max_output_tokens
+    if prediction['input_tokens']>limit or chars>writer.max_input_chars:
+        raise ContextOverflow(prediction['input_tokens'],limit,chars,max_input_chars=writer.max_input_chars)
     return ContextBundle(story_id=story_id,scene_id=None,stage='publication_suggest',scene_revision=None,
-        story_revision=captured.story.revision,settings=planner,system_text=system,user_text=user,
+        story_revision=captured.story.revision,settings=writer,system_text=system,user_text=user,
         input_refs=[ref.id for scene,ref in captured.scenes],fingerprint=fingerprint({'request':body,'sources':stamp,'prompt_version':2}),
         estimated_tokens=prediction['input_tokens'],estimate_method=prediction['method'],api_request=body,token_estimate=prediction,
         fragments={'publication_sources':json.dumps(stamp,ensure_ascii=False),
@@ -48,7 +49,7 @@ def readiness(repo,request):
     result={'ready':False,'reason':None,'roles':{},'calls':0,'evaluator':None,'warnings':[]}
     try:
         context=build_publication_context(repo,request.story_id)
-        result['roles']={'planner':context.settings.provider.model_dump(include={'provider','model'})}
+        result['roles']={'writer':context.settings.provider.model_dump(include={'provider','model'})}
         if context.settings.provider.provider in {'venice','openrouter'} and repo.billing('summary',scope='story:'+request.story_id)['limit_nanos'] is None:
             raise ValueError('Спершу задайте явний ліміт бюджету оповідання')
         result.update(ready=True,calls=1,eligible_fields=json.loads(context.fragments['publication_eligible']),
