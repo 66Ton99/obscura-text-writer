@@ -48,7 +48,8 @@ def test_non_empty_list_and_missing_thread_decisions_stay_violations():
     assert codes(answer([], ['x'])) == [('threads', 'schema')]
     assert codes(answer([{'h': {}}], {})) == [('core', 'schema')]
     # With active threads an empty list is "no decision" for each of them, not silent acceptance.
-    assert ('threads.' + BOUNDS['threads'][0], 'schema') in codes(answer({}, []), PREV, BOUNDS)
+    expected = [('core.h', 'schema')] + [('threads.' + claim_id, 'schema') for claim_id in BOUNDS['threads']]
+    assert len(BOUNDS['threads']) == 2 and codes(answer({}, []), PREV, BOUNDS) == expected
 
 
 @pytest.mark.req('MEMORY-002')
