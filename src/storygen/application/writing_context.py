@@ -22,7 +22,7 @@ def _content(view,story,scene,writer) -> dict:
     if dropped:future=future+[label('future_more',story.language,count=dropped)]
     from ..narration import narrator_section
     from ..characters.models import load_characters
-    narrator,narrator_warnings=narrator_section(scene,load_characters(view.read_text(story.characters_version_id)) if story.characters_version_id else [],story.language)
+    narrator,narrator_warnings=narrator_section(scene,load_characters(view.read_text(story.characters_version_id)) if story.characters_version_id else [],story.language,scenes)
     return {'instructions':instructions,'instructions_error':instructions_error,'story_id':story.id,'scene_id':scene.id,'title':scene.title,'position':scene.position,'scene_count':len(scenes),
             'plan':plan,'brief':brief,'characters':characters,'character_warnings':list(character_warnings),'memory':projection.text,
             'day_change':writer_day_change(scene,scenes,tracked,names,story.language,story),

@@ -93,12 +93,13 @@ def capture_target(view,version_id,*,baseline_override=None,current_sources_only
             state=context_label('impact_current_sources' if ids==[s.heads.get('prose') for s in prefix] else 'impact_historical_sources',view.story.language)
             from ..book.protagonists import scene_tracked
             from ..storage.snapshots import core_cards
+            from ..characters.names import scene_names
             cards=core_cards(view,view.story)
             # The policy is already the effective hidden set (I5 applied); pass it through without re-deriving I5.
             policy=set(old_hidden if old else projection_policy(view,scene.id))
             return state+'\n'+project_memory(journal,old_cast if old else scene.character_ids,numbers,
                 hidden_claim_ids=policy,forwarded_claim_ids={e.claim_id for e in journal.events}-policy,
-                tracked=scene_tracked(view.story,cards,view.peek_scenes(view.story.id),scene),names={card.id:card.name for card in cards},language=view.story.language).text
+                tracked=scene_tracked(view.story,cards,view.peek_scenes(view.story.id),scene),names=scene_names(cards,view.peek_scenes(view.story.id),scene),language=view.story.language).text
         return raw
     def document(value,selector,old=False,blind=False):
         kinds=({'plan':{'scene_plan'},'brief':{'brief'},'draft':{'draft'},'prose':{'edited','manual'},'memory':{'memory'}}.get(selector.field)

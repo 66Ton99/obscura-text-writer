@@ -40,6 +40,8 @@ class SelectionInput:
     stale_summaries: tuple = ()    # MEMORY-SUMMARY: unusable heads (StaleSummary) of earlier blocks
     # BOOK-LINEAGE-S03: book scene number -> number in the scene's lineage; empty when they are equal (a chain).
     lineage_numbers: Mapping[int,int] = field(default_factory=dict)
+    # CHARACTER-NAMES: every name available in the scene (comma separated) for finding mentions; None means names.
+    match_names: Mapping[str,str] | None = None
 
 
 def scenes_back(scene_number: int, source_number: int, lineage_numbers: Mapping[int,int] | None = None) -> int:
@@ -71,7 +73,8 @@ def _norm(text: str) -> str:
 def name_stems(name: str) -> tuple[str,...]:
     # Same rule as the retrieval bench: drop one inflection letter of longer words, keep stems of 3+ letters.
     stems=[]
-    for word in _norm(name).split():
+    # CHARACTER-NAMES: several names come comma separated; a comma never belongs to a word.
+    for word in _norm(name).replace(',',' ').split():
         stem=word[:-1] if len(word)>4 else word
         if len(stem)>=3:stems.append(stem)
     return tuple(stems)
@@ -96,7 +99,7 @@ def classify(inp: SelectionInput) -> dict[str,list[MemoryItem]]:
     layers={name:[] for name in LAYERS}
     cast=set(inp.cast)
     heroes=set(inp.tracked)&cast
-    stems=lambda ids:tuple(s for cid in sorted(ids) for s in name_stems(inp.names.get(cid,'')))
+    stems=lambda ids:tuple(s for cid in sorted(ids) for s in name_stems((inp.match_names or inp.names).get(cid,'')))
     cast_stems,hero_stems,other_stems=stems(cast),stems(heroes),stems(cast-heroes)
     for item in inp.items:
         kind=inp.kinds.get(item.claim_id)

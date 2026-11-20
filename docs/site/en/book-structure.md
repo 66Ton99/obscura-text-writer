@@ -61,7 +61,7 @@ In an outline, an `Arcs: Road, Town` line does the same (titles separated by com
 
 By default every arc follows one book hero: the card marked as the protagonist, or the first participant of the earliest scene. An arc with a different lead can have its own protagonist:
 
-- in the outline — a `Protagonist: Bohdan` line in the outline of any scene of the arc; the name must match a card title. If the card does not exist yet, Obscura looks again at the end of the import, so the character file can be imported after the outline. An unknown name gives a warning and sets no protagonist. The line sets a protagonist only for an arc that has none; change an existing one in the panel;
+- in the outline — a `Protagonist: Bohdan` line in the outline of any scene of the arc; the name must match a card title or one of its [other names](characters.md#other-names). If the card does not exist yet, Obscura looks again at the end of the import, so the character file can be imported after the outline. An unknown name gives a warning and sets no protagonist. The line sets a protagonist only for an arc that has none; change an existing one in the panel;
 - in the **Book structure** panel — with the protagonist field in the arc row: **Book hero** or one of the cards. The choice is saved with **Save structure**.
 
 The arc protagonist affects two things in the scenes of that arc:

@@ -3859,6 +3859,61 @@
       }
     },
     {
+      "id": "CHARACTER-NAMES-S01",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Позначка інших імен двома мовами; розпізнавання в плані, «Знайомий з:», оповідачі й «Протагоніст:» за будь-яким ім’ям.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_marker_line_variants",
+        "tests/characters/test_character_names.py::test_card_names_keep_order_without_repeats",
+        "tests/characters/test_character_names.py::test_every_name_resolves_in_any_scene",
+        "tests/characters/test_character_names.py::test_other_name_works_in_acquaintance_narrator_and_arc_protagonist_lines"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S02",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Чинне ім’я сцени за найпізнішою доступною позначкою from_scene; заголовок «також», оповідач і знайомства в брифі; майбутнє ім’я відсутнє.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_current_name_follows_the_latest_available_marker",
+        "tests/characters/test_character_names.py::test_scene_name_dicts_and_unmarked_cards",
+        "tests/generation/test_character_names_context.py::test_brief_before_and_after_the_rename",
+        "tests/generation/test_character_names_context.py::test_english_story_uses_also"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S03",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Ім’я кількох карток: «Неоднозначне ім’я», попередження «Знайомий з:», «Протагоніст:» без вибору, ID у cast_names, попередження сторінки й preview.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_name_shared_by_two_cards_is_ambiguous_and_warned",
+        "tests/characters/test_character_names.py::test_acquaintance_names_a_shared_other_name_ambiguous_and_arc_skips_it",
+        "tests/characters/test_character_names.py::test_new_scene_cast_line_writes_an_id_for_a_name_shared_through_another_name",
+        "tests/web/test_character_names_api.py::test_shared_name_is_warned_on_load_and_preview"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S04",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Картки без позначок: заголовок з основним ім’ям без «також», імена запитів збігаються з основними.",
+      "tests": [
+        "tests/generation/test_character_names_context.py::test_cards_without_markers_keep_the_card_name_and_no_also",
+        "tests/characters/test_character_names.py::test_scene_name_dicts_and_unmarked_cards"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S05",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Пошук фактів пам’яті за ранішими іменами у вибірці письменника й звуженні каталогу; селектор character_names знімка memory.",
+      "tests": [
+        "tests/memory/test_character_names_memory.py::test_writer_selection_finds_a_fact_by_an_earlier_name",
+        "tests/memory/test_character_names_memory.py::test_catalog_narrowing_keeps_a_fact_by_an_earlier_name",
+        "tests/memory/test_character_names_memory.py::test_requests_match_every_name_available_in_the_scene",
+        "tests/memory/test_character_names_memory.py::test_name_change_stales_the_memory_of_the_scene",
+        "tests/memory/test_character_names_memory.py::test_an_added_name_keeps_the_inflected_mentions_of_the_card_name",
+        "tests/memory/test_character_names_memory.py::test_memory_snapshot_has_no_names_selector_without_other_names"
+      ]
+    },
+    {
       "id": "WORD-TARGET-S01",
       "requirement": "WORD-TARGET",
       "scope": "Обсяг твору й сцени понад рекомендацію та нижня межа.",
