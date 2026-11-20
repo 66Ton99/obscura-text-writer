@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from '../../../frontend/browser-test.mjs';
 test.use({locale:'uk-UA'});
 
 // A brief saved through the same API the workspace uses, then the brief tab opened.
@@ -95,6 +95,34 @@ test.describe('brief form',()=>{
     await page.locator('#version-panel button',{hasText:'Переглянути'}).first().click();
     await expect(beats(page).first()).toHaveJSProperty('readOnly',true);
     await expect(page.locator('#brief-form [data-add="beats"]')).toHaveCount(0);
+  });
+
+  test('BRIEF-FORM-S04 save and run from the form with an empty row starts the run',async({page,request})=>{
+    const f=await(await request.post('/test-editor-no-changes')).json();
+    const data=await(await request.get(`/api/scenes/${f.scene_id}/versions`)).json();
+    expect((await request.post(`/api/scenes/${f.scene_id}/brief`,{data:{expected_revision:data.scene.revision,text:JSON.stringify({objective:'Спостерігати зорі.',beats:['Вечір у парку.'],constraints:[],proposed_changes:[]})}})).ok()).toBe(true);
+    const dispatches=[];
+    await page.route('**/api/runs',async route=>{
+      if(route.request().method()!=='POST')return route.continue();
+      dispatches.push(route.request().postDataJSON());
+      await route.fulfill({status:503,json:{detail:'Synthetic dispatch captured; no model called'}});
+    });
+    page.on('dialog',dialog=>dialog.accept());
+    await page.goto(`/stories/${f.story_id}?scene=${f.scene_id}&material=brief`);
+    await expect(page.locator('#brief-form')).toBeVisible();
+    await beats(page).nth(0).fill('Вечір у парку й зорі.');
+    await page.locator('#brief-form [data-add="constraints"]').click();
+    await page.locator('#workspace-primary').click();
+    await expect.poll(()=>dispatches.length).toBe(1);
+    expect((await savedBrief(request,f.scene_id)).constraints).toEqual([]);
+  });
+
+  test('BRIEF-FORM-S03 advanced JSON for a scene without a brief can be saved',async({page,request})=>{
+    await openBrief(page,request,null);
+    await expect(page.locator('#save-text')).toBeDisabled();
+    await page.locator('#brief-advanced').click();
+    await page.locator('#editor').fill(JSON.stringify({objective:'Мета',beats:['Біт'],constraints:[],proposed_changes:[]}));
+    await expect(page.locator('#save-text')).toBeEnabled();
   });
 
   test('BRIEF-FORM narrow screen has no horizontal scroll',async({page,request})=>{

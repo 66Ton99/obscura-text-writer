@@ -1,6 +1,6 @@
 // BRIEF-FORM: the writer's brief as a form. The editor buffer (JSON text) stays the source of truth: the form reads it and writes every edit back.
 import {t,uiText,uiAttr} from './i18n.js';
-import {parseBrief,stripPlannerNumbers,serializeBrief,briefForSave,canSaveBrief,moveItem,insertBefore,removeItem} from './brief-form.js';
+import {parseBrief,stripPlannerNumbers,serializeBrief,canSaveBrief,moveItem,insertBefore,removeItem} from './brief-form.js';
 
 export function installBriefEditor({state,textEditor}){
   const panel=document.querySelector('#brief-form');
@@ -93,7 +93,11 @@ export function installBriefEditor({state,textEditor}){
       else if(saveButton.dataset.briefBlocked)saveButton.disabled=false;
       if(blocked)saveButton.dataset.briefBlocked='1';else delete saveButton.dataset.briefBlocked;
       uiAttr(saveButton,'title',()=>blocked?t('brief_form.need_beat'):'');
-    }else if(saveButton.dataset.briefBlocked){delete saveButton.dataset.briefBlocked;uiAttr(saveButton,'title',()=>'');}
+    }else if(saveButton.dataset.briefBlocked){
+      // Leaving the form (advanced JSON, another tab) gives Save back the state the workspace would give it.
+      delete saveButton.dataset.briefBlocked;uiAttr(saveButton,'title',()=>'');
+      saveButton.disabled=!!state.saving||state.bufferOrigin==='history'||['history','blueprint','review'].includes(state.mode);
+    }
   }
   function update(){
     if(!visible()){advanced=false;model=null;viewKey='';lastText=null;brokenMessage='';controls();return;}
@@ -114,12 +118,11 @@ export function installBriefEditor({state,textEditor}){
   for(const event of ['editor-state-changed','story-refreshed','scene-selected'])document.addEventListener(event,update);
   return {
     active,
-    /** Empty items are dropped from the buffer before the save, so the saved text and the buffer match. */
+    /** A brief without a beat is not sent. The buffer is left alone: changing it here would move the buffer epoch
+     *  that "Save and run" checks after the save. Empty items are dropped from the request by briefForSave. */
     beforeSave(){
       if(!active()||state.bufferOrigin==='history')return;
       if(!canSaveBrief(model))throw new Error(t('brief_form.need_beat'));
-      const text=briefForSave(textEditor.read());
-      if(text!==textEditor.read()){lastText=text;textEditor.replaceText(text);fromBuffer();render();}
     },
   };
 }

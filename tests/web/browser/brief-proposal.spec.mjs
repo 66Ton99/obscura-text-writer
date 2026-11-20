@@ -13,6 +13,9 @@ test('pending brief is visible and needs explicit acceptance before draft',async
   const saved=await(await request.get(`/api/scenes/${f.scene_id}/versions`)).json();expect(saved.scene.heads.brief).toBe(f.old_brief_id);
   const accept=page.locator('#brief-proposal button');await expect(accept).toBeEnabled();await accept.click();
   await expect(page.locator('#brief-proposal')).toBeHidden();
+  // BRIEF-FORM: the accepted brief is editable in the form again.
+  await expect(page.locator('#brief-form textarea').first()).toHaveJSProperty('readOnly',false);
+  await expect(page.locator('#brief-form [data-add="beats"]')).toBeVisible();
   await expect(page.locator('#workspace-primary')).toBeEnabled();
   expect((await(await request.get(`/api/scenes/${f.scene_id}/versions`)).json()).scene.heads.brief).not.toBe(f.old_brief_id);
 });
