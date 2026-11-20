@@ -61,6 +61,7 @@ Only after consent:
 2. `get_templates(language)`. Fill the plan template and the characters template with the agreed content:
    - keep the headings «Сцена N: Назва» (or "Scene N: Title");
    - keep the «Хто бере участь:» line with names exactly as in the character headings;
+   - when a scene is told from a different point of view than the rest of the book, add a line «Оповідач: <name>, перша особа» (or «третя особа»; «Оповідач: всезнаючий» for an omniscient narrator; English: «Narrator: <name>, first person»);
    - for a book of a series, start the plan with the preamble lines «Серія: <name>» and «Номер: N».
 3. `import_plan_and_characters(story_id, plan_markdown, characters_markdown)`. Check the import result. If it reports problems, fix the Markdown and import only the missing part again.
 4. `get_story(story_id)`. Confirm:

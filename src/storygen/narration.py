@@ -70,3 +70,14 @@ def narrator_section(scene,cards,language='uk'):
     if narrator.character_id and narrator.character_id not in scene.character_ids:
         warnings.append(NOT_IN_CAST.format(name=name))
     return label('narrator',language)+'\n'+label('narrator_'+narrator.person,language,name=name),warnings
+
+
+def narrator_card(scene,cards):
+    """Fields of the scene card (SCENE-NARRATOR-S03, S07): effective narrator, its source and problems, with the warning
+    for a hero outside the cast."""
+    narrator,source,problems=effective_narrator(scene,cards)
+    names={card.id:card.name for card in cards}
+    warnings=list(problems)
+    if narrator and narrator.character_id and narrator.character_id not in scene.character_ids:
+        warnings.append(NOT_IN_CAST.format(name=names.get(narrator.character_id,narrator.character_id)))
+    return {'narrator_effective':narrator.model_dump() if narrator else None,'narrator_source':source,'narrator_problems':warnings}
