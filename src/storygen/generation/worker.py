@@ -207,7 +207,8 @@ class RunCoordinator:
         for run in self.list_runs(new.story_id):
             if run.id==new.id or run.state not in {'needs_review','alternative','paused','interrupted'} or run.request.mode=='impact':
                 continue
-            remaining=run.tasks[run.cursor:]
+            # An editor loop waits for its summary with the cursor past its last pass: that pass is its current task.
+            remaining=run.tasks[run.cursor:] or run.tasks[-1:]
             # A run that still has other scenes ahead keeps waiting: one manual stage must not drop the automation.
             if not remaining or remaining[0].get('stage')!=stage or any(task.get('scene_id')!=scene_id for task in remaining):
                 continue

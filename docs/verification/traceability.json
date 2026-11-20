@@ -130,9 +130,10 @@
     {
       "id": "RUN-ACCEPT-CLOSE-S04",
       "requirement": "RUN-ACCEPT-CLOSE",
-      "scope": "Новий stage-запуск скасовує лише зупинені запуски того самого етапу цієї сцени; повтор request_id нічого не скасовує.",
+      "scope": "Новий stage-запуск скасовує лише зупинені запуски того самого етапу цієї сцени; повтор request_id нічого не скасовує. Багатопрохідна редактура, що чекає підсумку з cursor за останнім проходом, теж замінюється.",
       "tests": [
-        "tests/generation/test_run_closure.py::test_a_new_run_of_the_same_stage_cancels_the_stopped_one"
+        "tests/generation/test_run_closure.py::test_a_new_run_of_the_same_stage_cancels_the_stopped_one",
+        "tests/generation/test_run_closure.py::test_a_new_edit_run_cancels_an_editor_loop_waiting_for_its_summary"
       ]
     },
     {
@@ -2878,7 +2879,7 @@
     {
       "id": "DATA-006-S04",
       "requirement": "DATA-006",
-      "scope": "Видалення сцени з зупиненим, активним запуском, відмовою та незавершеним скасуванням.",
+      "scope": "Видалення й відновлення сцени з зупиненим, активним запуском, відмовою та незавершеним скасуванням; блокування буфера під час скасування.",
       "tests": [
         "tests/web/test_trash_api.py::test_trash_ui_preserves_unsaved_buffers"
       ]

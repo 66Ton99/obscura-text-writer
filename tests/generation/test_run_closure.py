@@ -116,3 +116,18 @@ def test_startup_completes_runs_whose_result_was_already_accepted(tmp_path):
     assert repo.get_run(accepted.id).state == 'completed' and repo.get_run(accepted.id).cursor == 1
     assert repo.list_run_events(accepted.id)[-2].data == {'attempt_id': attempt.id, 'version_id': ref.id}
     assert repo.get_run(waiting.id).state == 'needs_review', 'an undecided result keeps waiting for the author'
+
+
+@pytest.mark.parametrize('mode', ['stage', 'edit_loop'])
+def test_a_new_edit_run_cancels_an_editor_loop_waiting_for_its_summary(tmp_path, mode):
+    repo, story, scene = ready(tmp_path)
+    brief = repo.save_version(story.id, scene.id, 'brief', json.dumps({'objective': 'Мета', 'beats': ['Подія'], 'constraints': [], 'proposed_changes': []}), [])
+    repo.set_head(scene.id, 'brief', brief.id, repo.get_scene(scene.id).revision)
+    draft = repo.save_version(story.id, scene.id, 'draft', 'Ранок у бібліотеці. ' * 20, [brief.id])
+    repo.set_head(scene.id, 'draft', draft.id, repo.get_scene(scene.id).revision)
+    tasks = [{'scene_id': scene.id, 'stage': 'edit'}] * 2
+    loop = stopped(repo, story.id, scene.id, tasks, cursor=len(tasks), mode='edit_loop')  # summary waits past the last pass
+    request = RunRequest(story_id=story.id, scene_id=scene.id, mode=mode, stage='edit' if mode == 'stage' else None)
+    new = RunCoordinator(repo).enqueue(request, 'edit-' + mode)
+    assert repo.get_run(loop.id).state == 'cancelled'
+    assert repo.list_run_events(loop.id)[-2].data == {'run_id': new.id}

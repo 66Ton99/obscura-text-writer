@@ -60,14 +60,20 @@ export function installSceneTrash(state,refresh,clear){
       for(const scene of result.scenes||[]){
         const row=document.createElement('p'),title=document.createElement('span');uiText(title,"textContent",()=>(scene.title+' '));
         const restore=action(live(()=>(t("m_11b6e5a88fd6"))),async()=>{
-          if(state.dirty||state.saving){notice(msg("m_a4c2e86ecc1a"),'error');return}
-          let pending;
-          try{pending=await stoppedRuns(state.storyId,t("scenes.active_run"))}catch(error){notice(error.message,'error');return}
-          if(pending.length&&!await confirmDialog(t("scenes.restore_confirm_runs",{p0:pending.length})))return;
+          if(restore.disabled)return;
           if(state.dirty||state.saving){notice(msg("m_a4c2e86ecc1a"),'error');return}
           restore.disabled=true;
-          try{await cancelRuns(pending,t("scenes.cancel_unfinished"));await api('/api/scenes/'+scene.id+'/restore',json('POST',{story_id:state.storyId,expected_revision:scene.revision}));await refresh();notice(msg("m_415e821184f4"))}
-          catch(error){notice(error.message,'error')}finally{restore.disabled=false}
+          try{
+            const pending=await stoppedRuns(state.storyId,t("scenes.active_run"));
+            if(pending.length&&!await confirmDialog(t("scenes.restore_confirm_runs",{p0:pending.length})))return;
+            if(state.dirty||state.saving){notice(msg("m_a4c2e86ecc1a"),'error');return}
+            // The same buffer lock as moving to trash: no save or other trash action while runs are cancelled.
+            state.saving=true;document.dispatchEvent(new CustomEvent('editor-state-changed'));
+            await cancelRuns(pending,t("scenes.cancel_unfinished"));
+            await api('/api/scenes/'+scene.id+'/restore',json('POST',{story_id:state.storyId,expected_revision:scene.revision}));
+            state.saving=false;await refresh();notice(msg("m_415e821184f4"));
+          }catch(error){notice(error.message,'error')}
+          finally{restore.disabled=false;if(state.saving){state.saving=false;document.dispatchEvent(new CustomEvent('editor-state-changed'))}}
         });row.append(title,restore);list.append(row);
       }
       if(!(result.scenes||[]).length){const empty=document.createElement('p');uiText(empty,"textContent",()=>(t("m_f5afb4e831d7")));list.append(empty)}
