@@ -15,7 +15,7 @@ from .core import SLOTS
 from .journal import MemoryJournal, _add_event, _change_event, decode_memory, load_memory, replay_memory
 from .replay import strip_wrapper
 from .story_time import day_change
-from .wire_v4 import MemoryWireV4, split_joined_evidence, wire_v4_events
+from .wire_v4 import MemoryWireV4, empty_sections, split_joined_evidence, wire_v4_events
 
 
 def captured_wire(repo, memory_version_id: str) -> tuple[dict, dict] | None:
@@ -30,7 +30,8 @@ def captured_wire(repo, memory_version_id: str) -> tuple[dict, dict] | None:
         if fragments.get('memory_wire_version')!='4':return None
         bounds=json.loads(fragments['memory_schema_bounds'])
         raw,_=strip_wrapper(repo.files.read_partial(attempt.partial_path))
-        data=decode_memory(raw)
+        # Same reading of an empty decisions list as the parser (MEMORY-002-S14).
+        data=empty_sections(decode_memory(raw))
         MemoryWireV4.model_validate(data)
         if not isinstance(bounds,dict) or not isinstance(bounds.get('tracked'),dict):return None
         # Same reading of joined evidence strings as the parser that published this head.

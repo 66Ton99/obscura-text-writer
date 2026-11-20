@@ -783,6 +783,17 @@
       ]
     },
     {
+      "id": "MEMORY-002-S14",
+      "requirement": "MEMORY-002",
+      "scope": "Порожній список у core/threads читається як порожні рішення без попередження; непорожній список і відсутні рішення активних ліній дають schema; вхідні дані не мутуються; етап публікує пам’ять, captured_wire читає так само.",
+      "tests": [
+        "tests/memory/test_wire_v4_empty_sections.py::test_empty_lists_read_as_no_decisions",
+        "tests/memory/test_wire_v4_empty_sections.py::test_non_empty_list_and_missing_thread_decisions_stay_violations",
+        "tests/memory/test_wire_v4_empty_sections.py::test_empty_sections_does_not_mutate_and_keeps_other_values",
+        "tests/memory/test_wire_v4_empty_sections.py::test_stage_publishes_memory_and_captured_wire_reads_it"
+      ]
+    },
+    {
       "id": "MEMORY-003-S01",
       "requirement": "MEMORY-003",
       "scope": "Змінений стан і закрита лінія. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
