@@ -89,7 +89,7 @@ def test_memory_and_diff_do_not_receive_goal_or_future_plans(tmp_path):
     repo.set_head(scenes[0].id,'prose',prose.id,repo.get_scene(scenes[0].id).revision)
     for stage,settings in [('memory',role('all')),('edit',role('all',edit_mode='diff')),('edit',role('all',edit_mode='patches'))]:
         ctx=build_context(repo,scenes[0].id,stage,settings)
-        assert 'ТАЄМНИЙ_ФІНАЛ' not in ctx.user_text and 'УНІКАЛЬНИЙ_ПЛАН' not in ctx.user_text
+        assert 'ТАЄМНИЙ_ФІНАЛ' not in ctx.user_text and 'УНІКАЛЬНИЙ_ПЛАН' not in ctx.user_text and 'МЕЖІ ПОТОЧНОЇ СЦЕНИ' not in ctx.user_text
 
 
 def test_transitive_wide_brief_dependency_is_not_hidden_by_writer_horizon(tmp_path):
@@ -181,3 +181,41 @@ def test_legacy_pending_editor_proposal_can_be_accepted_without_new_selector_fie
     assert preview['can_apply']
     result=select_copyedits(repo,scene.id,attempt.id,preview['groups'][0]['indices'],preview['expected_revision'],preview['proposal_fingerprint'])
     assert repo.read_text(result['version'].id)==CANDIDATE
+
+
+BOUNDARY='МЕЖІ ПОТОЧНОЇ СЦЕНИ'
+
+
+def with_heads(repo,story,scene):
+    brief=repo.save_version(story.id,scene.id,'brief',json.dumps({'objective':'Початок','beats':['Початок']}),[])
+    repo.set_head(scene.id,'brief',brief.id,repo.get_scene(scene.id).revision)
+    draft=repo.save_version(story.id,scene.id,'draft','Поточна чернетка.',[])
+    repo.set_head(scene.id,'draft',draft.id,repo.get_scene(scene.id).revision)
+    prose=repo.save_version(story.id,scene.id,'manual','Поточна проза.',[])
+    repo.set_head(scene.id,'prose',prose.id,repo.get_scene(scene.id).revision)
+    return draft
+
+
+@pytest.mark.req('CONTEXT-005')
+def test_all_horizon_with_future_plans_has_the_scene_boundary(tmp_path):
+    # CONTEXT-005-S06 (#231): the default «all» horizon shows future plans, so the request limits the scene to its own beats.
+    repo,story,scenes=seeded(tmp_path,3)
+    draft=with_heads(repo,story,scenes[0])
+    for stage,kwargs in [('brief',{}),('draft',{}),('edit',{}),('rewrite',{'editor_source_id':draft.id})]:
+        ctx=build_context(repo,scenes[0].id,stage,role('all'),**kwargs)
+        assert 'УНІКАЛЬНИЙ_ПЛАН_2' in ctx.user_text,stage
+        assert ctx.user_text.count(BOUNDARY)==1 and 'Поточна сцена не остання' in ctx.user_text,stage
+        assert ctx.user_text.index('УНІКАЛЬНИЙ_ПЛАН_3')<ctx.user_text.index(BOUNDARY),stage
+    assert not any('горизонт' in w.lower() for w in build_context(repo,scenes[0].id,'brief',role('all')).context_warnings)
+
+
+@pytest.mark.req('CONTEXT-005')
+def test_last_scene_without_goal_has_no_boundary_and_goal_gives_it_once(tmp_path):
+    from storygen.authoring.blueprints import update_story_profile
+    for size,last in ((1,True),(2,False)):
+        repo,story,scenes=seeded(tmp_path/str(size),size)
+        text=build_context(repo,scenes[0].id,'brief',role('all')).user_text
+        assert (BOUNDARY in text)==(not last)
+        update_story_profile(repo,story.id,StyleProfile(ending_goal='ФІНАЛ'),repo.get_story(story.id).revision)
+        text=build_context(repo,scenes[0].id,'brief',role('all')).user_text
+        assert text.count(BOUNDARY)==1 and text.index('ФІНАЛ')<text.index(BOUNDARY)

@@ -33,7 +33,7 @@ In the settings of every role the **Future outline horizon** block sets how many
 - **Current and next N scenes** — for example, for scene 3 and N=2 the model gets outlines 3, 4 and 5;
 - **Current scene only**.
 
-The planner and the writer can have different horizons; memory never receives future outlines. In the **Writing profile** you can add an **Author’s ending guide** — the intended resolution, up to 12,000 characters, which the model sees separately from the outlines. The horizon limits only outlines: if the ending is already mentioned in a brief, the style or a prompt, the model will see it.
+The planner and the writer can have different horizons; memory never receives future outlines. In the **Writing profile** you can add an **Author’s ending guide** — the intended resolution, up to 12,000 characters, which the model sees separately from the outlines. The horizon limits only outlines: if the ending is already mentioned in a brief, the style or a prompt, the model will see it. When the model sees outlines of later scenes, the request asks it to carry out only the beats of the current scene, whatever the horizon.
 
 The **Voice sample** field in the **Writing profile** takes a passage of up to 3,000 characters — for example, a few sentences in the rhythm the story should have. The writer takes its rhythm, vocabulary and sentence structure, but not its events, names or world. Only the draft, the comment-based rewrite and the edit in full-rewrite mode see the sample. Changing it makes drafts and scene texts stale, but not outlines and briefs. Use your own text or text you have the right to use.
 
