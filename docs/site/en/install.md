@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Windows 10 or 11.
+- Windows 10 or 11, the only officially supported system. On Linux and macOS the application can run from source, but unofficially and without guarantees: these systems are not tested, and some features (such as “Connect to Claude”) work only on Windows.
 - [Python](https://www.python.org/downloads/) 3.10 or newer.
 - A model API: a local OpenAI-compatible server (for example LM Studio) or an OpenRouter or Venice account.
 
