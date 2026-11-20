@@ -973,7 +973,7 @@ def build_client(url: str) -> httpx.Client:
 
 def connection_for(url: str | None, data_dir: Path | None) -> Connection:
     """STORE-MCP: `--url` is used as given; the installed bridge or an explicit `--data-dir` searches the record and
-    starts Obscura. A checkout without arguments keeps the old address, because its `storygen` serves ./data on 8765
+    starts Obscura. A checkout without arguments keeps the old address, because its `storygen` serves ./data on 8760
     and writes no record: searching the default library there would start a second Obscura over another folder."""
     if url is not None:
         return Connection(None, check_url(url), client_factory=build_client)

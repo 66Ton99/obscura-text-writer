@@ -12,7 +12,8 @@ from typing import Callable
 
 import httpx
 
-DEFAULT_URL = 'http://127.0.0.1:8765'
+# The checkout's `storygen` port; the installed app prefers 8765 and records its own address (#233).
+DEFAULT_URL = 'http://127.0.0.1:8760'
 START_TIMEOUT = 30.0
 START_FAILED = ('Obscura не запустилася за {seconds} с. Відкрийте Obscura з меню «Пуск» і повторіть запит; '
                 'якщо вона не відкривається, подробиці є в журналі теки творів (logs/obscura.log).')
