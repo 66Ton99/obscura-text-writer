@@ -2,7 +2,7 @@
 import re
 
 from .domain import SceneNarrator
-from .scene_description import resolve_participants
+from .scene_description import resolve_participants, split_participants
 
 LINE=re.compile(r'(?i)^(?:[-*]\s+)?(?:Оповідач|Narrator)\s*:\s*(.*)$')
 # Longest first: «всезнаючий, третя особа» is omniscient, not limited.
@@ -28,7 +28,8 @@ def parse_narrator(value,cards):
     if person is None:return None,'Оповідач: вкажіть лице («перша особа», «третя особа» або «всезнаючий»): '+value[:120]
     rest=PERSONS[[name for name,_ in PERSONS].index(person)][1].sub(' ',value)
     if person=='third_omniscient':rest=THIRD.sub(' ',rest)
-    names=[name for name in (part.strip(' .') for part in re.split(r'[,;]',rest)) if name]
+    # SCENE-DESCRIPTION rules: commas inside parentheses belong to the name.
+    names=[name for name in (part.strip(' .') for part in split_participants(rest)) if name]
     if person=='third_omniscient':
         if names:return None,'Оповідач: всезнаючий оповідач не має героя: '+value[:120]
         return SceneNarrator(person=person),None

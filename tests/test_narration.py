@@ -30,12 +30,26 @@ def test_plan_line_is_parsed(line, expected):
 
 
 @pytest.mark.req('SCENE-NARRATOR')
-@pytest.mark.parametrize('line', ['Оповідач: Юлія', 'Оповідач: третя особа', 'Оповідач: перша особа',
-                                  'Оповідач: Марта, перша особа', 'Оповідач: Олег, перша особа', 'Оповідач: всезнаючий, Юлія'])
-def test_plan_line_without_clear_meaning_is_a_problem(line):
+@pytest.mark.parametrize('line,problem', [
+    ('Оповідач: Юлія', 'Оповідач: вкажіть лице («перша особа», «третя особа» або «всезнаючий»): Юлія'),
+    ('Оповідач: третя особа', 'Оповідач: вкажіть одного героя: третя особа'),
+    ('Оповідач: перша особа', 'Оповідач: вкажіть одного героя: перша особа'),
+    ('Оповідач: Марта, перша особа', 'Оповідач: Невідомий персонаж: Марта'),
+    ('Оповідач: Олег, перша особа', 'Оповідач: Неоднозначне ім’я: Олег'),
+    ('Оповідач: всезнаючий, Юлія', 'Оповідач: всезнаючий оповідач не має героя: всезнаючий, Юлія'),
+])
+def test_plan_line_without_clear_meaning_is_a_problem(line, problem):
     field = SceneNarrator(person='third_omniscient')
     narrator, source, problems = effective_narrator(scene(line, field), CARDS)
-    assert narrator == field and source == 'scene' and len(problems) == 1
+    assert narrator == field and source == 'scene' and problems == [problem]
+
+
+@pytest.mark.req('SCENE-NARRATOR')
+def test_hero_name_with_a_comma_in_parentheses():
+    # SCENE-DESCRIPTION rules: commas inside parentheses do not split the name.
+    cards = [SimpleNamespace(id='j', name='Юлія (старша, лікарка)')]
+    narrator, source, problems = effective_narrator(scene('Оповідач: Юлія (старша, лікарка), перша особа'), cards)
+    assert narrator == SceneNarrator(person='first', character_id='j') and source == 'plan' and problems == []
 
 
 @pytest.mark.req('SCENE-NARRATOR')

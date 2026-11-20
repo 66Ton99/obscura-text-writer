@@ -90,9 +90,11 @@ def update_scene_metadata(repo,scene_id: str,changes: dict,expected_revision: in
             raise RevisionConflict("Сцену вже змінено")
         candidate=Scene.model_validate({**scene.model_dump(),**changes})
         if candidate==scene:return scene
+        # The scene card sends unchanged fields too; only fields whose value changes decide the invalidation.
+        changed={field for field in changes if getattr(candidate,field)!=getattr(scene,field)}
         scene=candidate.model_copy(update={'revision':scene.revision+1})
         repo._save_scene(db,scene)
-        if set(changes)-{'prose_language','flashback','narrator'}:
+        if changed-{'prose_language','flashback','narrator'}:
             # Prose language, the flashback flag and the narrator stale only material built for them, through their scene selectors.
             from .invalidation import invalidate_in_transaction
             invalidate_in_transaction(repo,db,list(scene.heads.values()))

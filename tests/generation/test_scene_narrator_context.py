@@ -139,3 +139,18 @@ def test_snapshot_without_the_selector_stays_fresh(tmp_path):
     assert stale_fields(repo, story, ref) == []
     narrate(repo, scene, SceneNarrator(person='third_omniscient'))
     assert stale_fields(repo, story, ref) == []
+
+
+@pytest.mark.req('SCENE-NARRATOR')
+def test_unchanged_title_and_target_with_the_narrator_do_not_invalidate_heads(tmp_path):
+    # The scene card sends title and target_words with every save; only fields that really change count.
+    repo, story, first, scene = setup(tmp_path)
+    first = repo.get_scene(first.id)
+    prose = repo.save_version(story.id, first.id, 'manual', 'Текст.', [])
+    repo.set_head(first.id, 'prose', prose.id, repo.get_scene(first.id).revision)
+    following = repo.save_version(story.id, scene.id, 'draft', 'Далі.', [prose.id])
+    first = repo.get_scene(first.id)
+    repo.update_scene_metadata(first.id, {'title': first.title, 'target_words': first.target_words,
+                                          'narrator': {'person': 'third_omniscient', 'character_id': None}}, first.revision)
+    assert repo.get_version(following.id).stale is False
+    assert repo.get_scene(scene.id).needs_review is False

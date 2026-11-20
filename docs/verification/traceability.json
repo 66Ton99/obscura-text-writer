@@ -1486,7 +1486,8 @@
         "tests/test_narration.py::test_plan_line_without_clear_meaning_is_a_problem",
         "tests/test_narration.py::test_plan_line_wins_over_the_field",
         "tests/test_narration.py::test_no_override_without_line_or_field",
-        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line"
+        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line",
+        "tests/test_narration.py::test_hero_name_with_a_comma_in_parentheses"
       ]
     },
     {
@@ -1503,7 +1504,8 @@
       "scope": "Селектор narrator робить застарілими матеріали сцени без поширення; старі знімки свіжі.",
       "tests": [
         "tests/generation/test_scene_narrator_context.py::test_narrator_change_stales_brief_draft_and_prose_of_the_scene_only",
-        "tests/generation/test_scene_narrator_context.py::test_snapshot_without_the_selector_stays_fresh"
+        "tests/generation/test_scene_narrator_context.py::test_snapshot_without_the_selector_stays_fresh",
+        "tests/generation/test_scene_narrator_context.py::test_unchanged_title_and_target_with_the_narrator_do_not_invalidate_heads"
       ]
     },
     {
