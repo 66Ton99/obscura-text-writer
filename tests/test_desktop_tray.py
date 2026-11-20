@@ -122,7 +122,7 @@ def test_launcher_without_a_tray_keeps_running_and_logs_it(monkeypatch, tmp_path
     servers[0].should_exit = True
     thread.join(30)
     assert result == {'code': 0}
-    assert 'Значок у треї недоступний' in (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
+    assert 'The tray icon is unavailable' in (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
 
 
 def test_tray_language_follows_the_windows_ui_language(monkeypatch):

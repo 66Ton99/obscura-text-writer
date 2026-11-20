@@ -58,7 +58,7 @@ PLUGIN_DIR = 'integrations/claude'
 def tracked_files(path: str) -> list[str]:
     listed = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z', path], capture_output=True, timeout=60)
     if listed.returncode:
-        raise Refused('не вдалося отримати перелік відстежуваних файлів (git ls-files)')
+        raise Refused('could not get the list of tracked files (git ls-files)')
     return [item for item in listed.stdout.decode('utf-8').split('\0') if item]
 
 
@@ -83,9 +83,9 @@ def freeze_bridge(work: Path, bridge_work: Path, bridge_dist: Path, environment:
             frozen = subprocess.run([sys.executable, '-m', 'PyInstaller', *arguments], stdout=stream, stderr=subprocess.STDOUT,
                                     cwd=work, env=environment, timeout=FREEZE_TIMEOUT)
     except subprocess.TimeoutExpired:
-        raise Refused(f'PyInstaller (міст MCP) не завершився за {FREEZE_TIMEOUT} с; див. {log}') from None
+        raise Refused(f'PyInstaller (MCP bridge) did not finish within {FREEZE_TIMEOUT} s; see {log}') from None
     if frozen.returncode:
-        raise Refused(f'PyInstaller (міст MCP) завершився з кодом {frozen.returncode}; див. {log}')
+        raise Refused(f'PyInstaller (MCP bridge) exited with code {frozen.returncode}; see {log}')
 
 
 def check_bridge(target: Path) -> None:
@@ -96,13 +96,13 @@ def check_bridge(target: Path) -> None:
             answered = subprocess.run([str(target / f'{packaging.BRIDGE_NAME}.exe'), flag], capture_output=True,
                                       timeout=SELF_CHECK_TIMEOUT)
         except subprocess.TimeoutExpired:
-            raise Refused(f'міст MCP не відповів на {flag} за {SELF_CHECK_TIMEOUT} с') from None
+            raise Refused(f'the MCP bridge did not answer {flag} within {SELF_CHECK_TIMEOUT} s') from None
         except OSError as error:
-            raise Refused(f'міст MCP не запустився: {type(error).__name__}') from None
+            raise Refused(f'the MCP bridge did not start: {type(error).__name__}') from None
         if answered.returncode or expected not in answered.stdout:
-            raise Refused(f'міст MCP не пройшов перевірку {flag} (код виходу {answered.returncode})')
+            raise Refused(f'the MCP bridge failed the {flag} check (exit code {answered.returncode})')
         if flag == '--self-check' and b'guide: ok' not in answered.stdout:
-            raise Refused('міст MCP не бачить провідника (тека claude\\ поруч з exe)')
+            raise Refused('the MCP bridge does not see the guide (the claude\\ folder next to the exe)')
 
 
 def build(args, out: Path) -> dict:
@@ -114,7 +114,7 @@ def build(args, out: Path) -> dict:
         if not args.skip_msix:
             missing = [flag for flag in ('identity_name', 'publisher', 'publisher_display_name') if not getattr(args, flag)]
             if missing:
-                raise Refused('для пакета MSIX потрібні --' + ', --'.join(flag.replace('_', '-') for flag in missing))
+                raise Refused('the MSIX package requires --' + ', --'.join(flag.replace('_', '-') for flag in missing))
             makeappx = packaging.find_makeappx(args.makeappx)
         manifest = packaging.package_data_manifest(ROOT, project['version'], tracked_package_files())
         plugin = tracked_plugin_files()
@@ -123,14 +123,14 @@ def build(args, out: Path) -> dict:
     vendor_files = packaging.vendor_runtime_files(Path(shutil.__file__).parent)
     if vendor_files:
         names = ', '.join(path.name for path in vendor_files)
-        print(f'Увага: інтерпретатор не є звичайним CPython; у збірку буде додано його файли: {names}', file=sys.stderr)
+        print(f'Warning: the interpreter is not a standard CPython; its files will be added to the build: {names}', file=sys.stderr)
         if not args.skip_msix and not args.allow_vendor_runtime:
-            raise Refused('пакет MSIX слід збирати на офіційному CPython; щоб усе ж зібрати на цьому інтерпретаторі, '
-                          'додайте --allow-vendor-runtime')
+            raise Refused('the MSIX package should be built on the official CPython; to build on this interpreter anyway, '
+                          'add --allow-vendor-runtime')
     try:
         import PyInstaller  # noqa: F401
     except ImportError:
-        raise Refused('PyInstaller не встановлено: pip install "pyinstaller>=6,<7"') from None
+        raise Refused('PyInstaller is not installed: pip install "pyinstaller>=6,<7"') from None
 
     # The freezer must see the checkout as the package: its collect-data and collect-submodules resolve `storygen`
     # through the import system, and an installed copy may be another branch.
@@ -139,7 +139,7 @@ def build(args, out: Path) -> dict:
                              capture_output=True, encoding='utf-8', env=environment, timeout=60)
     expected = SOURCE / 'storygen' / '__init__.py'
     if located.returncode or Path(located.stdout.strip()).resolve() != expected.resolve():
-        raise Refused(f'пакет storygen у середовищі збирання береться не з робочої копії: {located.stdout.strip() or located.stderr.strip()[:200]}')
+        raise Refused(f'the storygen package in the build environment does not come from the working copy: {located.stdout.strip() or located.stderr.strip()[:200]}')
 
     work = out / 'work'
     work.mkdir(parents=True)
@@ -153,21 +153,21 @@ def build(args, out: Path) -> dict:
             frozen = subprocess.run([sys.executable, '-m', 'PyInstaller', *arguments], stdout=stream, stderr=subprocess.STDOUT,
                                     cwd=work, env=environment, timeout=FREEZE_TIMEOUT)
     except subprocess.TimeoutExpired:
-        raise Refused(f'PyInstaller не завершився за {FREEZE_TIMEOUT} с; див. {log}') from None
+        raise Refused(f'PyInstaller did not finish within {FREEZE_TIMEOUT} s; see {log}') from None
     if frozen.returncode:
-        raise Refused(f'PyInstaller завершився з кодом {frozen.returncode}; див. {log}')
+        raise Refused(f'PyInstaller exited with code {frozen.returncode}; see {log}')
 
     target = out / NAME
     internal = target / '_internal'
     package = internal / 'storygen'
     if not package.is_dir():
-        raise Refused(f'у збірці немає теки пакета: {package}')
+        raise Refused(f'the build has no package folder: {package}')
     stale = sorted(path.name for path in internal.glob('storygen-*.dist-info'))
     if stale:
-        raise Refused('у збірку потрапили метадані встановленої копії: ' + ', '.join(stale))
+        raise Refused('the build contains metadata of an installed copy: ' + ', '.join(stale))
     stray = packaging.stray_data_files(package, manifest)
     if stray:
-        raise Refused('у збірку потрапили файли, яких немає серед відстежуваних у робочій копії: ' + ', '.join(stray[:10]))
+        raise Refused('the build contains files that are not tracked in the working copy: ' + ', '.join(stray[:10]))
     (package / MARKER).write_text(marker, encoding='utf-8')
     (package / MANIFEST).write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
     for extra in vendor_files:
@@ -191,7 +191,7 @@ def build(args, out: Path) -> dict:
         names = sorted(set(bundled) | set(packaging.ALWAYS_NOTICED))
         runtime = Path(sys.base_prefix) / 'LICENSE.txt'
         if not runtime.is_file():
-            raise Refused(f'немає ліцензії інтерпретатора: {runtime}')
+            raise Refused(f'no interpreter licence: {runtime}')
         notices = packaging.third_party_notices(names, runtime_license=runtime.read_text(encoding='utf-8', errors='replace'),
                                                licenses_dir=ROOT / packaging.BUNDLED_LICENSES)
     except ValueError as error:
@@ -203,23 +203,23 @@ def build(args, out: Path) -> dict:
     try:
         checked = subprocess.run([str(target / f'{NAME}.exe'), '--self-check', str(report_path)], timeout=SELF_CHECK_TIMEOUT)
     except subprocess.TimeoutExpired:
-        raise Refused(f'самоперевірка не завершилася за {SELF_CHECK_TIMEOUT} с (зібраний застосунок завис або показав вікно помилки)') from None
+        raise Refused(f'the self-check did not finish within {SELF_CHECK_TIMEOUT} s (the built app hung or showed an error window)') from None
     except OSError as error:
-        raise Refused(f'зібраний застосунок не запустився: {type(error).__name__}') from None
+        raise Refused(f'the built app did not start: {type(error).__name__}') from None
     try:
         report = json.loads(report_path.read_text(encoding='utf-8'))
     except (OSError, ValueError):
         report = None
     reasons = packaging.check_report(report, args.edition, project['version'])
     if reasons:
-        raise Refused(f'збірка не пройшла самоперевірку (код виходу {checked.returncode}): ' + '; '.join(reasons))
+        raise Refused(f'the build failed the self-check (exit code {checked.returncode}): ' + '; '.join(reasons))
     files = [path for path in target.rglob('*') if path.is_file()]
     summary = {'edition': args.edition, 'version': project['version'], 'package_version': version, 'files': len(files),
                'megabytes': round(sum(path.stat().st_size for path in files) / 1e6, 1), 'data_files': len(manifest['files']),
                'bridge_megabytes': round(sum(path.stat().st_size for path in (target / packaging.BRIDGE_CONTENTS).rglob('*') if path.is_file()) / 1e6, 1),
                'components_with_notices': names, 'plugin_files': plugin, 'vendor_runtime_files': [path.name for path in vendor_files], 'msix': None}
-    print(f"Збірка: {target} ({summary['files']} файлів, {summary['megabytes']} МБ), видання {args.edition}, версія {project['version']}")
-    print(f"Плагін Claude у claude\\: {len(plugin)} файлів")
+    print(f"Build: {target} ({summary['files']} files, {summary['megabytes']} MB), edition {args.edition}, version {project['version']}")
+    print(f"Claude plugin in claude\\: {len(plugin)} files")
     if args.skip_msix:
         return summary
 
@@ -234,9 +234,9 @@ def build(args, out: Path) -> dict:
         packed = subprocess.run([str(makeappx), 'pack', '/d', str(layout), '/p', str(msix), '/o'], stdout=stream,
                                 stderr=subprocess.STDOUT, timeout=FREEZE_TIMEOUT)
     if packed.returncode or not msix.is_file():
-        raise Refused(f"makeappx завершився з кодом {packed.returncode}; див. {out / 'makeappx.log'}")
+        raise Refused(f"makeappx exited with code {packed.returncode}; see {out / 'makeappx.log'}")
     summary['msix'] = {'file': msix.name, 'megabytes': round(msix.stat().st_size / 1e6, 1), 'makeappx': str(makeappx)}
-    print(f"Пакет: {msix} ({summary['msix']['megabytes']} МБ)")
+    print(f"Package: {msix} ({summary['msix']['megabytes']} MB)")
     return summary
 
 
@@ -248,7 +248,7 @@ def main(argv=None) -> int:
     args = parse(argv)
     out = args.out.resolve()
     if out.exists() and (not out.is_dir() or any(out.iterdir())):
-        print(f'Помилка: тека результату має бути порожньою або відсутньою: {out}', file=sys.stderr)
+        print(f'Error: the output folder must be empty or absent: {out}', file=sys.stderr)
         return 1
     try:
         summary = build(args, out)
@@ -256,7 +256,7 @@ def main(argv=None) -> int:
         # The folder may hold a complete-looking build: mark it so that nobody ships it.
         if out.is_dir():
             (out / 'BUILD-FAILED.txt').write_text(str(refusal) + '\n', encoding='utf-8')
-        print('Помилка: ' + str(refusal), file=sys.stderr)
+        print('Error: ' + str(refusal), file=sys.stderr)
         return 1
     (out / 'BUILD-OK.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
     return 0

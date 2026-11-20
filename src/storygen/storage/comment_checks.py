@@ -41,6 +41,6 @@ def check_comments(db,report,stories,scenes,versions,verify_file,root):
                     raise ValueError('Origin quote')
             revisions.setdefault(notes.scene_id,[]).append(notes.revision)
         except (ValueError,OSError,KeyError,TypeError):
-            report.add('invalid_comment_set',row[0],'Некоректний набір коментарів або його джерело')
+            report.add('invalid_comment_set',row[0],'Invalid comment set or its source')
     for scene_id,values in revisions.items():
-        if values!=list(range(1,max(values)+1)):report.add('comment_history_gap',scene_id,'Історія коментарів має пропущені ревізії')
+        if values!=list(range(1,max(values)+1)):report.add('comment_history_gap',scene_id,'The comment history has missing revisions')

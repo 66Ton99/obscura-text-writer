@@ -6,7 +6,7 @@ from ..storage.repository import Repository
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Перевірені профілі оцінки токенів; без модельних викликів')
+    parser = argparse.ArgumentParser(description='Verified token estimation profiles; no model calls')
     parser.add_argument('--data-dir', type=Path, default=Path('data'))
     parser.add_argument('action', choices=['list', 'build', 'activate', 'deactivate', 'collect'])
     parser.add_argument('--identity')
@@ -28,12 +28,12 @@ def main(argv=None):
                     if record_usage(repo, role['provider'], role['base_url'], body, attempt.usage, attempt.id): count += 1
             result = {'collected_attempts': count}
         else:
-            if not args.identity: raise ValueError('Потрібен --identity зі списку list')
+            if not args.identity: raise ValueError('--identity from the list output is required')
             result = repo.token_profile_action(args.identity, args.action)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except (ValueError, KeyError):
-        print('Профіль не пройшов перевірку, прострочений або спостереження змінилися. Виконайте list/build; активацію не виконано.')
+        print('The profile failed verification, has expired or its observations have changed. Run list/build; nothing was activated.')
         return 2
 
 

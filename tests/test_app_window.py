@@ -235,7 +235,7 @@ def test_edge_that_exits_with_an_error_falls_back_to_the_browser(tmp_path, caplo
     window, opened = make(tmp_path, api)
     window.show()
     window.wait_launch()
-    assert opened == [URL] and 'кодом 3' in caplog.text
+    assert opened == [URL] and 'code 3' in caplog.text
 
 
 @pytest.mark.req('DESKTOP-001')

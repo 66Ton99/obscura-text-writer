@@ -4,19 +4,17 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
-from .backup import create_backup
+from .backup import DestinationTaken, create_backup
 from .database import SCHEMA_VERSION
 
 DATABASE = 'storygen.sqlite3'
-# The text storage.backup.new_destination raises before it creates anything.
-DESTINATION_TAKEN = 'Каталог призначення вже існує'
 
 
 class PreMigrationBackupFailed(ValueError):
     """Author-facing: the reason is a code-owned backup diagnostic, never story text."""
 
     def __init__(self, reason: str):
-        super().__init__('Резервну копію перед оновленням бази не створено, тому базу не змінено: ' + reason)
+        super().__init__('No backup was created before the database upgrade, so the database was not changed: ' + reason)
 
 
 def backups_dir(data_dir: Path) -> Path:
@@ -47,7 +45,7 @@ def _reason(error: Exception) -> str:
     if isinstance(error, OSError):
         return f'{type(error).__name__} [{error.errno}]'  # no path: it may name a story file
     if isinstance(error, sqlite3.Error):
-        return f'базу не вдалося прочитати ({type(error).__name__})'
+        return f'the database could not be read ({type(error).__name__})'
     return str(error)
 
 
@@ -68,7 +66,7 @@ def backup_before_migration(data_dir: Path, now: datetime | None = None) -> Path
     except (OSError, ValueError, RuntimeError, sqlite3.Error) as error:
         # A half-made copy must not sit there under the name of a complete one. A destination that create_backup found
         # already taken is somebody else's copy (another launch in the same second), not ours to rename.
-        if not existed and destination.exists() and str(error) != DESTINATION_TAKEN:
+        if not existed and destination.exists() and not isinstance(error, DestinationTaken):
             try:
                 destination.rename(destination.with_name(destination.name + '.failed'))
             except OSError:

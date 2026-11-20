@@ -79,7 +79,7 @@ The `storygen-desktop` command starts the application without a PowerShell windo
 - `--env-file .env` takes provider keys from the same `.env` file as the ordinary launch. Without this option the application looks for `.env` in the stories folder; a key saved in the settings (Windows credential store) works in both cases.
 
 - Stories are kept in the `Obscura` folder of your profile (`%USERPROFILE%\Obscura`); `--data-dir` sets another folder.
-- The log is `logs\obscura.log` in the stories folder. If the application cannot start, it shows a message with the reason and the path of the log.
+- The log is `logs\obscura.log` in the stories folder. If the application cannot start, it shows a message in the Windows display language with a short reason and the path of the log. The log keeps the diagnostic details in English.
 - If port 8765 is busy, the application takes a free one; the address is in the log and in the `server.json` file.
 - Before the database format is upgraded, the application makes a backup into the neighbouring `Obscura-backups` folder and does not start if the backup cannot be made. It never deletes old backups.
 - Launching it again while it is running only shows its window.
@@ -103,7 +103,7 @@ Stop the server before copying. The built-in backup checks integrity and hashes:
 
 Destination parent folders must exist. Restore creates only a new folder and overwrites nothing. You can also copy the **whole** data folder of a stopped server; do not copy the database apart from the texts.
 
-To check the data folder without changing it, run `./.venv/Scripts/storygen.exe fsck --data-dir "<folder>" --json`. It reports problems but repairs and deletes nothing. If a backup or restore was interrupted, do not use the incomplete folder: repeat the restore from a verified backup into another new folder.
+To check the data folder without changing it, run `./.venv/Scripts/storygen.exe fsck --data-dir "<folder>" --json`. It reports problems but repairs and deletes nothing. Service commands (`fsck`, `backup`, `restore` and the other `storygen-*` tools) always write in English, whatever the interface language. If a backup or restore was interrupted, do not use the incomplete folder: repeat the restore from a verified backup into another new folder.
 
 ## Updating
 

@@ -62,7 +62,7 @@ def test_dependency_closure_follows_markers_and_extras():
         return table[name]
     expected = ['app', 'core', 'lib', 'speedups'] + (['win-only'] if sys.platform == 'win32' else [])
     assert dependency_closure(['app'], lookup=lookup) == sorted(expected)
-    with pytest.raises(ValueError, match='Залежність не встановлена: ghost'):
+    with pytest.raises(ValueError, match='Dependency is not installed: ghost'):
         dependency_closure(['ghost'], lookup=lookup)
 
 
@@ -112,7 +112,7 @@ def test_only_real_licence_files_are_taken(tmp_path):
 def test_distribution_without_a_licence_text_stops_the_build(tmp_path):
     table = {'mystery': FakeDistribution('Mystery', tmp_path, ['mystery/__init__.py', write(tmp_path, 'mystery/license.py')], '')}
     assert missing_licenses(['mystery'], lookup=table.__getitem__) == ['mystery']
-    with pytest.raises(ValueError, match='Немає тексту ліцензії для: mystery'):
+    with pytest.raises(ValueError, match='No licence text for: mystery'):
         third_party_notices(['mystery'], lookup=table.__getitem__)
 
 
@@ -120,7 +120,7 @@ def test_bundled_licence_of_another_version_stops_the_build(tmp_path):
     table = {'tokenizers': FakeDistribution('tokenizers', tmp_path, ['tokenizers/__init__.py'], '')}
     write(tmp_path / 'licences', 'tokenizers-0.9.txt', 'old text')
     assert missing_licenses(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences') == ['tokenizers']
-    with pytest.raises(ValueError, match='Немає тексту ліцензії для: tokenizers 1.0'):
+    with pytest.raises(ValueError, match='No licence text for: tokenizers 1.0'):
         third_party_notices(['tokenizers'], lookup=table.__getitem__, licenses_dir=tmp_path / 'licences')
 
 
@@ -152,7 +152,7 @@ def test_bundled_distributions_come_from_the_freezer_records(tmp_path):
     installed = [FakeDistribution(name, site, files) for name, files in owned.items()]
     # Bundled files decide: 'unused' is installed but not bundled; the standard library and the app itself own no notice.
     assert bundled_distributions(toc_sources(work), installed=installed) == ['alpha', 'beta-lib']
-    with pytest.raises(ValueError, match='Немає записів PyInstaller'):
+    with pytest.raises(ValueError, match='No PyInstaller records'):
         toc_sources(tmp_path / 'empty')
 
 
@@ -179,7 +179,7 @@ def test_package_data_manifest_lists_tracked_data_with_digests(tmp_path):
     for relative in ('web/static/i18n.json', 'storage/migrations/001_initial.sql', 'web/static/untracked-notes.txt', 'build_edition.json'):
         write(frozen, relative)
     assert stray_data_files(frozen, manifest, allowed=('build_edition.json',)) == ['web/static/untracked-notes.txt']
-    with pytest.raises(ValueError, match='не знайдено файлів даних'):
+    with pytest.raises(ValueError, match='No package data files found'):
         package_data_manifest(tmp_path, '0.1.0', ['src/storygen/web/app.py'])
     assert package.is_dir()
 
@@ -298,7 +298,7 @@ def test_installed_freezer_matches_the_exception_table():
 
 def test_copyleft_distribution_stops_the_notices(tmp_path):
     table = {'tray': FakeDistribution('Tray', tmp_path, [write(tmp_path, 'tray-1.0.dist-info/COPYING', 'text')], 'LGPL-3.0-only')}
-    with pytest.raises(ValueError, match='родини GPL.*tray'):
+    with pytest.raises(ValueError, match='GPL-family.*tray'):
         third_party_notices(['tray'], lookup=table.__getitem__)
 
 
@@ -312,26 +312,26 @@ def test_check_report_accepts_only_a_complete_matching_report():
     assert check_report(GOOD, 'store', '0.1.0') == []
     failed = json.loads(json.dumps(GOOD))
     failed['ok'], failed['checks'][0]['ok'], failed['checks'][0]['detail'] = False, False, 'FileNotFoundError'
-    assert check_report(failed, 'store', '0.1.0') == ['перевірка tls_context: FileNotFoundError']
-    assert check_report({**GOOD, 'frozen': False}, 'store', '0.1.0') == ['самоперевірку виконано не в замороженій збірці']
-    assert check_report({**GOOD, 'edition': 'full'}, 'store', '0.1.0') == ['позначка видання не потрапила в збірку: очікувано store, застосунок повідомляє full']
-    assert check_report(GOOD, 'store', '0.2.0') == ['версія застосунку не збігається з версією проєкту: очікувано 0.2.0, застосунок повідомляє 0.1.0']
-    assert check_report({**GOOD, 'ok': False}, 'store', '0.1.0') == ['самоперевірка не пройшла']
+    assert check_report(failed, 'store', '0.1.0') == ['check tls_context: FileNotFoundError']
+    assert check_report({**GOOD, 'frozen': False}, 'store', '0.1.0') == ['the self-check did not run in a frozen build']
+    assert check_report({**GOOD, 'edition': 'full'}, 'store', '0.1.0') == ['the edition mark did not reach the build: expected store, the app reports full']
+    assert check_report(GOOD, 'store', '0.2.0') == ['the app version does not match the project version: expected 0.2.0, the app reports 0.1.0']
+    assert check_report({**GOOD, 'ok': False}, 'store', '0.1.0') == ['the self-check failed']
     for broken in (None, {}, {'checks': 'x'}, [], {**GOOD, 'checks': ['tls_context']}, {**GOOD, 'checks': [{'ok': True}]}):
-        assert check_report(broken, 'store', '0.1.0') == ['звіт самоперевірки відсутній або пошкоджений']
+        assert check_report(broken, 'store', '0.1.0') == ['the self-check report is missing or damaged']
 
 
 @pytest.mark.parametrize('checks', [[], GOOD['checks'][:-1], GOOD['checks'] + [GOOD['checks'][0]], list(reversed(GOOD['checks'])),
                                     GOOD['checks'][:-1] + [{'name': 'something_else', 'ok': True, 'detail': ''}]])
 def test_check_report_requires_exactly_the_seven_checks(checks):
     reasons = check_report({**GOOD, 'checks': checks}, 'store', '0.1.0')
-    assert len(reasons) == 1 and reasons[0].startswith('у звіті не той набір перевірок')
+    assert len(reasons) == 1 and reasons[0].startswith('the report has the wrong set of checks')
 
 
 def test_check_report_treats_a_non_boolean_ok_as_failure():
     odd = json.loads(json.dumps(GOOD))
     odd['checks'][2]['ok'] = 'yes'
-    assert check_report(odd, 'store', '0.1.0') == ['перевірка package_data: ']
+    assert check_report(odd, 'store', '0.1.0') == ['check package_data: ']
 
 
 @pytest.mark.parametrize('given,expected', [('0.1.0', '0.1.0.0'), ('1.2', '1.2.0.0'), ('2.0.1.0', '2.0.1.0'), ('7', '7.0.0.0'), ('65535.0.10', '65535.0.10.0')])
@@ -341,7 +341,7 @@ def test_package_version(given, expected):
 
 @pytest.mark.parametrize('given', ['0.2.0rc1', '1.2.3.4.5', '', '1..2', '1.-2', '١.٢', '2.0.1.5', '65536.0.0', '01.2', '1.02'])
 def test_package_version_refuses_what_the_store_cannot_hold(given):
-    with pytest.raises(ValueError, match='Версія пакета MSIX'):
+    with pytest.raises(ValueError, match='The MSIX package version'):
         package_version(given)
 
 
@@ -415,7 +415,7 @@ def test_find_makeappx(tmp_path, monkeypatch):
     monkeypatch.setenv('MAKEAPPX', str(other))
     assert find_makeappx(None) == other and find_makeappx(str(tool)) == tool
     # A path given on purpose is never replaced by another tool found elsewhere.
-    with pytest.raises(ValueError, match='не знайдено за вказаним шляхом'):
+    with pytest.raises(ValueError, match='not found at the given path'):
         find_makeappx(str(tmp_path / 'typo' / 'makeappx.exe'))
     monkeypatch.delenv('MAKEAPPX')
     with pytest.raises(ValueError, match='Microsoft.Windows.SDK.BuildTools'):
@@ -444,7 +444,7 @@ def test_build_script_refuses_a_non_empty_output_folder(tmp_path):
     (['--skip-msix'], 'report_url'),
     (['--report-url', 'https://example.test/r'], '--identity-name'),
     (['--report-url', 'https://example.test/r', '--identity-name', 'A', '--publisher', 'CN=A', '--publisher-display-name', 'A',
-      '--makeappx', 'C:/no/such/makeappx.exe'], 'не знайдено за вказаним шляхом'),
+      '--makeappx', 'C:/no/such/makeappx.exe'], 'not found at the given path'),
 ])
 def test_build_script_refuses_bad_arguments_before_freezing(tmp_path, arguments, needle):
     out = tmp_path / 'out'
@@ -518,7 +518,7 @@ def test_bridge_check_requires_the_guide(monkeypatch, tmp_path):
         return subprocess.CompletedProcess(arguments, 0, stdout=answers[arguments[1]], stderr=b'')
 
     monkeypatch.setattr(build_store.subprocess, 'run', fake)
-    with pytest.raises(build_store.Refused, match='провідник'):
+    with pytest.raises(build_store.Refused, match='guide'):
         build_store.check_bridge(tmp_path)
     answers['--self-check'] = b'storygen-mcp: ok\nguide: ok\n'
     build_store.check_bridge(tmp_path)

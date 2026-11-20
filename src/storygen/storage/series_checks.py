@@ -15,21 +15,21 @@ def check_series(report, db, stories, versions=None) -> None:
                     raise ValueError
                 known[id] = item
             except ValueError:
-                report.add('invalid_series', id, 'Некоректний запис серії')
+                report.add('invalid_series', id, 'Invalid series record')
     numbers = Counter()
     for story in stories.values():
         if story.series_id is None and story.series_number is None:
             if story.series_start_version_id:  # leaving a series clears it
-                report.add('invalid_series', story.id, 'Знімок початку серії в книзі поза серією')
+                report.add('invalid_series', story.id, 'Series start snapshot in a book outside the series')
             continue
         if story.series_id not in known or story.series_number is None:
-            report.add('invalid_series', story.id, 'Книга посилається на відсутню серію або не має номера')
+            report.add('invalid_series', story.id, 'The book refers to a missing series or has no number')
             continue
         numbers[(story.series_id, story.series_number)] += 1
         start = (versions or {}).get(story.series_start_version_id) if story.series_start_version_id else None
         if story.series_start_version_id and versions is not None and (
                 start is None or start.kind != 'series_start' or start.story_id != story.id):
-            report.add('invalid_series', story.id, 'Знімок початку серії не є знімком цієї книги')
+            report.add('invalid_series', story.id, 'The series start snapshot is not a snapshot of this book')
     for (series_id, number), count in numbers.items():
         if count > 1:
-            report.add('invalid_series', series_id, f'Номер {number} у серії повторюється')
+            report.add('invalid_series', series_id, f'Number {number} is repeated in the series')

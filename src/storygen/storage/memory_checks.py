@@ -19,12 +19,12 @@ def check_memory_versions(report,root,versions):
                     sources[id]=read_series_start(contained_path(root,source.relative_path).read_text(encoding='utf-8'),id).text
                     continue
                 if not source or source.story_id!=ref.story_id or source.kind not in {'manual','edited'} or not source.scene_id:
-                    raise ValueError('Невірне джерело пам’яті')
+                    raise ValueError('Invalid memory source')
                 sources[id]=contained_path(root,source.relative_path).read_text(encoding='utf-8')
                 owners.append(source.scene_id)
                 prose_ids.append(id)
             if not owners or owners[-1]!=ref.scene_id or len(owners)!=len(set(owners)):
-                raise ValueError('Пам’ять не закінчується своєю сценою або повторює сцену')
+                raise ValueError('Memory does not end with its own scene or repeats a scene')
             validate_memory_journal(journal,sources)
             snapshot=ref.dependency_snapshot
             if snapshot and snapshot.scope=='memory':
@@ -34,8 +34,8 @@ def check_memory_versions(report,root,versions):
                 if owners!=snapshot.scene_order or any(
                         old!=heads.get(owner) and (old,heads.get(owner)) not in pairs
                         for owner,old in zip(owners,prose_ids)):
-                    raise ValueError('Пам’ять порушує зафіксований префікс сцен')
+                    raise ValueError('Memory breaks the fixed scene prefix')
             else:
-                report.limitations.append(ref.id+': історичний порядок legacy-пам’яті без snapshot не доведений; джерела й цитати перевірені.')
+                report.limitations.append(ref.id+': the historical order of legacy memory without a snapshot is not proven; sources and quotes are verified.')
         except (ValueError,KeyError,OSError,TypeError):
-            report.add('invalid_memory',ref.id,'Некоректний журнал, префікс або доказ пам’яті')
+            report.add('invalid_memory',ref.id,'Invalid memory log, prefix or proof')

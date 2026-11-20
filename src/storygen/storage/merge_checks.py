@@ -16,4 +16,4 @@ def check_merge_heads(report, root, stories, versions):
                 except (OSError, ValueError):
                     valid = False
             if not valid:
-                report.add('invalid_memory_merge_head', story.id, f'Голова злиття {key} не вказує на злиття пам’яті цієї точки')
+                report.add('invalid_memory_merge_head', story.id, f'Merge head {key} does not point to a memory merge of this point')

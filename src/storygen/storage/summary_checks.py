@@ -16,4 +16,4 @@ def check_summary_heads(report, root, stories, versions):
                 except (OSError, ValueError):
                     valid = False
             if not valid:
-                report.add('invalid_summary_head', story.id, f'Голова підсумку {block_key} не вказує на підсумок цього блоку')
+                report.add('invalid_summary_head', story.id, f'Summary head {block_key} does not point to a summary of this block')
