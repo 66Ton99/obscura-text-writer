@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from '../../../frontend/browser-test.mjs';
 
 async function openPlan(page,request,text){
   const fixture=await(await request.post('/test-fixture')).json();
