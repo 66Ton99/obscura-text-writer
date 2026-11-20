@@ -420,7 +420,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
             refs.append(source_plan.id)
             sections.append(label('global_notes',language)+f' [version_id={source_plan.id}]\n'+preamble)
     # Author plans are explicitly future intentions, never evidence of completed events.
+    future_plans=0
     for item in selected_plan_scenes(scenes,scene,settings):
+        future_plans+=item.position>scene.position
         if item.heads.get('plan'):
             add(label('future_plan',language,number=item.position+1),item.heads['plan'])
         else:
@@ -434,6 +436,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     if profile.ending_goal.strip():
         sections.append(label('ending_goal',language)+'\n'+profile.ending_goal)
         if count is None:sections.append(horizon_instructions(scene,len(scenes),language))
+    elif count is None and future_plans:
+        # CONTEXT-005-S06 (#231): the «all» horizon shows later plans too, so the request still limits the scene to its own beats.
+        sections.append(horizon_instructions(scene,len(scenes),language))
     if stage in {'brief','draft','edit','rewrite'}:
         from ..memory.future import future_section
         future=future_section(repo,story,scene,language,settings.max_input_chars//8)  # SERIES-S10
