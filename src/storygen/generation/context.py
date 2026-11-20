@@ -14,7 +14,7 @@ from ..memory.service import journal_before
 from ..memory.projection import MemoryProjection, project_memory, memory_catalog_v4, memory_items
 from ..memory.selection import SelectionInput, minimal_chars, select_memory
 from ..providers.models import RoleSettings
-from .models import StyleProfile
+from .models import StyleProfile, default_style_profile
 from .role_routing import WRITER_STAGES, settings_for
 from .prompts import role_prompt, validate_role_prompt
 from .context_labels import label, prose_language_directive
@@ -408,7 +408,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         add(label('draft',language),draft_id)
         sections=[repo.read_text(draft_id)] if settings.edit_mode=='diff' else [label('draft_fragments',language,id=draft_id)+'\n'+render_fragments(repo.read_text(draft_id))]
         return make_context(repo,story,scene,stage,settings,sections,refs,{'copyedit_draft_id':draft_id})
-    profile=StyleProfile()
+    profile=default_style_profile(story.language)
     warnings=[]
     if story.style_version_id:
         add(label('style',language),story.style_version_id)

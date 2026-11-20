@@ -3,7 +3,7 @@ from pydantic import Field
 
 from ..authoring.blueprints import ROLES, apply_blueprint, get_role_settings, save_role_settings, update_story_profile, save_shared_provider
 from ..domain import DomainModel
-from ..generation.models import StoryBlueprint, StyleProfile
+from ..generation.models import StoryBlueprint, StyleProfile, default_style_profile
 from ..generation.prompts import default_prompt, role_prompt, expected_contract
 from ..providers.discovery import discover_models
 from ..providers.models import ProviderSettings, RoleSettings
@@ -68,7 +68,7 @@ def read_settings(story_id: str,request: Request):
     story=repo.get_story(story_id)
     roles=get_role_settings(repo,story_id)
     prompts={role: repo.read_text(config.prompt_version_id) if config.prompt_version_id else role_prompt({'planner':'brief','writer':'draft','editor':'edit','memory':'memory'}[role],config,story.language) for role,config in roles.items()}
-    profile=StyleProfile.model_validate_json(repo.read_text(story.style_version_id)) if story.style_version_id else StyleProfile()
+    profile=StyleProfile.model_validate_json(repo.read_text(story.style_version_id)) if story.style_version_id else default_style_profile(story.language)
     planner=roles.get('planner')
     preparation=repo.read_text(planner.prepare_prompt_version_id) if planner and planner.prepare_prompt_version_id else default_prompt('prepare',story.language)
     contracts={role:repo.get_version(config.prompt_version_id).prompt_contract if config.prompt_version_id else expected_contract({'planner':'brief','writer':'draft','editor':'edit','memory':'memory'}[role],config) for role,config in roles.items()}
