@@ -15,5 +15,6 @@ assert.equal(findTarget(cards,'анна'),1);
 assert.equal(findTarget(cards,'анн'),0);
 assert.equal(findTarget(cards,'бос'),2);
 assert.equal(findTarget(cards,'ніхто'),-1);
+assert.equal(findTarget([card('Bob Sr'),card('Host','Other names: A\u{1F600}, Bob')],'Bob'),1);
 // Parity with characters/names.py: the cases come from the Python test as JSON.
 if(process.argv[3])console.log(JSON.stringify(JSON.parse(process.argv[3]).map(item=>cardNames(item))));

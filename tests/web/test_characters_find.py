@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CASES = [
     ('Хазяїн', ["Інше ім'я: Джон"]), ('Хазяїн', ['- **Інші імена:** Незнайомець, хазяїн']), ('Ліна', ['Також відома як: Лінка']),
     ('John', ['Other names: Johnny, Boss', 'AKA: J']), ('Анна', ["Інше ім'я: —", 'Вік: 30']), ('Анна', ['Also known as: Ann (стара, кличка)']),
+    ('Host', ['Other names: A\U0001F600, Bob']),
+    ('Host', ['Other names: Alice\rAKA: Bob\x85Інше ім\'я: Ліза']),
 ]
 
 

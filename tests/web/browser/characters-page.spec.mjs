@@ -108,6 +108,7 @@ test('timing warning follows the interface language on load and in preview',asyn
 test('find a character filters cards, jumps and never loses edits',async({page,request})=>{
   // CHARACTER-TIME-S04 (#75)
   const story=await(await request.post('/api/stories',{data:{title:'Пошук персонажів'}})).json();
+  expect((await request.post(`/api/stories/${story.id}/scenes`,{data:{title:'Зустріч'}})).ok()).toBeTruthy();
   const url=`/api/stories/${story.id}/characters`;
   const entry=text=>({id:null,text,origin:'author',sources:[],availability:'timeless',available_from_scene_id:null});
   const cards=[{id:null,name:'Маріанна',entries:[entry('Сусідка')]},{id:null,name:'Анна',entries:[entry('Лікарка')]},
@@ -148,6 +149,15 @@ test('find a character filters cards, jumps and never loses edits',async({page,r
   await expect(find).toHaveValue('');
   await expect(groups.nth(0)).toBeVisible();
   expect((await(await request.get(url)).json()).cards[1].name).toBe('Анна');
+  let previews=0;page.on('request',req=>{if(req.url().endsWith('/characters/preview'))previews++});
+  await find.fill('хаз');
+  await expect(groups.nth(0)).toBeHidden();
+  await expect(page.locator('#characters-preview')).toBeEnabled();
+  await page.locator('#characters-preview').click();
+  await expect(find).toHaveValue('');
+  await expect(groups.nth(0)).toBeVisible();
+  expect(await groups.nth(0).locator('textarea').evaluate(el=>el.matches(':invalid'))).toBeTruthy();
+  expect(previews).toBe(0);
   await groups.nth(0).locator('textarea').fill('Сусідка');
   await find.fill('хаз');
   await page.locator('#characters-save').click();
