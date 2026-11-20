@@ -1516,6 +1516,51 @@
       ]
     },
     {
+      "id": "PLAN-NUMBERING-S01",
+      "requirement": "PLAN-NUMBERING",
+      "scope": "Enter у кінці пункту продовжує список і зсуває решту; порожній пункт розриває список, нижчі пункти від 1; Ctrl+Z після Enter.",
+      "tests": [
+        "tests/web/test_plan_numbering.py::test_plan_numbering_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-numbering",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/plan-numbering.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "PLAN-NUMBERING-S02",
+      "requirement": "PLAN-NUMBERING",
+      "scope": "Новий перший пункт перенумеровує список, рядки розбору сервера не змінюються.",
+      "tests": [
+        "tests/web/test_plan_numbering.py::test_plan_numbering_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-numbering",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/plan-numbering.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "PLAN-NUMBERING-S03",
+      "requirement": "PLAN-NUMBERING",
+      "scope": "Видалення пункту зсуває номери; кнопка вирівнює всі списки, порожній рядок розділяє списки.",
+      "tests": [
+        "tests/web/test_plan_numbering.py::test_plan_numbering_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-numbering",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/plan-numbering.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "PLAN-NUMBERING-S04",
+      "requirement": "PLAN-NUMBERING",
+      "scope": "Одне Ctrl+Z повертає перенумерацію; інші вкладки без кнопки й без змін номерів.",
+      "manual": {
+        "procedure": "docs/verification/manual.md#plan-numbering",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/plan-numbering.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "SCENE-CAST-DISPLAY-S01",
       "requirement": "SCENE-CAST-DISPLAY",
       "scope": "Імена після збереження плану. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",

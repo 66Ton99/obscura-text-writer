@@ -2678,7 +2678,9 @@
     "publication.refusal_content": "Письменник відмовився через контент.",
     "publication.refusal_unknown": "Письменник відмовився; причина не встановлена.",
     "publication.writer_timeout": "Перевищено час очікування відповіді письменника.",
-    "publication.writer_connection": "Не вдалося встановити з’єднання з письменником."
+    "publication.writer_connection": "Не вдалося встановити з’єднання з письменником.",
+    "plan.renumber": "Перенумерувати",
+    "plan.renumber_hint": "Вирівняти номери всіх нумерованих списків плану"
   },
   "en": {
     "ui.save": "Save",
@@ -5359,6 +5361,8 @@
     "publication.refusal_content": "The writer refused because of the content.",
     "publication.refusal_unknown": "The writer refused; the reason is unknown.",
     "publication.writer_timeout": "The writer's response timed out.",
-    "publication.writer_connection": "Could not connect to the writer."
+    "publication.writer_connection": "Could not connect to the writer.",
+    "plan.renumber": "Renumber",
+    "plan.renumber_hint": "Put the numbers of every numbered list in the plan in order"
   }
 }

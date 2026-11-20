@@ -14,6 +14,7 @@ import {readWorkspacePosition,rememberWorkspacePosition,resolveWorkspacePosition
 import {registerWorkspaceCommand,invokeWorkspaceCommand} from './workspace-commands.js';
 import {externalNotice} from './scene-sync.js';
 import {groupScenes,sceneMarks} from './book-structure.js';
+import {installPlanNumbering} from './plan-numbering-editor.js';
 
 export const state={storyId:document.querySelector('#workspace')?.dataset.storyId,scene:null,view:null,mode:'plan',dirty:false,saving:false,bufferEpoch:0};
 export const initialWorkspacePosition=readWorkspacePosition(state.storyId,globalThis.location?.search||'');
@@ -22,6 +23,8 @@ export function registerAuthorComments(controller){authorComments=controller;}
 export const getAuthorComments=()=>authorComments;
 const editor=document.querySelector('#editor');
 export const textEditor=createTextEditor(editor);
+// PLAN-NUMBERING: only the scene plan, in the plain textarea, for the current editable buffer.
+export const planNumbering=installPlanNumbering({element:editor,active:()=>state.mode==='plan'&&state.bufferOrigin!=='history'&&!textEditor.isReadOnly()&&!state.saving});
 const placeholders={
   get plan(){return t("m_af47cedafa12")},
   get brief(){return t("m_d5bd1ca9098e")},
