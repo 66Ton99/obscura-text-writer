@@ -1,8 +1,8 @@
 # Межа поточної сцени за будь-якого горизонту (#231)
 
 Дата: 2026-11-20
-Статус: чернетка
-Spec-review: —
+Статус: очікує затвердження
+Spec-review: codex/gpt-6.1-sol @ 18f15f2 (author: claude) — 0 findings: 0 fixed, 0 rejected
 
 ## Для власника
 
@@ -91,4 +91,4 @@ Traceability: S06 → pytest у `tests/generation/test_story_horizon.py`.
 
 ## Рев'ю спеки
 
-—
+Зауважень немає.
