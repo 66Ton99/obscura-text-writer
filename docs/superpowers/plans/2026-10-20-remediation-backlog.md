@@ -30,7 +30,7 @@
 
 Наслідок порядку, погоджений власником 10.11.2026: інсталятор іде перед довгою формою, тож перший реліз готових збірок розрахований на оповідання, а не на романи.
 
-Без місця в черзі: [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176) — R-37 рекламні пікселі й банер згоди на cookies для сайту (запит власника 15.11.2026). [#200](https://github.com/ysilvestrov/obscura-text-writer/issues/200) — R-39 скіли Obscura: пакування для Store і методика в MCP (залишок R-35, перший пакет якого реалізовано 17.11.2026; виконується разом із залишком #119); [#203](https://github.com/ysilvestrov/obscura-text-writer/issues/203) — R-40 скіл `revise`; [#196](https://github.com/ysilvestrov/obscura-text-writer/issues/196) — R-38 анотацію пише роль письменника (запит власника 17.11.2026); [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
+Без місця в черзі: [#176](https://github.com/ysilvestrov/obscura-text-writer/issues/176) — R-37 рекламні пікселі й банер згоди на cookies для сайту (запит власника 15.11.2026). [#200](https://github.com/ysilvestrov/obscura-text-writer/issues/200) — R-39 скіли Obscura: пакування для Store і методика в MCP (залишок R-35, перший пакет якого реалізовано 17.11.2026; виконується разом із залишком #119); [#203](https://github.com/ysilvestrov/obscura-text-writer/issues/203) — R-40 скіл `revise`; [#196](https://github.com/ysilvestrov/obscura-text-writer/issues/196) — R-38 анотацію пише роль письменника (запит власника 17.11.2026); [#236](https://github.com/ysilvestrov/obscura-text-writer/issues/236) — R-42 ім’я файлу експорту з автора, назви книги й дати (запит власника 20.11.2026); [#67](https://github.com/ysilvestrov/obscura-text-writer/issues/67), [#68](https://github.com/ysilvestrov/obscura-text-writer/issues/68), [#69](https://github.com/ysilvestrov/obscura-text-writer/issues/69), [#70](https://github.com/ysilvestrov/obscura-text-writer/issues/70) — залишки #60.
 
 Відкладено: [#61](https://github.com/ysilvestrov/obscura-text-writer/issues/61) — автоматичні сигнали втрати запису пам'яті (з #41); береться, коли буде видно частоту пропусків пам'яті v4.
 
@@ -720,3 +720,13 @@ Read-only розбір останнього запуску06.11.2026 вияви�
 - Відкриті рішення: чи потрібна функція взагалі (імпорт і чат її значною мірою дублюють); чи повертати її в Store; чи відкривати етап `prepare` через MCP.
 - Залежності: специфікація «Підвал редактора для Store» (`docs/superpowers/specs/2026-11/2026-11-19-store-footer-design.md`) ховає планувальника в Store; #213 (редактор завдання без JSON) — споріднений підхід до показу.
 - Приймання: специфікація зміни, SPEC.MD (prepare/blueprint) + traceability, сайт uk/en.
+
+## R-42 — Ім’я файлу експорту з автора, назви книги й дати
+
+**Статус:** запит власника 20.11.2026, GitHub [#236](https://github.com/ysilvestrov/obscura-text-writer/issues/236). Місце в черзі не визначено.
+
+- Мета: з імені завантаженого файлу видно автора, книгу й дату експорту, а не технічний ID.
+- Обсяг: ім’я завантаження для MD, TXT, FB2, EPUB і PDF (`Content-Disposition` з UTF-8 і ASCII-запасним іменем); сховище й маніфест лишаються під ID експорту.
+- Відкриті рішення: формат дати й роздільники; ім’я без автора; чи називати так само експорт плану й маніфест.
+- Залежності: немає.
+- Приймання: SPEC.MD EXPORT-001 + traceability; сторінка `publication` uk/en; MCP `export_book`, якщо він повертає ім’я.
