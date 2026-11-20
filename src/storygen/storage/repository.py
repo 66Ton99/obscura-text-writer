@@ -173,6 +173,14 @@ class Repository:
         from .run_store import recover_running_attempts
         return recover_running_attempts(self)
 
+    def close_run_after_acceptance(self, attempt_id):
+        from .run_store import close_run_after_acceptance
+        return close_run_after_acceptance(self, attempt_id)
+
+    def close_accepted_runs(self):
+        from .run_store import close_accepted_runs
+        return close_accepted_runs(self)
+
     def read_evaluator_settings(self, story_id):
         from .settings_store import read_evaluator_settings
         return read_evaluator_settings(self, story_id)

@@ -29,11 +29,11 @@ state.scene=null;holder.removed=false;listeners.get('scene-selected')();assert.e
 const {installLibraryTrash}=await import(pathToFileURL(process.argv[2]+'/src/storygen/web/static/trash.js'));
 const storyButton=new Element();storyButton.dataset={trashStory:'story',revision:'8'};
 document.querySelectorAll=()=>[storyButton];
-let requests=[],prompts=[],reloads=0,answer=true,runs=[],cancelResponse='cancelled',failCancel=false;
+let trashedScenes=[],requests=[],prompts=[],reloads=0,answer=true,runs=[],cancelResponse='cancelled',failCancel=false;
 globalThis.location={reload(){reloads++}};
 globalThis.confirm=text=>{prompts.push(text);return answer};
 globalThis.fetch=async(url,options={})=>{
-  if(!options.method)return {ok:true,json:async()=>url.endsWith('/runs')?{runs}:{stories:[]}};
+  if(!options.method)return {ok:true,json:async()=>url.endsWith('/runs')?{runs}:{stories:[],scenes:trashedScenes}};
   requests.push([url,options]);
   if(url.endsWith('/cancel'))return {ok:!failCancel,json:async()=>failCancel?{detail:'Cancellation failed'}:{state:cancelResponse}};
   return {ok:true,json:async()=>({})};
@@ -53,4 +53,35 @@ requests=[];failCancel=false;cancelResponse='cancellation_requested';await story
 assert.equal(requests.length,1,'a resumed run must not be trashed before cancellation completes');
 requests=[];cancelResponse='cancelled';runs=[{id:'done',state:'completed'}];await storyButton.onclick();
 assert.deepEqual(requests.map(([u])=>u),['/api/stories/story/trash']);
+// RUN-ACCEPT-CLOSE: deleting a scene offers to cancel stopped runs instead of a dead end; an active run still blocks it.
+const sceneState={storyId:'s2',scene:{id:'x',revision:4},dirty:false,saving:false};
+installSceneTrash(sceneState,async()=>{},()=>{});
+const sceneButton=element('#scene-select-mobile').placed[0];
+requests=[];prompts=[];answer=true;cancelResponse='cancelled';failCancel=false;runs=[{id:'wait',state:'needs_review'},{id:'done',state:'completed'}];
+await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel','/api/scenes/x/trash']);assert.match(prompts.at(-1),/1/);
+requests=[];answer=false;await sceneButton.onclick();assert.equal(requests.length,0,'declining keeps runs and scene');
+answer=true;runs=[{id:'busy',state:'running'}];prompts=[];await sceneButton.onclick();
+assert.equal(requests.length,0,'an active run is never cancelled by scene trash');assert.equal(prompts.length,0);
+runs=[{id:'wait',state:'paused'}];cancelResponse='cancellation_requested';await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel'],'the scene stays until cancellation completes');
+requests=[];cancelResponse='cancelled';runs=[];await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/scenes/x/trash']);assert.doesNotMatch(prompts.at(-1),/запуск/);
+// The scene trash list offers the same choice when a scene is restored, under the same buffer lock.
+trashedScenes=[{id:'y',title:'Стара',revision:2}];await listeners.get('story-refreshed')();
+const panel=element('.scene-panel'),trashList=panel.children.at(-1).children[1],restoreButton=trashList.children[0].children[1];
+requests=[];prompts=[];answer=true;cancelResponse='cancelled';runs=[{id:'wait',state:'alternative'}];
+const realFetch=globalThis.fetch;let lockedDuringCancel=null;
+globalThis.fetch=async(url,options={})=>{if(url.endsWith('/cancel'))lockedDuringCancel=sceneState.saving;return realFetch(url,options)};
+await restoreButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel','/api/scenes/y/restore']);assert.match(prompts.at(-1),/1/);
+assert.equal(lockedDuringCancel,true,'restore locks the buffer while runs are cancelled');assert.equal(sceneState.saving,false);
+requests=[];answer=false;await restoreButton.onclick();assert.equal(requests.length,0,'declining restores nothing');
+answer=true;runs=[{id:'busy',state:'queued'}];prompts=[];await restoreButton.onclick();
+assert.equal(requests.length,0,'an active run blocks restore');assert.equal(prompts.length,0);
+runs=[{id:'wait',state:'interrupted'}];cancelResponse='cancellation_requested';await restoreButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel'],'the scene stays in the trash until cancellation completes');
+assert.equal(sceneState.saving,false);assert.equal(restoreButton.disabled,false);
+requests=[];runs=[];prompts=[];await restoreButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/scenes/y/restore']);assert.equal(prompts.length,0,'no runs: restore without a question');
 console.log('trash buffer and stopped-run guards passed');process.exit(0);

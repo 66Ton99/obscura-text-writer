@@ -268,6 +268,7 @@ def accept_brief(scene_id: str,body: Selection,request: Request):
     for attempt in repo.list_attempts(scene.story_id):
         if attempt.result_version_id==body.version_id and attempt.state=='needs_review':
             attempt.state='completed';attempt.error=None;repo.save_attempt(attempt)
+            repo.close_run_after_acceptance(attempt.id)  # RUN-ACCEPT-CLOSE: the decision the run waited for is made
     return scene
 
 
