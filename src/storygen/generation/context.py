@@ -263,8 +263,16 @@ def memory_projection(repo,story,scene,scenes,language):
     source_numbers={id:source_number(repo.get_version(id),scene_numbers) for id in past.source_prose_ids}
     hidden,forwarded=hidden_before(repo,scene.id),forwarded_before(repo,scene.id)
     tracked=[] if flashback else scene_tracked(story,cards,scenes,scene);names={card.id:card.name for card in cards}
-    projection=project_memory(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language)
+    from ..memory.story_time import day_key
+    # CONTEXT-002-S07: days of the source scenes date the clothing worn earlier the same day.
+    projection=project_memory(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language,
+        scene_day=day_key(scene),source_days=source_days(story,scenes,scene))
     return past,source_numbers,hidden,forwarded,tracked,names,projection
+
+
+def source_days(story,scenes,scene):
+    from ..memory.story_time import day_key
+    return {s.position+1:day_key(s) for s in previous_scenes(story,scenes,scene)}
 
 
 def writer_day_change(scene,scenes,tracked,names,language,story=None):
@@ -458,7 +466,8 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     if foreign_warning:warnings.append(foreign_warning)
     def selection_input():
         from ..memory.story_time import day_key
-        items,_=memory_items(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language)
+        items,_=memory_items(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language,
+            scene_day=day_key(scene),source_days=source_days(story,scenes,scene))
         # FTS query: the scene's own plan (already in refs) and, where it is a required input, its brief.
         query=[repo.read_text(scene.heads['plan']) if scene.heads.get('plan') else scene.beats]
         if stage in {'draft','edit'} and scene.heads.get('brief'):query.append(repo.read_text(scene.heads['brief']))

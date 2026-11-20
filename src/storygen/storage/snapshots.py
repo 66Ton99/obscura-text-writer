@@ -95,6 +95,7 @@ def build_dependency_snapshot(
             head(scene, name)
         # CONTEXT-002-S05: these stages see «ЗМІНИВСЯ ДЕНЬ», so a change of the parsed day is a change of their input.
         memory_core_selectors(view,story,scene,scenes,select)
+        same_day_selectors(view,story,scene,scenes,select,selectors)
     if scope in SERIES_SCOPES:
         from ..memory.series_start import scene_series_start
         start = scene_series_start(story, scenes, scene)
@@ -168,6 +169,28 @@ def memory_core_selectors(view,story,scene,scenes,select):
     owners=[scene]+[item for item in (comparison_scene(scenes,scene,hero,story) for hero in tracked) if item]
     for item in dict((item.id,item) for item in owners).values():
         select('scene',item.id,'memory_day_key',day_key(item))
+
+
+def same_day_selectors(view,story,scene,scenes,select,selectors):
+    """CONTEXT-002-S08: the day of each scene that set a clothing value of a tracked character dates the «earlier this day»
+    hint, so a change of that day is a change of the writing input. Snapshots taken before carry none and stay fresh."""
+    from ..book.lineage import previous_scenes
+    from ..book.protagonists import scene_tracked
+    from ..memory.service import journal_before
+    from ..memory.projection import same_day_source_ids
+    from ..memory.story_time import day_key, is_flashback
+    if is_flashback(scene):return
+    earlier={s.id:s for s in previous_scenes(story,scenes,scene)}
+    if not earlier:return
+    tracked=scene_tracked(story,core_cards(view,story),scenes,scene)
+    if not tracked:return
+    try:journal=journal_before(view,scene.id)
+    except ValueError:return  # memory awaiting confirmation: the writing context has no core to date either
+    have={s.owner_id for s in selectors if s.kind=='scene' and s.field=='memory_day_key'}
+    for id in same_day_source_ids(journal,tracked):
+        owner=earlier.get(view.get_version(id).scene_id)
+        if owner and owner.id not in have:
+            have.add(owner.id);select('scene',owner.id,'memory_day_key',day_key(owner))
 
 
 def previous_memory_selector(view, story, scene, select, head):
