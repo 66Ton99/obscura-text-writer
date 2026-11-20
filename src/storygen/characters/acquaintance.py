@@ -14,8 +14,7 @@ ROLE=re.compile(r'(?i)^(?:роль(?:\s+у\s+творі)?|role(?:\s+in\s+the\s+s
 KNOWN=re.compile(r'(?i)^(?:(?:знайомий|знайома|знайомі|знайм)\s+з|knows|acquainted\s+with)\s*:\s*(.*)$')
 
 
-def plain_line(line):
-    return re.sub(r'^[\s\-—–]+','',line.replace('**','').replace('__','').replace('*','').strip()).strip()
+from .names import plain_line
 
 
 def is_protagonist_line(line):
@@ -66,7 +65,9 @@ def pre_story_known(cards,scenes,scene_id,hero_id):
 
 def _ambiguous(name,cards):
     """True when the name (or its form without parentheticals) belongs to several cards, i.e. it is ambiguous, not unknown."""
-    count=lambda value:sum(name_key(card.name)==name_key(value) for card in cards)
+    from .names import name_index
+    index=name_index(cards)  # CHARACTER-NAMES: other names count too
+    count=lambda value:len(index.get(name_key(value),[]))
     return (count(name) or count(without_parentheticals(name)))>1
 
 

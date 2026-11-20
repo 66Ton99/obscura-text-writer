@@ -162,8 +162,9 @@ PROTAGONIST_UNKNOWN = 'Протагоніст «{name}» не знайдений
 
 
 def _card_by_name(cards):
-    from ..scene_description import name_key
-    return {name_key(card.name): card.id for card in cards}
+    from ..characters.names import name_index
+    # CHARACTER-NAMES: any name of a card; a name of several cards names nobody.
+    return {key: ids[0] for key, ids in name_index(cards).items() if len(ids) == 1}
 
 
 def _apply_protagonists(structure, wanted, cards):
