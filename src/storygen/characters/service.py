@@ -4,6 +4,7 @@ import json
 from ..domain import RevisionConflict,new_id
 from .models import load_characters
 from .projection import project_characters,TEMPORAL_WARNING
+from .names import name_warnings
 
 
 def _cards(view,story):
@@ -46,6 +47,7 @@ def read_character_material(repo,story_id,scene_id=None):
     view=repo.context_view(story_id);story=view.get_story(story_id);cards=_cards(view,story)
     source=view.active_source(story_id,'source_characters') if not story.characters_version_id else None
     warnings=[TEMPORAL_WARNING] if source or any(e.availability=='unclassified' for c in cards for e in c.entries) else []
+    warnings+=name_warnings(cards)  # CHARACTER-NAMES-S03
     result={'story_id':story_id,'revision':story.revision,'version_id':story.characters_version_id,
         'cards':[c.model_dump() for c in cards],
         'scenes':[{'id':s.id,'title':s.title,'position':s.position} for s in view.list_scenes(story_id)],
@@ -60,7 +62,7 @@ def preview_character_material(repo,story_id,cards,scene_id):
     view=repo.context_view(story_id);story=view.get_story(story_id)
     normalized,_=_normalize(view,story,cards)
     projection=project_characters(normalized,view.list_scenes(story_id),scene_id)
-    return {'text':projection.text,'warnings':projection.warnings,'excluded_count':projection.excluded_count,'revision':story.revision}
+    return {'text':projection.text,'warnings':projection.warnings+name_warnings(normalized),'excluded_count':projection.excluded_count,'revision':story.revision}
 
 
 def save_character_material(repo,story_id,cards,expected_revision):
