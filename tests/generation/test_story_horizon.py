@@ -204,7 +204,8 @@ def test_all_horizon_with_future_plans_has_the_scene_boundary(tmp_path):
     for stage,kwargs in [('brief',{}),('draft',{}),('edit',{}),('rewrite',{'editor_source_id':draft.id})]:
         ctx=build_context(repo,scenes[0].id,stage,role('all'),**kwargs)
         assert 'УНІКАЛЬНИЙ_ПЛАН_2' in ctx.user_text,stage
-        assert ctx.user_text.count(BOUNDARY)==1 and 'Поточна сцена не остання' in ctx.user_text,stage
+        assert ctx.user_text.count(BOUNDARY)==1,stage
+        assert 'МЕЖІ ПОТОЧНОЇ СЦЕНИ\nРеалізуйте лише біти поточної сцени. Майбутні плани та орієнтир фіналу — задум, а не вже здійснені події. Поточна сцена не остання: не завершуйте весь твір і не переносіть розв’язку сюди.' in ctx.user_text,stage
         assert ctx.user_text.index('УНІКАЛЬНИЙ_ПЛАН_3')<ctx.user_text.index(BOUNDARY),stage
     assert not any('горизонт' in w.lower() for w in build_context(repo,scenes[0].id,'brief',role('all')).context_warnings)
 
