@@ -1344,6 +1344,7 @@
         "tests/authoring/test_plan_export.py::test_plan_and_characters_in_reading_order",
         "tests/authoring/test_plan_export.py::test_empty_plan_and_no_characters_are_marked",
         "tests/authoring/test_plan_export.py::test_imported_characters_text_without_cards",
+        "tests/authoring/test_plan_export.py::test_scene_heading_inside_the_plan_is_not_repeated",
         "tests/authoring/test_plan_export.py::test_english_story_uses_english_labels",
         "tests/authoring/test_plan_export.py::test_english_availability_notes",
         "tests/authoring/test_plan_export.py::test_route_serves_markdown_attachment",
