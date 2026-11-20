@@ -171,7 +171,8 @@ def acquaintance_material(view,story,scene,stage):
     others=[cid for cid in scene.character_ids if cid!=hero]
     if not others:return '',warnings
     result=acquaintances(view,story,scene)
-    names={card.id:card.name for card in load_characters(view.read_text(story.characters_version_id))}
+    from .names import scene_names
+    names=scene_names(cards,scenes,scene)  # CHARACTER-NAMES: the name current in the scene
     def name(cid):return names.get(cid,cid)
     known=[cid for cid in others if cid in result.known]
     known.sort(key=lambda cid:(result.known[cid] is not None,result.known[cid] or 0))

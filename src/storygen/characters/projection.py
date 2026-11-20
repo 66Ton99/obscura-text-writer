@@ -40,7 +40,12 @@ def project_characters(cards,scenes,scene_id,language='uk'):
             groups[entry.availability].append('— '+entry.text)
             included.append(entry.id)
         body='\n\n'.join(labels[key]+'\n'+'\n'.join(lines) for key,lines in groups.items() if lines)
-        if body:sections.append(label('character',language)+card.name+'\n'+body)
+        if body:
+            # CHARACTER-NAMES: the name current in this scene and the earlier names available here.
+            from .names import scene_name
+            current,earlier=scene_name(card,active,scene)
+            also=label('character_also',language,names=', '.join(earlier)) if earlier else ''
+            sections.append(label('character',language)+current+also+'\n'+body)
     missing=set(scene.character_ids)-{card.id for card in cards}
     if missing:warnings.append('Для частини персонажів сцени немає карток; перевірте список персонажів.')
     return CharacterProjection('\n\n'.join(sections),warnings,included,excluded)

@@ -262,12 +262,21 @@ def memory_projection(repo,story,scene,scenes,language):
     from ..memory.series_start import source_number
     source_numbers={id:source_number(repo.get_version(id),scene_numbers) for id in past.source_prose_ids}
     hidden,forwarded=hidden_before(repo,scene.id),forwarded_before(repo,scene.id)
-    tracked=[] if flashback else scene_tracked(story,cards,scenes,scene);names={card.id:card.name for card in cards}
+    from ..characters.names import scene_names
+    tracked=[] if flashback else scene_tracked(story,cards,scenes,scene);names=scene_names(cards,scenes,scene)  # CHARACTER-NAMES
     from ..memory.story_time import day_key
     # CONTEXT-002-S07: days of the source scenes date the clothing worn earlier the same day.
     projection=project_memory(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language,
         scene_day=day_key(scene),source_days=source_days(story,scenes,scene))
     return past,source_numbers,hidden,forwarded,tracked,names,projection
+
+
+def story_match_names(repo,story,scenes,scene):
+    """CHARACTER-NAMES: every name of each card available in the scene, for finding mentions in memory text."""
+    from ..characters.models import load_characters
+    from ..characters.names import scene_match_names
+    cards=load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else []
+    return scene_match_names(cards,scenes,scene)
 
 
 def source_days(story,scenes,scene):
@@ -346,7 +355,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         simple=flashback and not bible and flashback_mode(story,scenes)=='simple'
         tracked=[] if flashback else [cid for cid in everyone if cid in scene.character_ids]
         changed={cid:day_change(scenes,scene,cid,story) for cid in tracked}
-        names={card.id:card.name for card in cards}
+        from ..characters.names import scene_names,scene_match_names
+        # CHARACTER-NAMES: the catalog shows the current name; narrowing finds mentions of every name available here.
+        names=scene_names(cards,scenes,scene);match_names=scene_match_names(cards,scenes,scene)
         prose_text=repo.read_text(prose_id)
         dump=lambda value:json.dumps(value,ensure_ascii=False,separators=(',',':'))
         def catalog_sections(keep=None):
@@ -378,7 +389,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
             from ..memory.series_start import source_number
             numbers={s.id:s.position+1 for s in scenes}
             from ..book.lineage import lineage_numbers
-            narrow=narrow_catalog(past,scene.character_ids,everyone,names,prose_text,scene.position+1,
+            narrow=narrow_catalog(past,scene.character_ids,everyone,match_names,prose_text,scene.position+1,
                 {id:source_number(repo.get_version(id),numbers) for id in past.source_prose_ids},lineage_numbers(story,scenes,scene))
             small,_,small_bounds,small_sections=catalog_sections(set(narrow.keep))
             return (small_sections,{'memory_schema_bounds':json.dumps(small_bounds,ensure_ascii=False)},
@@ -411,7 +422,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     # SCENE-NARRATOR: right after the style it replaces point_of_view of; nothing at all without an override.
     from ..narration import narrator_section
     from ..characters.models import load_characters
-    narrator_text,narrator_warnings=narrator_section(scene,load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else [],language)
+    narrator_text,narrator_warnings=narrator_section(scene,load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else [],language,scenes)
     if narrator_text:sections.append(narrator_text)
     warnings.extend(narrator_warnings)
     if story.canon_version_id:
@@ -486,7 +497,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         summaries,stale=usable_summaries(repo,story,scenes,scene.position+1,language)
         return SelectionInput(tuple(items),scene.id,scene.position+1,tuple(scene.character_ids),tuple(tracked),names,'\n'.join(query),kinds(),
             day_key(scene),{s.position+1:day_key(s) for s in previous_scenes(story,scenes,scene)},language,tuple(summaries),tuple(stale),
-            lineage_numbers(story,scenes,scene))
+            lineage_numbers(story,scenes,scene),story_match_names(repo,story,scenes,scene))
     def kinds():
         from ..memory.kinds import kind_overrides
         return kind_overrides(repo if hasattr(repo,'peek_scene') else repo.context_view(story.id),scene.id)

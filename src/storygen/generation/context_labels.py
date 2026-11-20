@@ -85,6 +85,7 @@ LABELS: dict[str, dict[str, str]] = {
     # Characters (characters/projection.py, characters/context.py, characters/acquaintance.py).
     'characters': {'uk': 'КАРТКИ ПЕРСОНАЖІВ', 'en': 'CHARACTER CARDS'},
     'character': {'uk': 'ПЕРСОНАЖ: ', 'en': 'CHARACTER: '},
+    'character_also': {'uk': ' (також: {names})', 'en': ' (also: {names})'},
     'character_timeless': {'uk': 'ПОЗАЧАСОВІ ВІДОМОСТІ', 'en': 'TIMELESS DETAILS'},
     'character_from_scene': {'uk': 'ДОСТУПНІ АВТОРСЬКІ ВКАЗІВКИ — НЕ ДОКАЗ МИНУЛИХ ПОДІЙ',
                              'en': 'AVAILABLE AUTHOR NOTES — NOT EVIDENCE OF PAST EVENTS'},

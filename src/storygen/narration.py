@@ -60,13 +60,15 @@ def narrator_value(narrator):
     return narrator.person+(':'+narrator.character_id if narrator.character_id else '')
 
 
-def narrator_section(scene,cards,language='uk'):
+def narrator_section(scene,cards,language='uk',scenes=None):
     """(section text or None, warnings) for the writing stages: the effective narrator with the card name, never an ID."""
     from .generation.context_labels import label
     narrator,_,problems=effective_narrator(scene,cards)
     warnings=list(problems)
     if narrator is None:return None,warnings
-    names={card.id:card.name for card in cards}
+    from .characters.names import scene_names
+    # CHARACTER-NAMES: the name current in the scene when the story's scenes are known.
+    names=scene_names(cards,scenes,scene) if scenes is not None else {card.id:card.name for card in cards}
     name=names.get(narrator.character_id) or label('memory_protagonist',language) if narrator.character_id else ''
     if narrator.character_id and narrator.character_id not in scene.character_ids:
         warnings.append(NOT_IN_CAST.format(name=name))
