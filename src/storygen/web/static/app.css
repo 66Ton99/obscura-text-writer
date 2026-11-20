@@ -250,6 +250,21 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.7 var(--font-
 .copyedit-selected-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 32rem; overflow-y: auto; padding: 16px; border: 1px solid var(--border-color); font: inherit; }
 
 .memory-filters { display: flex; gap: 12px; margin-block: 16px; }
+.brief-form h3 { font-size: 1rem; margin: 16px 0 8px; }
+.editor-panel .brief-form textarea { width: 100%; min-height: 0; box-sizing: border-box; padding: 8px 12px; line-height: 1.5; font-size: 16px; resize: vertical; }
+.brief-form-problem { color: var(--error); }
+.brief-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.brief-item { display: flex; gap: 8px; align-items: flex-start; }
+.brief-item textarea { flex: 1; min-width: 0; }
+.brief-item-number { min-width: 2.2em; padding-top: 6px; text-align: right; font-variant-numeric: tabular-nums; }
+.brief-item-tools { display: flex; gap: 4px; flex-wrap: wrap; }
+.brief-item-button { min-width: 2.2em; padding-inline: 6px; }
+.brief-form-list > button { margin-top: 8px; }
+@media (max-width: 650px) {
+  .brief-item { flex-wrap: wrap; }
+  .brief-item textarea { flex-basis: calc(100% - 3em); }
+  .brief-item-tools { margin-left: calc(2.2em + 8px); }
+}
 .memory-filters input, .memory-filters select { min-width: 0; flex: 1; }
 .memory-table-wrap { overflow-x: auto; }
 .memory-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }

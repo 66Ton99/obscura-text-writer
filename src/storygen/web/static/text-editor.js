@@ -110,6 +110,8 @@ export function createTextEditor(element){
     placeholder(text){uiText(element,'placeholder',()=>text);if(engine)uiAttr(engine.view.dom,'data-placeholder',()=>text);},
     readOnly(value){locked=Boolean(value);element.readOnly=locked;engine?.readOnly(locked);update();},
     isReadOnly:()=>locked,
+    /** Replaces the plain-text buffer as typing would: the input handlers run and the saved baseline stays. */
+    replaceText(text){if(engine)return;element.value=text;emit();},
     visible(value){shown=Boolean(value);visibility();},
     focus:()=>engine?engine.focus():element.focus(),
     selection:()=>engine?engineModule.toSourceRange(engine.selection(),engine.snapshot().sourceMap):null,

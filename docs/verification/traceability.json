@@ -2566,6 +2566,16 @@
       ]
     },
     {
+      "id": "R16-SUGGEST-S06",
+      "requirement": "R16-SUGGEST",
+      "scope": "Пропозицію картки будує профіль письменника: планувальник із малим вікном не заважає, готовність називає writer, без моделі письменника — пояснення. Згоду й позначку відмови перевіряють і записують за роллю writer.",
+      "tests": [
+        "tests/generation/test_publication_metadata.py::test_suggestion_uses_the_writer_role_not_a_small_planner",
+        "tests/generation/test_publication_metadata.py::test_suggestion_without_a_writer_model_explains_it",
+        "tests/generation/test_publication_metadata.py::test_suggestion_consent_and_refusal_belong_to_the_writer"
+      ]
+    },
+    {
       "id": "SAVE-UNCHANGED-S01",
       "requirement": "SAVE-UNCHANGED",
       "scope": "Exact bytes reuse з CAS для всіх матеріалів, незмінні metadata/head, stale збережено, зміни інвалідують.",
@@ -4239,6 +4249,54 @@
       "manual": {
         "procedure": "docs/verification/manual.md#r20-brief-review",
         "reason": "Браузерний сценарій додатково перевіряє ручне збереження й primary action."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S01",
+      "requirement": "BRIEF-FORM",
+      "scope": "Точне збереження біта з лапками й переносом; introduced і решта полів без змін.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S02",
+      "requirement": "BRIEF-FORM",
+      "scope": "Вставка, переміщення й видалення перенумеровують мітки, не змінюючи текстів бітів.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S03",
+      "requirement": "BRIEF-FORM",
+      "scope": "Розширений JSON зберігає незбережені правки; зіпсований JSON не дає повернутися до форми.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
+      "id": "BRIEF-FORM-S04",
+      "requirement": "BRIEF-FORM",
+      "scope": "Номери планувальника приховано без зміни буфера; без біта збереження неактивне, порожні біти відкидаються; історія лише для читання.",
+      "tests": [
+        "tests/web/test_brief_form.py::test_brief_form_rules"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#brief-form",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/brief-form.spec.mjs перелічено в процедурі й виконуються окремим runner, цей зв’язок не є доказом виконання."
       }
     },
     {

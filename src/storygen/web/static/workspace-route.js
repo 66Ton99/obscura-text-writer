@@ -31,7 +31,7 @@ function render(){
   const compact=document.querySelector('#workspace-compact-status');if(compact){const labels={get queued(){return t("m_eb3c78969040")},get running(){return t("m_b4232dd37ccb")},get needs_review(){return t("m_66d1a05343f7")},get completed(){return t("m_016bc923f7ff")},get failed(){return t("m_57467fc4b91f")},get paused(){return t("m_03498e395a43")},get cancelled(){return t("m_84b388351ede")},get alternative(){return t("m_e6d278323734")},get interrupted(){return t("m_54e9f1dc0cc0")}};uiText(compact,"textContent",()=>((labels[state.workspaceRun?.state]||t("m_a6150ea8a568"))+' · '+(compactBudgetText(state.workspaceBudgetData||document.querySelector('.budget-panel')?.budgetData))));}
   const activeRun=activeStates.has(state.workspaceRun?.state)?state.workspaceRun:(state.workspaceRuns||[]).find(run=>activeStates.has(run.state));
   const review=state.mode==='review';
-  textEditor.visible(!review&&!state.memoryTableActive);
+  textEditor.visible(!review&&!state.memoryTableActive&&!state.briefFormActive);
   const panel=document.querySelector('#copyedit-panel');panel.hidden=!review;
   const details=panel.querySelector('details');if(review&&details)details.open=true;
   const action=primaryAction(state);

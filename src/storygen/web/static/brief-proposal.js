@@ -29,7 +29,8 @@ if(host){
       });
       notice(t('brief.accepted'));
     }catch(error){notice(error.message,'error');}
-    finally{busy=false;if(state.scene?.id===sceneId&&state.mode==='brief')textEditor.readOnly(readonly);render();}
+    // The brief form follows the editor lock through editor-state-changed.
+    finally{busy=false;if(state.scene?.id===sceneId&&state.mode==='brief')textEditor.readOnly(readonly);render();document.dispatchEvent(new CustomEvent('editor-state-changed'));}
   };
   for(const event of ['editor-state-changed','scene-selected','story-refreshed','workspace-run-state','workspace-readiness'])document.addEventListener(event,render);
   render();
