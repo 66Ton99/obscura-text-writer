@@ -405,7 +405,9 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.7 var(--font-
 /* One toolbar row: the model line sits under the primary button without widening it, so the button stays beside
    Save, focus and the material's second action; the toolbar keeps room for that line below the row. */
 .workspace-sticky .workspace-primary-wrap { align-items: flex-end; }
-.workspace-sticky #workspace-telemetry { position: absolute; top: 100%; right: 0; white-space: nowrap; }
+.workspace-sticky .editor-toolbar { container-type: inline-size; }
+/* A long model name is cut to the toolbar width; the details card on hover or focus shows it whole. */
+.workspace-sticky #workspace-telemetry { position: absolute; top: 100%; right: 0; max-width: 100cqw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #workspace:not(.focus-mode) .workspace-sticky .editor-toolbar:has(#workspace-telemetry:not([hidden])) { padding-bottom: 1.6rem; }
 #workspace-history, .workspace-extra { border-top: 1px solid var(--border-color); margin-top: 1.5rem; padding-top: 1rem; }
 #workspace-history > summary, .workspace-extra > summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
@@ -474,7 +476,7 @@ body:has(#workspace.focus-mode) #notice { z-index: 30; }
   #workspace-primary { flex: 1 1 100%; }
   .workspace-primary-wrap { margin-left: 0; }
   .workspace-sticky .workspace-primary-wrap { flex: 1 1 100%; align-items: stretch; }
-  .workspace-sticky #workspace-telemetry { position: static; white-space: normal; }
+  .workspace-sticky #workspace-telemetry { position: static; max-width: none; white-space: normal; }
   #workspace:not(.focus-mode) .workspace-sticky .editor-toolbar:has(#workspace-telemetry:not([hidden])) { padding-bottom: 0; }
   .workspace-sticky .tabs button { flex: 0 0 auto; min-width: 6.5rem; }
   .workspace-sticky { padding-top: 0.25rem; }
