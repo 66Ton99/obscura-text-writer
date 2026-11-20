@@ -18,10 +18,14 @@ EXCLUDED = {'worker.lock', 'storygen.sqlite3-wal', 'storygen.sqlite3-shm', 'stor
 EXCLUDED_NAMES = {'.env'}
 
 
+class DestinationTaken(ValueError):
+    """The destination folder already exists; callers recognise it by type, never by text (R26-CLI-LANG)."""
+
+
 def new_destination(source: Path, destination: Path) -> Path:
     destination = Path(destination).absolute()
     if destination.exists() or destination.is_symlink():
-        raise ValueError('Каталог призначення вже існує')
+        raise DestinationTaken('The destination folder already exists')
     destination = destination.resolve()
     if destination.is_relative_to(source) or source.is_relative_to(destination):
         raise ValueError('Джерело й призначення не можуть бути вкладеними')

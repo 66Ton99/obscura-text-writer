@@ -146,3 +146,14 @@ def test_a_copy_made_by_another_launch_is_never_renamed(tmp_path, monkeypatch):
     kept = backups_dir(data) / 'pre-migration-v4-20261111-093005'
     assert [p.name for p in backups_dir(data).iterdir()] == [kept.name]
     assert json.loads((kept / 'manifest.json').read_text(encoding='utf-8'))['status'] == 'complete'
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_a_taken_destination_is_a_type_not_a_text(tmp_path):
+    # R26-CLI-LANG (#32): the backup texts are English now; a taken destination is recognised by its type.
+    from storygen.storage.backup import DestinationTaken, new_destination
+    taken = tmp_path / 'taken'
+    taken.mkdir()
+    with pytest.raises(DestinationTaken) as error:
+        new_destination(tmp_path / 'data', taken)
+    assert isinstance(error.value, ValueError) and not hasattr(pre_migration, 'DESTINATION_TAKEN')
