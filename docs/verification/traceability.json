@@ -104,6 +104,46 @@
       ]
     },
     {
+      "id": "RUN-ACCEPT-CLOSE-S01",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Прийняття завдання через accept-brief закриває одноетапний запуск; після цього сцена переміщується в кошик.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_accepting_the_brief_completes_its_waiting_run"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S02",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Запуск із наступним завданням лишається needs_review після прийняття.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_accepting_the_brief_keeps_a_run_with_later_tasks_waiting"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S03",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Вибір точкових правок одного проходу закриває запуск редактора.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_applying_point_edits_completes_a_single_edit_run"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S04",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Новий stage-запуск скасовує лише зупинені запуски того самого етапу цієї сцени; повтор request_id нічого не скасовує.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_a_new_run_of_the_same_stage_cancels_the_stopped_one"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S05",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Старт закриває запуски з уже прийнятою останньою спробою й лишає неприйняті.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_startup_completes_runs_whose_result_was_already_accepted"
+      ]
+    },
+    {
       "id": "DATA-009-S01",
       "requirement": "DATA-009",
       "scope": "Повернення залежностей A→B→A. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -2833,6 +2873,14 @@
       "tests": [
         "tests/web/test_trash_api.py::test_trash_ui_preserves_unsaved_buffers",
         "tests/web/test_trash_api.py::test_cancel_stopped_run_then_trash_preserves_materials"
+      ]
+    },
+    {
+      "id": "DATA-006-S04",
+      "requirement": "DATA-006",
+      "scope": "Видалення сцени з зупиненим, активним запуском, відмовою та незавершеним скасуванням.",
+      "tests": [
+        "tests/web/test_trash_api.py::test_trash_ui_preserves_unsaved_buffers"
       ]
     },
     {

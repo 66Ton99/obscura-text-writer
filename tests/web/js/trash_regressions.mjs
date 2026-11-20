@@ -53,4 +53,18 @@ requests=[];failCancel=false;cancelResponse='cancellation_requested';await story
 assert.equal(requests.length,1,'a resumed run must not be trashed before cancellation completes');
 requests=[];cancelResponse='cancelled';runs=[{id:'done',state:'completed'}];await storyButton.onclick();
 assert.deepEqual(requests.map(([u])=>u),['/api/stories/story/trash']);
+// RUN-ACCEPT-CLOSE: deleting a scene offers to cancel stopped runs instead of a dead end; an active run still blocks it.
+const sceneState={storyId:'s2',scene:{id:'x',revision:4},dirty:false,saving:false};
+installSceneTrash(sceneState,async()=>{},()=>{});
+const sceneButton=element('#scene-select-mobile').placed[0];
+requests=[];prompts=[];answer=true;cancelResponse='cancelled';failCancel=false;runs=[{id:'wait',state:'needs_review'},{id:'done',state:'completed'}];
+await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel','/api/scenes/x/trash']);assert.match(prompts.at(-1),/1/);
+requests=[];answer=false;await sceneButton.onclick();assert.equal(requests.length,0,'declining keeps runs and scene');
+answer=true;runs=[{id:'busy',state:'running'}];prompts=[];await sceneButton.onclick();
+assert.equal(requests.length,0,'an active run is never cancelled by scene trash');assert.equal(prompts.length,0);
+runs=[{id:'wait',state:'paused'}];cancelResponse='cancellation_requested';await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/runs/wait/cancel'],'the scene stays until cancellation completes');
+requests=[];cancelResponse='cancelled';runs=[];await sceneButton.onclick();
+assert.deepEqual(requests.map(([u])=>u),['/api/scenes/x/trash']);assert.doesNotMatch(prompts.at(-1),/запуск/);
 console.log('trash buffer and stopped-run guards passed');process.exit(0);

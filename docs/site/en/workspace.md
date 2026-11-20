@@ -10,6 +10,8 @@ If there are many scenes, click the **Scenes** heading with their count: the lis
 
 - In the scene list, the selected scene has a button with a trash icon: **Delete scene**. The app asks for confirmation and moves the scene to the scene trash; the following scenes will then need review.
 - Save your text first: with unsaved changes the scene is not deleted and the app tells you why.
+- If a run of the story stopped and is waiting for your decision, the app offers to cancel such runs together with deleting or restoring the scene. Text and history are preserved. While a model is working, the scene cannot be deleted: wait for the run to finish or cancel it.
+- Accepting a brief or applying point edits finishes the run that was waiting for them, and a new run of the same scene stage cancels the old stopped one.
 - To bring a scene back, expand **Scene trash** under the list and click **Restore**. Scenes are never deleted permanently.
 - On a narrow screen there is no scene list: pick the scene in the selector and click **Delete scene** under it.
 

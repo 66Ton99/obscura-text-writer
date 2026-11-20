@@ -191,11 +191,28 @@ class RunCoordinator:
             run,created=self.repo.enqueue_run(candidate)
             if created:
                 self.event(run.id,'state',{'state':'queued'})
+                self._supersede(run)
                 from ..evaluation.story_adapter import ENGLISH_NOT_EVALUATED
                 for scene_id in skipped_language:
                     self.event(run.id,'evaluation_skipped',{'scene_id':scene_id,'reason':ENGLISH_NOT_EVALUATED})
             self.condition.notify_all()
         return run
+
+    def _supersede(self,new: Run) -> None:
+        """RUN-SUPERSEDE: a new run of one stage of a scene cancels stopped runs waiting at that same stage of that scene."""
+        if new.request.mode not in {'stage','edit_loop'} or not new.request.scene_id:
+            return
+        scene_id=new.request.scene_id
+        stage=new.request.stage if new.request.mode=='stage' else 'edit'
+        for run in self.list_runs(new.story_id):
+            if run.id==new.id or run.state not in {'needs_review','alternative','paused','interrupted'} or run.request.mode=='impact':
+                continue
+            remaining=run.tasks[run.cursor:]
+            # A run that still has other scenes ahead keeps waiting: one manual stage must not drop the automation.
+            if not remaining or remaining[0].get('stage')!=stage or any(task.get('scene_id')!=scene_id for task in remaining):
+                continue
+            self.event(run.id,'superseded',{'run_id':new.id})
+            self.cancel(run.id)
 
     def readiness(self,story_id,scene_id=None,editor_source_head=None,editor_source_version_id=None,operation=None):
         from .readiness import preview
@@ -377,6 +394,7 @@ class RunCoordinator:
                     self.event(run.id,'state',{'state':run.state})
                     recovered.append(run)
             self.repo.recover_running_attempts()
+            self.repo.close_accepted_runs()  # RUN-ACCEPT-CLOSE: results accepted before the fix no longer hold runs open
         return recovered
 
     def start(self) -> None:
