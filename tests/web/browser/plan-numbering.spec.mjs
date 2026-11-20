@@ -48,6 +48,8 @@ test.describe('plan numbering',()=>{
     await editor.evaluate(el=>{el.value='1. А\n5. Б\n\n3. В\n3. Г';el.dispatchEvent(new Event('input',{bubbles:true}));});
     await page.locator('#plan-renumber').click();
     await expect(editor).toHaveValue('1. А\n2. Б\n\n3. В\n4. Г');
+    await page.keyboard.press('Control+z');
+    await expect(editor).toHaveValue('1. А\n5. Б\n\n3. В\n3. Г');
   });
 
   test('PLAN-NUMBERING-S04 one Ctrl+Z undoes the renumbering; other tabs keep their numbers',async({page,request})=>{
@@ -63,5 +65,11 @@ test.describe('plan numbering',()=>{
     await expect(page.locator('#plan-renumber')).toBeEnabled(); // the save has finished
     await page.locator('[data-mode="brief"]').click();
     await expect(page.locator('#plan-renumber')).toBeHidden();
+    // The brief keeps its numbers: Enter after an item adds a plain line, nothing is renumbered.
+    if(await editor.isHidden())await page.locator('#brief-advanced').click();
+    await editor.fill('1. А\n1. Б');
+    await caretAtEndOf(editor,'1. А');
+    await page.keyboard.press('Enter');
+    await expect(editor).toHaveValue('1. А\n\n1. Б');
   });
 });

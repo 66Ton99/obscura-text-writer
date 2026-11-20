@@ -120,7 +120,7 @@ document.querySelector('#workspace-edit-prose').onclick=async()=>{
     await launch({mode:'edit_loop',editor_source_head:'prose',editor_source_version_id:state.scene.heads.prose});
   }catch(error){notice(error.message,'error')}finally{busy=false;render()}
 };
-document.querySelector('#plan-renumber')?.addEventListener('click',()=>{planNumbering.renumberAll();textEditor.focus();});
+document.querySelector('#plan-renumber')?.addEventListener('click',()=>{textEditor.focus();planNumbering.renumberAll();});
 document.querySelector('#workspace-use-draft').onclick=async()=>{
   if(state.dirty||state.saving||busy||isActive())return;
   const scene=state.scene,id=scene?.heads.draft,epoch=state.bufferEpoch;

@@ -14,6 +14,8 @@ export function applyRenumber(element,lists,start=null){
   const caret=element.selectionStart,caretEnd=element.selectionEnd;
   const shift=at=>at<=from?at:at>=to?at+delta:at+edits.filter(e=>e.to<=at).reduce((sum,e)=>sum+e.insert.length-(e.to-e.from),0);
   const span=next.slice(from,to+delta);
+  // execCommand edits only the focused field; after a button click the focus is on the button.
+  if(element.ownerDocument.activeElement!==element)element.focus();
   element.setSelectionRange(from,to);
   let done=false;
   try{done=element.ownerDocument.execCommand?.('insertText',false,span)===true&&element.value===next;}catch{done=false;}
