@@ -3859,6 +3859,18 @@
       }
     },
     {
+      "id": "CHARACTER-TIME-S04",
+      "requirement": "CHARACTER-TIME",
+      "scope": "Поле «Знайти персонажа»: фільтр за назвою й іншим ім’ям, перехід на Enter і вибір із підказок, правки й збереження під фільтром, зняття фільтра за невалідної прихованої картки, додавання; правило імен JS = Python.",
+      "tests": [
+        "tests/web/test_characters_find.py::test_card_search_helpers_and_parity_with_server_names"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#characters-find",
+        "reason": "Фільтр, фокус, підказки й перевірка форми потребують браузера; автоматизована процедура Playwright."
+      }
+    },
+    {
       "id": "CHARACTER-NAMES-S01",
       "requirement": "CHARACTER-NAMES",
       "scope": "Позначка інших імен двома мовами; розпізнавання в плані, «Знайомий з:», оповідачі й «Протагоніст:» за будь-яким ім’ям.",

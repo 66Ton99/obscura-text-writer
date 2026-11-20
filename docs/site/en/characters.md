@@ -8,6 +8,8 @@ Open **Characters** in the story's top row. The separate page has wide descripti
 
 The buttons at the top save the cards, add a character or reload what is saved. Each card consists of entries; a solid imported description can be split into entries at blank paragraphs. Entries written by hand are marked "Author statement", and imported ones keep their source quotations.
 
+The **Find a character** field next to the buttons keeps only the cards whose title or [other name](#other-names) contains the text you type, and shows how many cards are visible. Enter or picking a name from the suggestions moves to that card and puts the cursor in its name field. Cards are only hidden: your edits are kept, and **Save details** saves every card. If a hidden card has an empty required field, the filter is cleared so you can see it. **Add character** clears the filter too.
+
 ## When a character appears
 
 For each entry choose:
