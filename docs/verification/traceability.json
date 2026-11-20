@@ -2993,6 +2993,27 @@
       }
     },
     {
+      "id": "R26-CLI-LANG-S01",
+      "requirement": "R26-CLI-LANG",
+      "scope": "Сторожовий AST-тест: службові модулі з явного переліку без кириличних літералів (docstring дозволено); англійські ключі storygen-eval --dry-run; зайняте призначення копії розпізнається за типом.",
+      "tests": [
+        "tests/test_service_text_language.py::test_service_modules_have_no_ukrainian_literals",
+        "tests/test_service_text_language.py::test_the_scan_sees_literals_but_not_docstrings",
+        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed"
+      ]
+    },
+    {
+      "id": "R26-CLI-LANG-S02",
+      "requirement": "R26-CLI-LANG",
+      "scope": "Вікно відмови desktop-запуску мовою Windows (uk/en) для кодів 2, 3, 4, непередбаченої помилки й теки даних; технічна причина лише в журналі; збій визначення мови дає англійський текст. Справжнє MessageBoxW у Windows не відкривається в тестах (alert підмінено).",
+      "tests": [
+        "tests/test_desktop_alerts.py::test_refused_start_alert_follows_the_windows_language",
+        "tests/test_desktop_alerts.py::test_technical_reason_goes_to_the_log_not_the_alert",
+        "tests/test_desktop_alerts.py::test_data_folder_alert_names_the_folder",
+        "tests/test_desktop_alerts.py::test_alert_survives_a_failing_language_lookup"
+      ]
+    },
+    {
       "id": "MEMORY-REUSE-S01",
       "requirement": "MEMORY-REUSE",
       "scope": "Авторський допуск історичної пам’яті без зміни доказів, хронології та інших guards.",
@@ -5144,7 +5165,8 @@
         "tests/storage/test_pre_migration.py::test_unreadable_version_is_a_failure_not_a_skipped_backup",
         "tests/storage/test_pre_migration.py::test_failed_copy_is_not_left_looking_like_a_backup",
         "tests/storage/test_pre_migration.py::test_schema_one_cannot_be_verified_and_is_refused",
-        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed"
+        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed",
+        "tests/storage/test_pre_migration.py::test_a_taken_destination_is_a_type_not_a_text"
       ]
     },
     {
