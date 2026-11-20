@@ -125,3 +125,14 @@ def test_scene_heading_inside_the_plan_is_not_repeated(tmp_path):
     # The plan title heading would repeat «## План» one level higher.
     assert '# План оповідання' not in text
     assert '## План\n\nРобоча назва: V-K\nЗадум: борги.' in text
+
+
+@pytest.mark.req('EXPORT-001')
+def test_dropped_scene_heading_keeps_the_indent_of_the_next_line(tmp_path):
+    repo = Repository(tmp_path)
+    story = repo.create_story(StoryCreate(title='Код', language='en'))
+    scene = repo.create_scene(story.id, SceneCreate(title='Meeting'))
+    plan = repo.save_version(story.id, scene.id, 'scene_plan', '## Scene 1: Meeting\n\n    first()\n    second()\n', [])
+    repo.set_head(scene.id, 'plan', plan.id, repo.get_scene(scene.id).revision)
+    text = plan_markdown(repo, story.id)[1].decode('utf-8')
+    assert '### Scene 1: Meeting\n\n    first()\n    second()\n' in text

@@ -23,7 +23,12 @@ def _file_name(title, suffix):
 def _drop_first_line(text, unwanted):
     """Text without its first non-empty line when `unwanted(line)` says that line only repeats a heading the file has."""
     lines = text.strip().splitlines()
-    return '\n'.join(lines[1:]).strip() if lines and unwanted(lines[0]) else text.strip()
+    if not lines or not unwanted(lines[0]):
+        return text.strip()
+    rest = lines[1:]
+    while rest and not rest[0].strip():
+        rest = rest[1:]  # Only blank lines go: an indented first line (a code block) keeps its indent.
+    return '\n'.join(rest).rstrip()
 
 
 def _heading(line):
