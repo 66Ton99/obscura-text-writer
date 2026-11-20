@@ -5689,6 +5689,16 @@
       ]
     },
     {
+      "id": "STORY-LANGUAGE-S10",
+      "requirement": "STORY-LANGUAGE",
+      "scope": "Типовий профіль письма за мовою твору в налаштуваннях і після зміни мови; часткове й порожнє тіло профілю PUT settings дозаповнюється типовим профілем мови твору; збережений профіль читається як записано.",
+      "tests": [
+        "tests/web/test_style_profile_language.py::test_default_profile_follows_story_language",
+        "tests/web/test_style_profile_language.py::test_partial_or_empty_profile_body_uses_story_language_defaults",
+        "tests/web/test_style_profile_language.py::test_saved_profile_is_read_as_saved"
+      ]
+    },
+    {
       "id": "DOCS-SITE-S01",
       "requirement": "DOCS-SITE",
       "scope": "Зміна однієї мовної версії без підтвердження пари; закінчення рядків. Перевірка зазначеного сценарію; не є доказом усієї вимоги.",
