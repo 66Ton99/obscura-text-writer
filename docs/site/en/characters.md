@@ -20,6 +20,16 @@ For each entry choose:
 
 **Save details** creates a new version of the cards. If the cards changed in another tab meanwhile, your edits stay in the form, and reloading asks for confirmation.
 
+## Other names
+
+If a character goes by several names, list the other names in a card entry with a line such as `Other name: Boss` (also `Other names:`, `Also known as:`, `AKA:`, or the Ukrainian «Інше ім’я:», «Інші імена:», «Також відомий як:»). Separate several names with commas.
+
+- Plans recognise the character by the card name and by every other name: in the scene cast, `Knows:`, the narrator line and `Protagonist:`.
+- To have the character called differently from some scene on, set the entry with the line `Other name: John` to **Starting from a scene**. From that scene the models call the character John and see the earlier names: "John (also: Boss)". Obscura does not insert the name John into earlier scenes; your own text in plans or other entries goes as written.
+- An entry without a first scene only adds a name; it does not change what the character is called.
+- If two cards share a name, the page shows a warning, and a plan using that name asks you to clarify the cast.
+- The interface calls the character by the card name. A name change makes stale the texts whose requests it changed.
+
 ## Protagonist and acquaintances
 
 To keep the model from naming people the protagonist has not met yet, the brief, draft and rewrite contexts get a short "Protagonist acquaintances" block.

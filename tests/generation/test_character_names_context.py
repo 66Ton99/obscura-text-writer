@@ -75,3 +75,17 @@ def test_english_story_uses_also(tmp_path):
     repo, scenes = setup(tmp_path, language='en')
     scenes = remember(repo, scenes, 1)
     assert 'CHARACTER: Джон (also: Хазяїн, Бос)\n' in build_context(repo, scenes[2].id, 'brief', role()).user_text
+
+
+@pytest.mark.req('CHARACTER-NAMES')
+def test_cards_without_markers_keep_the_card_name_and_no_also(tmp_path):
+    repo = Repository(tmp_path)
+    story = repo.create_story(StoryCreate(title='Ферма'))
+    style = repo.save_version(story.id, None, 'style', StyleProfile().model_dump_json(), [])
+    repo.publish_story_material(story.id, 'style_version_id', style.id, repo.get_story(story.id).revision)
+    cards = [{'schema_version': 2, 'id': 'h', 'name': 'Хазяїн', 'entries': [entry('h1', 'Вік: 40')]}]
+    ref = repo.save_version(story.id, None, 'character_cards', json.dumps(cards, ensure_ascii=False), [])
+    repo.publish_story_material(story.id, 'characters_version_id', ref.id, repo.get_story(story.id).revision)
+    scene = repo.create_scene(story.id, SceneCreate(title='Ворота', beats='Хто бере участь: Хазяїн\nВорота.'))
+    text = build_context(repo, scene.id, 'brief', role()).user_text
+    assert 'ПЕРСОНАЖ: Хазяїн\nПОЗАЧАСОВІ ВІДОМОСТІ\n— Вік: 40' in text and 'також' not in text
