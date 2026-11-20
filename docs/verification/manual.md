@@ -172,6 +172,13 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 Перевірки desktop/mobile: перехід і повернення до prose, додавання картки, довгий опис, UA/EN без втрати вводу, preview, save, порожній твір без сцен, відмова від виходу з dirty, CAS409 без втрати правок. Переглянути нейтральні `docs/images/characters-page-desktop.png` і `characters-page-mobile.png`: поля видимі, немає горизонтального переповнення.
 
 
+<a id="characters-find"></a>
+## Пошук картки на сторінці персонажів
+
+Запустити `node frontend/node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs characters-page -g "find a character" --reporter=line`.
+Перевірки desktop/mobile (CHARACTER-TIME-S04): фільтр за іншим ім'ям, статус «Показано 1 з 3», Enter переносить фокус, вибір «Анна» з підказок за наявності «Маріанна», введення не переносить фокус, правка під фільтром і збереження всіх карток, зняття фільтра за порожнього поля прихованої картки під час збереження й preview (без запиту preview), приховування після виходу з картки, «Додати персонажа» знімає фільтр, без горизонтальної прокрутки.
+
+
 <a id="additive-import-ui"></a>
 ## Інтерфейс письма та доповнювального імпорту
 
