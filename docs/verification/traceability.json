@@ -596,6 +596,36 @@
       ]
     },
     {
+      "id": "CONTEXT-002-S07",
+      "requirement": "CONTEXT-002",
+      "scope": "Підказка «раніше цього дня» для одягу: той самий день, інший день, без днів, retire, вимкнений запис, суфікс автора, інші слоти, незмінний вивід без днів; brief, draft і MCP. Не перевіряє якість прози.",
+      "tests": [
+        "tests/memory/test_core_same_day.py::test_earlier_value_of_the_same_day_is_shown",
+        "tests/memory/test_core_same_day.py::test_english_label",
+        "tests/memory/test_core_same_day.py::test_repeated_current_value_skips_to_last_distinct",
+        "tests/memory/test_core_same_day.py::test_value_of_another_day_is_not_shown",
+        "tests/memory/test_core_same_day.py::test_no_hint_without_day_marks",
+        "tests/memory/test_core_same_day.py::test_retire_resets_history",
+        "tests/memory/test_core_same_day.py::test_hidden_slot_has_no_hint",
+        "tests/memory/test_core_same_day.py::test_other_slots_get_no_hint",
+        "tests/memory/test_core_same_day.py::test_author_unquoted_earlier_value_keeps_reader_unknown_suffix",
+        "tests/memory/test_core_same_day.py::test_without_days_output_is_unchanged",
+        "tests/memory/test_core_same_day.py::test_item_text_stays_current_value",
+        "tests/generation/test_clothing_same_day.py::test_brief_draft_and_mcp_see_clothing_of_the_same_day",
+        "tests/generation/test_clothing_same_day.py::test_no_hint_when_the_earlier_value_is_from_another_day"
+      ]
+    },
+    {
+      "id": "CONTEXT-002-S08",
+      "requirement": "CONTEXT-002",
+      "scope": "Селектор дня сцени-джерела в знімку чернетки й зовнішньої чернетки MCP; знімок без нього лишається свіжим і після зміни дня.",
+      "tests": [
+        "tests/generation/test_clothing_same_day.py::test_draft_goes_stale_when_the_source_scene_changes_day",
+        "tests/generation/test_clothing_same_day.py::test_snapshot_without_the_new_selectors_stays_fresh",
+        "tests/generation/test_clothing_same_day.py::test_mcp_draft_goes_stale_when_the_source_scene_changes_day"
+      ]
+    },
+    {
       "id": "CONTEXT-003-S01",
       "requirement": "CONTEXT-003",
       "scope": "Застарілість перед початком. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -742,6 +772,14 @@
         "tests/memory/test_wire_v4.py::test_separate_evidence_ids_are_not_rewritten",
         "tests/memory/test_wire_v4.py::test_joined_evidence_in_groups_is_still_unknown",
         "tests/memory/test_core_review.py::test_captured_wire_splits_joined_evidence"
+      ]
+    },
+    {
+      "id": "MEMORY-002-S13",
+      "requirement": "MEMORY-002",
+      "scope": "Правило про знятий одяг у вбудованому промпті пам’яті uk/en і незмінний контракт. Перевіряє наявність інструкції, а не виконання моделлю.",
+      "tests": [
+        "tests/generation/test_clothing_same_day.py::test_builtin_memory_prompt_keeps_where_removed_clothing_is"
       ]
     },
     {

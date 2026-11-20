@@ -67,6 +67,7 @@ LABELS: dict[str, dict[str, str]] = {
     'memory_open_threads': {'uk': 'ВІДКРИТІ ЛІНІЇ', 'en': 'OPEN THREADS'},
     'memory_timeline': {'uk': 'ХРОНОЛОГІЯ', 'en': 'TIMELINE'},
     'memory_scene_prefix': {'uk': 'Сцена {number}: ', 'en': 'Scene {number}: '},
+    'memory_core_earlier_today': {'uk': ' (раніше цього дня: {value})', 'en': ' (earlier this day: {value})'},
     'memory_core_owner': {'uk': 'ЯДРО СТАНУ — {name}', 'en': 'CORE STATE — {name}'},
     'memory_protagonist': {'uk': 'протагоніст', 'en': 'protagonist'},
     'memory_none': {'uk': 'Немає.', 'en': 'None.'},
