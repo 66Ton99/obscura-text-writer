@@ -2999,7 +2999,8 @@
       "tests": [
         "tests/test_service_text_language.py::test_service_modules_have_no_ukrainian_literals",
         "tests/test_service_text_language.py::test_the_scan_sees_literals_but_not_docstrings",
-        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed"
+        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed",
+        "tests/evaluation/test_cli.py::test_dry_run_json_keys_are_english"
       ]
     },
     {

@@ -63,17 +63,19 @@ def test_technical_reason_goes_to_the_log_not_the_alert(tmp_path, monkeypatch):
 
 
 @pytest.mark.req('R26-CLI-LANG')
-@pytest.mark.parametrize('locale,expected', [('uk', 'Obscura не може створити теку даних {}'),
-                                             ('en', 'Obscura cannot create the data folder {}')])
+@pytest.mark.parametrize('locale,expected', [('uk', 'Obscura не може створити теку даних {} (PermissionError).'),
+                                             ('en', 'Obscura cannot create the data folder {} (PermissionError).')])
 def test_data_folder_alert_names_the_folder(tmp_path, monkeypatch, locale, expected):
+    # No log exists yet, so the folder and the exception class are all the person can pass on.
     monkeypatch.setattr(desktop_tray, 'system_locale', lambda: locale)
-    blocker = tmp_path / 'file'
-    blocker.write_text('x', encoding='utf-8')
-    data = blocker / 'data'
+
+    def denied(data_dir):
+        raise PermissionError(13, 'Access is denied', str(data_dir))
+    monkeypatch.setattr(desktop, 'configure_logging', denied)
+    data = tmp_path / 'data'
     alerts = []
     assert desktop.main(['--data-dir', str(data), '--no-browser', '--no-tray'], alert=alerts.append) == 4
-    prefix = expected.split('{}')[0]
-    assert len(alerts) == 1 and alerts[0].startswith(prefix + str(data.resolve()) + ' (') and '{p' not in alerts[0]
+    assert alerts == [expected.format(data.resolve())]
 
 
 @pytest.mark.req('R26-CLI-LANG')
