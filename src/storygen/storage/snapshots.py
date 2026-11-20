@@ -8,6 +8,8 @@ from ..rating.levels import effective_rating, from_wire, is_lower, to_wire
 RATING_SCOPES = frozenset({'brief', 'draft', 'prose_edit', 'patches', 'author_rewrite'})
 # Scopes whose result is prose of the scene (STORY-LANGUAGE-S04): a brief and memory do not depend on the prose language.
 PROSE_LANGUAGE_SCOPES = frozenset({'draft', 'prose_edit', 'patches', 'author_rewrite'})
+# SCENE-NARRATOR: the scopes whose request carries «ОПОВІДАЧ СЦЕНИ» (an external MCP draft adds it in _manual_snapshot).
+NARRATOR_SCOPES = frozenset({'brief', 'draft', 'prose_edit', 'author_rewrite'})
 
 
 def build_dependency_snapshot(
@@ -122,6 +124,8 @@ def build_dependency_snapshot(
     if scope in PROSE_LANGUAGE_SCOPES:
         from ..language import prose_language
         select('scene', scene.id, 'prose_language', prose_language(story, scene))
+    if scope in NARRATOR_SCOPES:
+        narrator_selector(view, story, scene, select)
     return DependencySnapshot(
         scope=scope,
         frozen_author_source_id=next((id for id in input_refs if view.get_version(id).scene_id==scene_id and view.get_version(id).kind=='draft'),None) if scope=='author_rewrite' else None,
@@ -157,6 +161,11 @@ def core_cards(view,story):
     if not story.characters_version_id:return []
     ref=view.peek_version(story.characters_version_id)  # no deep copy: planning counts them
     return load_characters(view.read_blob(ref.relative_path,ref.sha256).decode('utf-8'))
+
+
+def narrator_selector(view, story, scene, select):
+    from ..narration import effective_narrator, narrator_value
+    select('scene', scene.id, 'narrator', narrator_value(effective_narrator(scene, core_cards(view, story))[0]))
 
 
 def memory_core_selectors(view,story,scene,scenes,select):
@@ -241,6 +250,9 @@ def selector_value(view, selector: DependencySelector):
     if kind=='scene' and field=='series_start':
         from ..memory.series_start import scene_series_start
         return scene_series_start(view.peek_story(view.story.id), view.peek_scenes(view.story.id), view.peek_scene(owner))
+    if kind=='scene' and field=='narrator':
+        from ..narration import effective_narrator, narrator_value
+        return narrator_value(effective_narrator(view.peek_scene(owner), core_cards(view, view.peek_story(view.story.id)))[0])
     if kind=='scene' and field=='prose_language':
         from ..language import prose_language
         return prose_language(view.peek_story(view.story.id), view.peek_scene(owner))
@@ -320,9 +332,10 @@ def current_value(view, selector: DependencySelector, owner_scene: str | None):
 
 
 def language_only(result) -> bool:
-    """Stale only because the scene now wants prose in another language: its facts did not change."""
+    """Stale only because the scene now wants prose in another language or from another narrator (SCENE-NARRATOR-S04):
+    its facts did not change."""
     return bool(result.reasons) and all(r.reason=='selector_changed' and r.selector is not None
-        and r.selector.field=='prose_language' for r in result.reasons)
+        and r.selector.field in {'prose_language','narrator'} for r in result.reasons)
 
 
 # STYLE-SAMPLE-001: the scopes with a style selector whose requests never carry the voice sample.

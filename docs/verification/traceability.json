@@ -1506,6 +1506,80 @@
       ]
     },
     {
+      "id": "SCENE-NARRATOR-S01",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Секція оповідача в brief/draft після стилю, рядки лиць і англійська, patches без секції.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_field_reaches_brief_and_draft_after_the_style",
+        "tests/generation/test_scene_narrator_context.py::test_limited_and_omniscient_lines_and_english",
+        "tests/generation/test_scene_narrator_context.py::test_patches_get_no_section"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S02",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Розбір рядка «Оповідач:», проблеми без типових значень, перевага рядка над полем.",
+      "tests": [
+        "tests/test_narration.py::test_plan_line_is_parsed",
+        "tests/test_narration.py::test_plan_line_without_clear_meaning_is_a_problem",
+        "tests/test_narration.py::test_plan_line_wins_over_the_field",
+        "tests/test_narration.py::test_no_override_without_line_or_field",
+        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line",
+        "tests/test_narration.py::test_hero_name_with_a_comma_in_parentheses"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S03",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Герой поза складом і нерозібраний рядок дають попередження, збереження вдається.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_hero_outside_the_cast_and_unparsed_line_warn"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S04",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Селектор narrator робить застарілими матеріали сцени без поширення; старі знімки свіжі.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_narrator_change_stales_brief_draft_and_prose_of_the_scene_only",
+        "tests/generation/test_scene_narrator_context.py::test_snapshot_without_the_selector_stays_fresh",
+        "tests/generation/test_scene_narrator_context.py::test_unchanged_title_and_target_with_the_narrator_do_not_invalidate_heads"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S05",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Валідація поєднання лиця й героя в моделі та 422 у PATCH; повідомлення перекладено.",
+      "tests": [
+        "tests/test_narration.py::test_field_validation",
+        "tests/web/test_scene_narrator_api.py::test_patch_sets_and_resets_the_narrator",
+        "tests/web/test_scene_narrator_api.py::test_invalid_narrator_is_rejected",
+        "tests/web/test_scene_narrator_api.py::test_narrator_messages_are_translated"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S06",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "MCP add_scene/update_scene, writing-context і залежність зовнішньої чернетки.",
+      "tests": [
+        "tests/mcp/test_bridge_narrator.py::test_add_and_update_scene_set_the_narrator_and_context_shows_it",
+        "tests/mcp/test_bridge_narrator.py::test_external_draft_depends_on_the_narrator_and_own_text_does_not"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S07",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Картка сцени: вибір лиця й героя, попередження поза складом, вимкнені поля за рядка плану. Браузерна частина — Playwright.",
+      "tests": [
+        "tests/web/test_scene_narrator_api.py::test_patch_sets_and_resets_the_narrator",
+        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#scene-narrator",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/scene-narrator.spec.mjs виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
+    },
+    {
       "id": "SCENE-PLAN-TEMPLATE-S01",
       "requirement": "SCENE-PLAN-TEMPLATE",
       "scope": "Усі шість полів переносяться з попередньої сцени через сховище й API.",

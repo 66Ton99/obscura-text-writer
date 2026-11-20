@@ -2680,7 +2680,22 @@
     "publication.writer_timeout": "Перевищено час очікування відповіді письменника.",
     "publication.writer_connection": "Не вдалося встановити з’єднання з письменником.",
     "plan.renumber": "Перенумерувати",
-    "plan.renumber_hint": "Вирівняти номери всіх нумерованих списків плану"
+    "plan.renumber_hint": "Вирівняти номери всіх нумерованих списків плану",
+    "narrator.not_in_cast": "Оповідача немає серед учасників сцени: {p0}.",
+    "narrator.need_person": "Оповідач: вкажіть лице («перша особа», «третя особа» або «всезнаючий»): {p0}",
+    "narrator.omniscient_hero": "Оповідач: всезнаючий оповідач не має героя: {p0}",
+    "narrator.one_hero": "Оповідач: вкажіть одного героя: {p0}",
+    "narrator.unknown": "Оповідач: Невідомий персонаж: {p0}",
+    "narrator.ambiguous": "Оповідач: Неоднозначне ім’я: {p0}",
+    "narrator.invalid": "Перша особа й третя особа через героя потребують героя; всезнаючий оповідач — без героя",
+    "scene.narrator": "Оповідач",
+    "scene.narrator_story": "Як у творі",
+    "scene.narrator_first": "Перша особа",
+    "scene.narrator_third_limited": "Третя особа через героя",
+    "scene.narrator_third_omniscient": "Третя особа, всезнаючий",
+    "scene.narrator_hero": "Герой",
+    "scene.narrator_help": "Хто розповідає цю сцену. Без вибору діє лице зі стилю твору; рядок «Оповідач:» у плані має перевагу.",
+    "scene.narrator_from_plan": "Задано рядком «Оповідач:» у плані; змініть його там."
   },
   "en": {
     "ui.save": "Save",
@@ -5363,6 +5378,21 @@
     "publication.writer_timeout": "The writer's response timed out.",
     "publication.writer_connection": "Could not connect to the writer.",
     "plan.renumber": "Renumber",
-    "plan.renumber_hint": "Put the numbers of every numbered list in the plan in order"
+    "plan.renumber_hint": "Put the numbers of every numbered list in the plan in order",
+    "narrator.not_in_cast": "The narrator is not among the scene participants: {p0}.",
+    "narrator.need_person": "Narrator: name the person («first person», «third person» or «omniscient»): {p0}",
+    "narrator.omniscient_hero": "Narrator: an omniscient narrator has no character: {p0}",
+    "narrator.one_hero": "Narrator: name one character: {p0}",
+    "narrator.unknown": "Narrator: Unknown character: {p0}",
+    "narrator.ambiguous": "Narrator: Ambiguous name: {p0}",
+    "narrator.invalid": "First person and third person through a character need a character; an omniscient narrator has none",
+    "scene.narrator": "Narrator",
+    "scene.narrator_story": "As in the story",
+    "scene.narrator_first": "First person",
+    "scene.narrator_third_limited": "Third person through a character",
+    "scene.narrator_third_omniscient": "Third person, omniscient",
+    "scene.narrator_hero": "Character",
+    "scene.narrator_help": "Who tells this scene. Without a choice the person from the story style applies; a «Narrator:» line in the plan takes precedence.",
+    "scene.narrator_from_plan": "Set by the «Narrator:» line in the plan; change it there."
   }
 }

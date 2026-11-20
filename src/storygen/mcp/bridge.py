@@ -486,11 +486,16 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
 
     @server.tool()
     def add_scene(story_id: str, title: str, plan_markdown: str | None = None, position: int | None = None,
-                  target_words: int = 1000, character_ids: list[str] | None = None) -> dict[str, Any]:
+                  target_words: int = 1000, character_ids: list[str] | None = None,
+                  narrator: dict[str, Any] | None = None) -> dict[str, Any]:
         """Додати сцену до твору (position — місце від 0; без нього — у кінець). Грошей не коштує. Без плану Obscura
-        підставить план за зразком попередньої сцени. character_ids — id персонажів із get_story."""
+        підставить план за зразком попередньої сцени. character_ids — id персонажів із get_story. narrator — оповідач
+        сцени: {"person": "first"|"third_limited"|"third_omniscient", "character_id": id героя або null для всезнаючого};
+        без нього діє стиль твору. Рядок плану «Оповідач: Юлія, перша особа» має перевагу."""
         body: dict[str, Any] = {'title': title, 'beats': plan_markdown or '', 'target_words': target_words,
                                 'character_ids': [identifier(value) for value in character_ids or []]}
+        if narrator is not None:
+            body['narrator'] = narrator
         if position is not None:
             body['position'] = position
         scene = request('POST', f'/api/stories/{identifier(story_id)}/scenes', json=body)
@@ -499,11 +504,13 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
     @server.tool()
     def update_scene(story_id: str, scene_id: str, expected_revision: int, plan_markdown: str | None = None,
                      plan_version_id: str | None = NOT_GIVEN, title: str | None = None, target_words: int | None = None,
-                     character_ids: list[str] | None = None, prose_language: str | None = None) -> dict[str, Any]:
+                     character_ids: list[str] | None = None, prose_language: str | None = None,
+                     narrator: dict[str, Any] | None = NOT_GIVEN) -> dict[str, Any]:
         """Змінити план і/або властивості сцени. Грошей не коштує; попередній план лишається в історії версій. План
         переписуйте поверх прочитаного: plan_version_id з get_scene_text(material='plan') обов’язковий разом із планом
         (null, якщо версії плану ще немає). Якщо план змінено після читання, Obscura відповість 409. prose_language — uk, en
-        або story (мова твору)."""
+        або story (мова твору). narrator — {"person": "first"|"third_limited"|"third_omniscient", "character_id": id або
+        null}; null повертає оповідача зі стилю твору."""
         body: dict[str, Any] = {'story_id': identifier(story_id), 'expected_revision': expected_revision}
         given = plan_version_id != NOT_GIVEN
         if plan_markdown is not None:
@@ -520,6 +527,8 @@ def build_server(http: httpx.Client | None, client_name: str | None = None, *, c
                 body[key] = value
         if character_ids is not None:
             body['character_ids'] = [identifier(value) for value in character_ids]
+        if narrator != NOT_GIVEN:
+            body['narrator'] = narrator
         if len(body) == 2:
             raise ToolError('Передайте план або властивість сцени')
         response = send('PATCH', f'/api/scenes/{identifier(scene_id)}', json=body)
