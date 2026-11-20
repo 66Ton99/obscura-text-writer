@@ -5,6 +5,11 @@
 .characters-page .character-editor > p { max-width: 75ch; }
 .characters-page .characters-tools { position: sticky; top: 0; z-index: 2; padding-block: 12px; background: var(--bg-app); border-bottom: 1px solid var(--border-color); }
 .characters-page fieldset { padding-block: 24px; border-top: 1px solid var(--border-color); }
+.characters-page fieldset[hidden] { display: none; }
+.characters-page .characters-tools { align-items: flex-end; }
+.characters-page .characters-find { display: grid; gap: 4px; min-width: 0; }
+.characters-page .characters-find input { width: min(18rem, 100%); }
+.characters-page #characters-find-count { color: var(--text-secondary); }
 .characters-page legend { font-size: 25px; }
 .characters-page fieldset > label { max-width: 36rem; }
 .characters-page .character-entry { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 12px 32px; }

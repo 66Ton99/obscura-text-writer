@@ -41,7 +41,7 @@ test('empty story, dirty navigation and failed save preserve edits',async({page,
   await page.goto(`/stories/${story.id}/characters`);
   await expect(page.locator('#characters-preview')).toBeDisabled();
   await page.locator('#characters-add').click();
-  await page.locator('.character-editor input').fill('Марія');
+  await page.locator('.character-editor fieldset input').fill('Марія');
   page.once('dialog',dialog=>dialog.dismiss());
   await page.locator('#characters-return').click();
   await expect(page.locator('#characters-page')).toBeVisible();
@@ -50,7 +50,7 @@ test('empty story, dirty navigation and failed save preserve edits',async({page,
   });
   await page.locator('#characters-save').click();
   await expect(page.locator('#characters-status')).toContainText('Конфлікт');
-  await expect(page.locator('.character-editor input')).toHaveValue('Марія');
+  await expect(page.locator('.character-editor fieldset input')).toHaveValue('Марія');
   await expect(page.locator('#characters-save')).toBeEnabled();
 });
 
@@ -103,4 +103,63 @@ test('timing warning follows the interface language on load and in preview',asyn
   await expect(info).toHaveCount(1);
   await page.locator('[data-ui-locale="uk"]').click();
   await expect(page.getByRole('status').filter({hasText:UK})).toHaveCount(2);
+});
+
+test('find a character filters cards, jumps and never loses edits',async({page,request})=>{
+  // CHARACTER-TIME-S04 (#75)
+  const story=await(await request.post('/api/stories',{data:{title:'Пошук персонажів'}})).json();
+  const url=`/api/stories/${story.id}/characters`;
+  const entry=text=>({id:null,text,origin:'author',sources:[],availability:'timeless',available_from_scene_id:null});
+  const cards=[{id:null,name:'Маріанна',entries:[entry('Сусідка')]},{id:null,name:'Анна',entries:[entry('Лікарка')]},
+    {id:null,name:'Хазяїн',entries:[entry("Інше ім'я: Джон")]}];
+  const loaded=await(await request.get(url)).json();
+  expect((await request.put(url,{data:{expected_revision:loaded.revision,cards}})).ok()).toBeTruthy();
+  await page.goto(`/stories/${story.id}/characters`);
+  await page.locator('[data-ui-locale="uk"]').click();
+  const find=page.locator('#characters-find'),groups=page.locator('.character-editor fieldset'),count=page.locator('#characters-find-count');
+  await expect(groups).toHaveCount(3);
+  // Typing filters by the other name and never moves the cursor.
+  await find.pressSequentially('джон');
+  await expect(groups.filter({visible:true})).toHaveCount(1);
+  await expect(count).toHaveText('Показано 1 з 3');
+  await expect(find).toBeFocused();
+  await find.press('Enter');
+  await expect(groups.nth(2).locator('input').first()).toBeFocused();
+  // A suggestion picks the exact name, not the first card containing it.
+  await find.evaluate(el=>{el.value='Анна';el.dispatchEvent(new InputEvent('input',{inputType:'insertReplacementText',bubbles:true}))});
+  await expect(groups.nth(1).locator('input').first()).toBeFocused();
+  await expect(groups.filter({visible:true})).toHaveCount(2);
+  // An edit under the filter is kept, and Save stores every card.
+  await groups.nth(1).locator('input').first().fill('Анна К');
+  // Removing the found name hides the card only after the cursor leaves it.
+  await find.fill('джон');
+  const host=groups.nth(2).locator('textarea');
+  await host.fill("Інше ім'я: Петро");
+  await expect(groups.nth(2)).toBeVisible();
+  await find.click();
+  await expect(groups.filter({visible:true})).toHaveCount(0);
+  await expect(count).toHaveText('Немає персонажів за запитом');
+  // A hidden card with an empty required field clears the filter on Save and on preview.
+  await find.fill('');
+  await groups.nth(0).locator('textarea').fill('');
+  await find.fill('хаз');
+  await expect(groups.nth(0)).toBeHidden();
+  await page.locator('#characters-save').click();
+  await expect(find).toHaveValue('');
+  await expect(groups.nth(0)).toBeVisible();
+  expect((await(await request.get(url)).json()).cards[1].name).toBe('Анна');
+  await groups.nth(0).locator('textarea').fill('Сусідка');
+  await find.fill('хаз');
+  await page.locator('#characters-save').click();
+  await expect(page.locator('#characters-status')).toHaveText('Відомості збережено');
+  const saved=(await(await request.get(url)).json()).cards;
+  expect(saved.map(card=>card.name)).toEqual(['Маріанна','Анна К','Хазяїн']);
+  expect(saved[2].entries[0].text).toBe("Інше ім'я: Петро");
+  // Adding a character clears the filter and focuses the new card.
+  await find.fill('маріанна');
+  await page.locator('#characters-add').click();
+  await expect(find).toHaveValue('');
+  await expect(groups).toHaveCount(4);
+  await expect(groups.nth(3).locator('input').first()).toBeFocused();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });

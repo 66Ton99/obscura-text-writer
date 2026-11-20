@@ -2,7 +2,7 @@ import {confirmDialog} from './dialogs.js';
 import {live,t,msg,labelEntries,getLocale,uiText,uiAttr,uiHTML,diagnostic} from './i18n.js';
 import {api,json,notice} from './api.js';
 import {returnLink} from './workspace-links.js';
-import {CharacterBuffer} from './characters-state.js';
+import {CharacterBuffer,cardMatches,findTarget} from './characters-state.js';
 
 const host=document.querySelector('#characters-page');
 if(host){
@@ -14,8 +14,14 @@ if(host){
   const tools=document.createElement('div');tools.className='actions characters-tools';
   const button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.className='secondary';uiText(b,"textContent",()=>(text));b.onclick=fn;return b};
   const save=document.createElement('button');save.type='submit';save.id='characters-save';uiText(save,"textContent",()=>(t("m_62a3e0c3c375")));
-  const add=button(live(()=>(t("m_02e19be588cb"))),()=>{buffer.cards.push({id:null,schema_version:2,name:'',entries:[]});changed();render()});
-  const reload=button(live(()=>(t("m_ca97d079f3b6"))),()=>load(true));add.id='characters-add';tools.append(save,add,reload);form.append(tools,status,list);panel.append(form);
+  const add=button(live(()=>(t("m_02e19be588cb"))),()=>{find.value='';buffer.cards.push({id:null,schema_version:2,name:'',entries:[]});changed();render();jumpTo(buffer.cards.length-1)});
+  const reload=button(live(()=>(t("m_ca97d079f3b6"))),()=>load(true));add.id='characters-add';
+  // CHARACTER-TIME-S04 (#75): one field filters the cards by name or other name and jumps to a card; cards are only hidden.
+  const findLabel=document.createElement('label');findLabel.className='characters-find';uiText(findLabel,"textContent",()=>(t("characters.find_label")));
+  const find=document.createElement('input');find.type='search';find.id='characters-find';find.setAttribute('list','characters-find-names');find.autocomplete='off';
+  const findNames=document.createElement('datalist');findNames.id='characters-find-names';
+  const findCount=document.createElement('span');findCount.id='characters-find-count';findCount.setAttribute('role','status');
+  findLabel.append(find);tools.append(save,add,reload,findLabel,findNames,findCount);form.noValidate=true;form.append(tools,status,list);panel.append(form);
   const source=document.createElement('details'),sourceTitle=document.createElement('summary'),sourceText=document.createElement('pre');uiText(sourceTitle,"textContent",()=>(t("m_f617494aaf91")));sourceText.className='character-preview';source.append(sourceTitle,sourceText);panel.append(source);
   const previewLabel=document.createElement('label');uiText(previewLabel,"textContent",()=>(t("m_8f752c2d0363")));
   const previewScene=document.createElement('select');previewLabel.append(previewScene);
@@ -28,7 +34,28 @@ if(host){
     list.querySelectorAll('fieldset').forEach(field=>field.disabled=buffer.saving);
 
   }
-  function changed(){buffer.changed();uiText(status,"textContent",()=>(t("m_525315c068da")));uiText(previewInfo,"textContent",()=>(t("m_e2ea033c762a")));uiText(previewText,"textContent",()=>(''));update()}
+  const cardGroups=()=>[...list.querySelectorAll(':scope > fieldset')];
+  function applyFilter(){
+    const groups=cardGroups();let shown=0;
+    groups.forEach((group,index)=>{const visible=!buffer.cards[index]||cardMatches(buffer.cards[index],find.value)||group.contains(document.activeElement);group.hidden=!visible;if(visible)shown++});
+    findNames.replaceChildren(...buffer.cards.filter(card=>card.name?.trim()).map(card=>{const option=document.createElement('option');option.value=card.name;return option}));
+    if(!find.value.trim())uiText(findCount,"textContent",()=>(''));
+    else if(shown)uiText(findCount,"textContent",()=>(t("characters.find_count",{p0:shown,p1:groups.length})));
+    else uiText(findCount,"textContent",()=>(t("characters.find_none")));
+  }
+  function jumpTo(index){
+    const group=cardGroups()[index];if(!group)return;
+    group.scrollIntoView({block:'start'});group.querySelector('input')?.focus({preventScroll:true});
+  }
+  function validate(){
+    // A required field inside a hidden card cannot show its message: clear the filter first.
+    if(cardGroups().some(group=>group.hidden&&group.querySelector(':invalid'))){find.value='';applyFilter()}
+    return form.reportValidity();
+  }
+  find.oninput=event=>{applyFilter();if(find.value.trim()&&(event.inputType==='insertReplacementText'||event.inputType===undefined))jumpTo(findTarget(buffer.cards,find.value))};
+  find.onkeydown=event=>{if(event.key!=='Enter')return;event.preventDefault();if(find.value.trim())jumpTo(findTarget(buffer.cards,find.value))};
+  list.addEventListener('focusout',()=>setTimeout(applyFilter,0));
+  function changed(){buffer.changed();applyFilter();uiText(status,"textContent",()=>(t("m_525315c068da")));uiText(previewInfo,"textContent",()=>(t("m_e2ea033c762a")));uiText(previewText,"textContent",()=>(''));update()}
   function field(label,value,oninput,tag='input'){
     const wrapper=document.createElement('label');uiText(wrapper,"textContent",()=>(label));
     const input=document.createElement(tag);input.value=value||'';input.required=true;
@@ -66,7 +93,7 @@ if(host){
       });
       const actions=document.createElement('div');actions.className='actions';
       actions.append(button(live(()=>(t("m_7102b4a4f32a"))),()=>{card.entries.push({id:null,text:'',availability:'unclassified',available_from_scene_id:null,origin:'author',sources:[]});changed();render()}),button(live(()=>(t("m_1c58214eee32"))),()=>{buffer.cards.splice(cardIndex,1);changed();render()}));group.append(actions);list.append(group);
-    });update();
+    });update();applyFilter();
   }
   async function load(force=false){
     if(buffer.saving)return;
@@ -87,7 +114,7 @@ if(host){
     }catch(error){uiText(status,"textContent",()=>(diagnostic(error.message)));notice(error.message,'error');update()}
   }
   form.onsubmit=async event=>{
-    event.preventDefault();if(!form.reportValidity()||buffer.saving)return;
+    event.preventDefault();if(!validate()||buffer.saving)return;
     const snapshot=buffer.beginSave();update();
     try{
       const data=await api(url(),json('PUT',{cards:snapshot.cards,expected_revision:snapshot.expected_revision}));
@@ -98,7 +125,7 @@ if(host){
     finally{update()}
   };
   async function showPreview(){
-    if(!form.reportValidity())return;
+    if(!validate())return;
     const request=buffer.previewRequest(previewScene.value);previewBusy=true;uiText(previewInfo,"textContent",()=>(t("m_f1623b0f5ef2")));update();
     try{
       const result=await api(url()+'/preview',json('POST',{cards:structuredClone(buffer.cards),scene_id:request.scene_id}));
