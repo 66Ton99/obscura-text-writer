@@ -1,7 +1,7 @@
 # Мова текстів поза браузером: службові — англійською, вікна запуску — мовою Windows (#32, R-26)
 
 Дата: 2026-11-20
-Статус: чекає на затвердження
+Статус: затверджено 2026-11-20
 Spec-review: agy/gemini-4-argon @ 4f44d48 (author: claude) — 3 findings: 3 fixed, 0 rejected (fallback: codex — usage limit)
 
 ## Для власника
