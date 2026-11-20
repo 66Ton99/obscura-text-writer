@@ -1,6 +1,6 @@
 # Models, roles and budget
 
-Four roles prepare a scene: the **Planner** writes the outline and brief, the **Writer** writes the draft, the **Editor** suggests changes, and **Memory** records what happened. Each role can have its own model. The [evaluator](evaluator.md) is configured separately.
+Four roles prepare a scene: the **Planner** writes the outline and brief, the **Writer** writes the draft and suggests the book synopsis, the **Editor** suggests changes, and **Memory** records what happened. Each role can have its own model. The [evaluator](evaluator.md) is configured separately.
 
 ![Model settings](../../images/site/en/settings-models-desktop.png)
 

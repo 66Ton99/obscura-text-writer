@@ -2656,7 +2656,12 @@
     "history.already_same": "Текст уже такий самий",
     "history.restored": "Версію повернуто",
     "history.no_head": "Немає поточного тексту цього матеріалу",
-    "history.is_current": "Це вже поточна версія"
+    "history.is_current": "Це вже поточна версія",
+    "publication.configure_writer": "Налаштуйте модель письменника",
+    "publication.refusal_content": "Письменник відмовився через контент.",
+    "publication.refusal_unknown": "Письменник відмовився; причина не встановлена.",
+    "publication.writer_timeout": "Перевищено час очікування відповіді письменника.",
+    "publication.writer_connection": "Не вдалося встановити з’єднання з письменником."
   },
   "en": {
     "ui.save": "Save",
@@ -5315,6 +5320,11 @@
     "history.already_same": "The text is already the same",
     "history.restored": "Version restored",
     "history.no_head": "There is no current text of this material",
-    "history.is_current": "This is already the current version"
+    "history.is_current": "This is already the current version",
+    "publication.configure_writer": "Configure the writer model",
+    "publication.refusal_content": "The writer refused because of the content.",
+    "publication.refusal_unknown": "The writer refused; the reason is unknown.",
+    "publication.writer_timeout": "The writer's response timed out.",
+    "publication.writer_connection": "Could not connect to the writer."
   }
 }

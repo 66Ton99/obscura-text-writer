@@ -46,7 +46,7 @@ globalThis.fetch=async(url,options={})=>{
   if(!options.method)await initialReady;
   let data,ok=true;
   if(url.includes('publication-signatures'))data={signatures:[person]};
-  else if(url.endsWith('/suggestions/readiness'))data={ready:true,roles:{planner:{model:'fake-planner'}}};
+  else if(url.endsWith('/suggestions/readiness'))data={ready:true,roles:{writer:{model:'fake-writer'}}};
   else if(url.endsWith('/suggestions'))data={proposals,history:[],active_runs:[]};
   else if(url==='/api/runs'){runCalls++;suggestionBody=JSON.parse(options.body);data={id:'run'};}
   else if(url.endsWith('/cover/generate')){

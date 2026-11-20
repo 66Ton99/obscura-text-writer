@@ -252,8 +252,8 @@ class OpenAIGenerationGateway:
                 from openai import APIError
                 detail=(api_failure(exc,secret=used_key or resolve_key(self.settings.key_env),documents=(context.system_text,context.user_text)).model_dump(mode='json')
                     if isinstance(exc,APIError) else {'category':'technical','http_status':None,'message':'Не вдалося завершити запит; точну причину не встановлено.'})
-                role={'classify':'класифікатора','publication_suggest':'планувальника'}.get(context.stage,'провайдера')
-                detail['message']=detail['message'].replace('оцінювача',role).replace('оцінювачем',{'classify':'класифікатором','publication_suggest':'планувальником'}.get(context.stage,'провайдером')).replace('Оцінювач',{'publication_suggest':'Планувальник','classify':'Класифікатор'}.get(context.stage,'Провайдер'))
+                role={'classify':'класифікатора','publication_suggest':'письменника'}.get(context.stage,'провайдера')
+                detail['message']=detail['message'].replace('оцінювача',role).replace('оцінювачем',{'classify':'класифікатором','publication_suggest':'письменником'}.get(context.stage,'провайдером')).replace('Оцінювач',{'publication_suggest':'Письменник','classify':'Класифікатор'}.get(context.stage,'Провайдер'))
                 status=detail.get('http_status')
                 if status is not None:detail['message']=f"HTTP {status}: {detail['message']}"
                 detail['message']+=' Автоматичного повтору немає.'

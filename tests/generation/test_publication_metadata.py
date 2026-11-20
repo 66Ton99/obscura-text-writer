@@ -25,8 +25,8 @@ class Gateway:
 
 def seeded(root,scenes=2):
     repo=Repository(root);story=repo.create_story(StoryCreate(title='Назва'))
-    role=RoleSettings(provider=ProviderSettings(model='planner-test',response_mode='json_schema'),context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
-    save_role_settings(repo,story.id,'planner',role,story.revision)
+    role=RoleSettings(provider=ProviderSettings(model='writer-test',response_mode='json_schema'),context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
+    save_role_settings(repo,story.id,'writer',role,story.revision)
     for i in range(scenes):
         scene=repo.create_scene(story.id,SceneCreate(title=f'Частина {i+1}',beats='SECRET PLAN'))
         save_manual_prose(repo,scene.id,f'Готова проза сцени {i+1}. Літо й місто.',0)
@@ -46,7 +46,7 @@ def test_full_text_seven_scenes_dedicated_prompt_and_schema(tmp_path):
     context=build_publication_context(repo,story.id)
     assert 'SECRET PLAN' not in context.user_text
     for i in range(7):assert f'Готова проза сцени {i+1}.' in context.user_text
-    assert context.settings.provider.model=='planner-test' and len(context.input_refs)==7
+    assert context.settings.provider.model=='writer-test' and len(context.input_refs)==7
     assert context.api_request['response_format']['json_schema']['name']=='publication_suggest'
     assert json.loads(context.fragments['publication_eligible'])==['annotation','genres','keywords']
     before=repo.publication('get_card',story_id=story.id)
@@ -62,7 +62,7 @@ def test_full_text_seven_scenes_dedicated_prompt_and_schema(tmp_path):
 def test_no_dispatch_or_run_on_context_overflow_or_full_card(tmp_path):
     repo,story=seeded(tmp_path)
     role=RoleSettings(provider=ProviderSettings(model='small'),context_tokens=1024,max_output_tokens=512,max_input_chars=50)
-    save_role_settings(repo,story.id,'planner',role,repo.get_story(story.id).revision)
+    save_role_settings(repo,story.id,'writer',role,repo.get_story(story.id).revision)
     with pytest.raises(ContextOverflow):build_publication_context(repo,story.id)
     called=[];worker=RunCoordinator(repo,gateway_factory=lambda p:called.append(p))
     with pytest.raises(ValueError,match='Перевищено токенний та операційний ліміти входу'):worker.enqueue(RunRequest(story_id=story.id,mode='publication_suggest'),'overflow')
@@ -191,7 +191,7 @@ def test_text_refusal_cannot_be_accepted(tmp_path,text,category):
 def test_paid_preflight_requires_explicit_story_limit(tmp_path):
     repo,story=seeded(tmp_path)
     role=RoleSettings(provider=ProviderSettings(provider='venice',model='paid'),context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
-    save_role_settings(repo,story.id,'planner',role,repo.get_story(story.id).revision)
+    save_role_settings(repo,story.id,'writer',role,repo.get_story(story.id).revision)
     called=[];worker=RunCoordinator(repo,gateway_factory=lambda p:called.append(p))
     with pytest.raises(ValueError,match='бюджету'):
         worker.enqueue(RunRequest(story_id=story.id,mode='publication_suggest'),'paid')
@@ -238,3 +238,52 @@ def test_full_edition_publication_suggestions_ignore_the_limit(tmp_path):
     repo,story=seeded(tmp_path)
     _force_rating(repo,'stories',story.id,{'sexual':2,'violence':0,'themes':0})
     assert build_publication_context(repo,story.id).stage=='publication_suggest'
+
+
+@pytest.mark.req('R16-SUGGEST')
+def test_suggestion_uses_the_writer_role_not_a_small_planner(tmp_path):
+    """R16-SUGGEST-S06: a cheap planner with a tiny window does not block the proposal; the writer's model and limits do the work."""
+    repo,story=seeded(tmp_path)
+    small=RoleSettings(provider=ProviderSettings(model='tiny-planner'),context_tokens=1024,max_output_tokens=512,max_input_chars=50)
+    save_role_settings(repo,story.id,'planner',small,repo.get_story(story.id).revision)
+    writer=RoleSettings(provider=ProviderSettings(model='writer-test',response_mode='json_schema'),context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
+    save_role_settings(repo,story.id,'writer',writer,repo.get_story(story.id).revision)
+    context=build_publication_context(repo,story.id)
+    assert context.settings.provider.model=='writer-test'
+    from storygen.generation.publication_metadata import readiness
+    result=readiness(repo,RunRequest(story_id=story.id,mode='publication_suggest'))
+    assert result['ready'] and result['roles']=={'writer':{'provider':'local','model':'writer-test'}}
+
+
+@pytest.mark.req('R16-SUGGEST')
+def test_suggestion_without_a_writer_model_explains_it(tmp_path):
+    repo=Repository(tmp_path);story=repo.create_story(StoryCreate(title='Назва'))
+    scene=repo.create_scene(story.id,SceneCreate(title='Сцена',beats='План'));save_manual_prose(repo,scene.id,'Проза.',0)
+    with pytest.raises(ValueError,match='Налаштуйте модель письменника'):build_publication_context(repo,story.id)
+
+
+@pytest.mark.req('R16-SUGGEST')
+def test_suggestion_consent_and_refusal_belong_to_the_writer(tmp_path):
+    """R16-SUGGEST-S06 / MODEL-003: planner consent does not authorize the proposal; writer consent does, and a refusal marks the writer."""
+    import threading
+    from storygen.domain import ContentRating
+    from storygen.generation.stages import execute_stage
+    from storygen.providers.policy import ModelPolicyBlocked
+    repo,story=seeded(tmp_path)
+    cloud=ProviderSettings(provider='openrouter',model='x/writer',response_mode='json_schema')
+    writer=RoleSettings(provider=cloud,context_tokens=128000,max_input_chars=1000000,max_output_tokens=2048)
+    save_role_settings(repo,story.id,'writer',writer,repo.get_story(story.id).revision)
+    first=repo.list_scenes(story.id)[0]
+    repo.update_scene_rating(first.id,ContentRating(sexual=2,violence=0,themes=0),repo.get_scene(first.id).revision)
+    context=build_publication_context(repo,story.id)
+    repo.model_policy('set_consent',role='planner',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    with pytest.raises(ModelPolicyBlocked) as blocked:
+        execute_stage(repo,None,'publication_suggest',context,Gateway('{}'),threading.Event(),lambda _:None)
+    assert blocked.value.kind=='consent' and 'Письменник' in str(blocked.value)
+    repo.model_policy('set_consent',role='writer',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    class Refusing:
+        def stream(self,*args):
+            yield GenerationEvent(type='terminal',finish_reason='content_filter',usage={'prompt_tokens':1,'completion_tokens':0})
+    execute_stage(repo,None,'publication_suggest',context,Refusing(),threading.Event(),lambda _:None)
+    assert repo.model_policy('get_refusal',role='writer',provider='openrouter',base_url=cloud.base_url,model='x/writer')
+    assert repo.model_policy('get_refusal',role='planner',provider='openrouter',base_url=cloud.base_url,model='x/writer') is None
