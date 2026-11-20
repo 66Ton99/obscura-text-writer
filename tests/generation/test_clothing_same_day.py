@@ -80,6 +80,7 @@ def test_snapshot_without_the_new_selectors_stays_fresh(tmp_path):
     old = bundle.dependency_snapshot.model_copy(update={'selectors': [
         s for s in bundle.dependency_snapshot.selectors if not (s.field == 'memory_day_key' and s.owner_id == s1.id)]})
     draft = repo.save_version(story.id, s3.id, 'draft', 'Текст.', bundle.input_refs, dependency_snapshot=old)
+    repo.update_scene_plan(s1.id, 'Початок: день 1, 09:00', repo.get_scene(s1.id).revision)
     assert reasons(repo, story, draft) == []
 
 
@@ -88,7 +89,24 @@ def test_builtin_memory_prompt_keeps_where_removed_clothing_is():
     from storygen.generation.prompts import role_prompt
     from storygen.prompt_contracts import expected_contract
     uk, en = role_prompt('memory', role(), 'uk'), role_prompt('memory', role(), 'en')
-    assert 'clothing: коли персонаж знімає одяг або переодягається' in uk
-    assert 'clothing: when a character takes clothes off or changes' in en
+    assert ('clothing: коли персонаж знімає одяг або переодягається, а проза показує, де лишився знятий одяг, '
+            'додай це до значення: "гола; сукня й сандалі лишилися на березі".') in uk
+    assert ('clothing: when a character takes clothes off or changes, and the prose shows where the removed clothes are, '
+            'add that to the value: "naked; the dress and sandals are left on the shore".') in en
     contract = expected_contract('memory', role())
     assert (contract.stage, contract.mode, contract.schema_version) == ('memory', 'evidence_delta', 4)
+
+
+@pytest.mark.req('CONTEXT-002')
+def test_mcp_draft_goes_stale_when_the_source_scene_changes_day(tmp_path):
+    from storygen.domain import ExternalOrigin
+    from storygen.generation.dependencies import save_manual_draft
+    repo, story, (s1, _, s3) = three_scenes(tmp_path)
+    data = writing_context(repo, s3.id)
+    assert HINT in data['memory']
+    external = save_manual_draft(repo, s3.id, 'Анна вдяглася.', repo.get_scene(s3.id).revision,
+        external_origin=ExternalOrigin(client='test'), expected_context_fingerprint=data['context_fingerprint'],
+        expected_draft_version_id=None)
+    assert reasons(repo, story, external) == []
+    repo.update_scene_plan(s1.id, 'Початок: день 1, 09:00', repo.get_scene(s1.id).revision)
+    assert ('selector_changed', 'memory_day_key', s1.id) in reasons(repo, story, external)

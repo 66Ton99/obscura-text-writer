@@ -618,10 +618,11 @@
     {
       "id": "CONTEXT-002-S08",
       "requirement": "CONTEXT-002",
-      "scope": "Селектор дня сцени-джерела в знімку чернетки й свіжість знімка без нього.",
+      "scope": "Селектор дня сцени-джерела в знімку чернетки й зовнішньої чернетки MCP; знімок без нього лишається свіжим і після зміни дня.",
       "tests": [
         "tests/generation/test_clothing_same_day.py::test_draft_goes_stale_when_the_source_scene_changes_day",
-        "tests/generation/test_clothing_same_day.py::test_snapshot_without_the_new_selectors_stays_fresh"
+        "tests/generation/test_clothing_same_day.py::test_snapshot_without_the_new_selectors_stays_fresh",
+        "tests/generation/test_clothing_same_day.py::test_mcp_draft_goes_stale_when_the_source_scene_changes_day"
       ]
     },
     {
