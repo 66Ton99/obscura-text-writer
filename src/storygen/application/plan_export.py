@@ -3,7 +3,8 @@ import re
 
 from ..characters.models import load_characters
 from ..markdown_document import escape_plain_markdown
-from ..plan_sections import split_plan
+from ..plan_sections import split_plan, _container
+from ..scene_description import clean_title, explicit_scene_number
 
 LABELS = {
     'uk': dict(plan='План', scene='Сцена', characters='Персонажі', no_plan='_План не створено._',
@@ -19,6 +20,22 @@ def _file_name(title, suffix):
     return f'{base[:80]}-{suffix}.md'
 
 
+def _drop_first_line(text, unwanted):
+    """Text without its first non-empty line when `unwanted(line)` says that line only repeats a heading the file has."""
+    lines = text.strip().splitlines()
+    if not lines or not unwanted(lines[0]):
+        return text.strip()
+    rest = lines[1:]
+    while rest and not rest[0].strip():
+        rest = rest[1:]  # Only blank lines go: an indented first line (a code block) keeps its indent.
+    return '\n'.join(rest).rstrip()
+
+
+def _heading(line):
+    match = re.match(r'^[ \t]*#{1,6}[ \t]+(.+?)[ \t#]*$', line)
+    return clean_title(match[1]) if match else None
+
+
 def plan_markdown(repo, story_id):
     """Return (file name, UTF-8 bytes); one read snapshot for scenes, plans and characters."""
     view = repo.context_view(story_id)
@@ -30,12 +47,16 @@ def plan_markdown(repo, story_id):
     source_plan = view.active_source(story_id, 'source_plan')
     if source_plan:
         notes = split_plan(view.read_text(source_plan.id))[0].strip()
+        # The plan's own title («# План оповідання») would repeat «## План» one level higher.
+        notes = _drop_first_line(notes, lambda line: _heading(line) is not None and _container(_heading(line)))
         if notes:out.append(notes)
     for number, scene in enumerate(scenes, 1):
         # A scene keeps its imported beats until the author saves a plan version (SCENE-PLAN-TEMPLATE).
         text = view.read_text(scene.heads['plan']) if scene.heads.get('plan') else scene.beats
         out.append(f"### {words['scene']} {number}: {escape_plain_markdown(scene.title)}")
-        out.append(text.strip() or words['no_plan'])
+        # A scene plan opens with its own «Сцена N: …» heading (import, template): the file already names the scene.
+        text = _drop_first_line(text, lambda line: explicit_scene_number(line) is not None or _heading(line) == clean_title(scene.title))
+        out.append(text or words['no_plan'])
     out.append('## ' + words['characters'])
     cards = load_characters(view.read_text(story.characters_version_id)) if story.characters_version_id else []
     if cards:
