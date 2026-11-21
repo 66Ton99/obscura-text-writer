@@ -27,10 +27,10 @@ COPYLEFT_EXCEPTIONS: dict[str, tuple[frozenset[str], str]] = {
     'pyinstaller': (
         frozenset({'GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute '
                    'non-free programs (including commercial ones)', _GPL2_CLASSIFIER}),
-        'Bootloader Exception (COPYING.txt): у збірку потрапляють лише загрузчик і пов’язані файли'),
+        'Bootloader Exception (COPYING.txt): only the bootloader and related files are included in the build'),
     'pyinstaller-hooks-contrib': (
         frozenset({'License :: OSI Approved :: Apache Software License', _GPL2_CLASSIFIER}),
-        'runtime hooks, що потрапляють у збірку, під Apache-2.0 (LICENSE, розділ Runtime hooks)'),
+        'runtime hooks included in the build are under Apache-2.0 (LICENSE, section Runtime hooks)'),
 }
 # Files the standard library of some interpreters reads at run time and the freezer does not collect.
 VENDOR_RUNTIME_FILES = ('codex-rejected-cas.pem',)
@@ -83,7 +83,7 @@ def dependency_closure(requirements, *, lookup=None) -> list[str]:
         try:
             children = lookup(requirement.name)
         except PackageNotFoundError:
-            raise ValueError(f'Залежність не встановлена: {requirement.name}') from None
+            raise ValueError(f'Dependency is not installed: {requirement.name}') from None
         todo += [(Requirement(text), seen[name]) for text in children]
     return sorted(seen)
 
@@ -100,7 +100,7 @@ def toc_sources(work: Path) -> list[Path]:
                 walk(item)
     records = sorted(Path(work).rglob('*.toc'))
     if not records:
-        raise ValueError(f'Немає записів PyInstaller (*.toc) у {work}')
+        raise ValueError(f'No PyInstaller records (*.toc) in {work}')
     for record in records:
         walk(ast.literal_eval(record.read_text(encoding='utf-8')))
     return [Path(item) for item in sorted(found) if item]
@@ -171,10 +171,10 @@ def third_party_notices(names, *, lookup=distribution, runtime_license: str = ''
     """A distribution without licence files takes `<licenses_dir>/<name>-<version>.txt`; without that file the build stops."""
     copyleft = copyleft_distributions(names, lookup=lookup)
     if copyleft:
-        raise ValueError('Бібліотека з ліцензією родини GPL у збірці: ' + ', '.join(copyleft))
+        raise ValueError('Library with a GPL-family licence in the build: ' + ', '.join(copyleft))
     missing = missing_licenses(names, lookup=lookup, licenses_dir=licenses_dir)
     if missing:
-        raise ValueError('Немає тексту ліцензії для: ' + ', '.join(f'{name} {lookup(name).version}' for name in missing))
+        raise ValueError('No licence text for: ' + ', '.join(f'{name} {lookup(name).version}' for name in missing))
     parts = ['Obscura Text Writer — third-party notices\n',
              'This build includes the following components. Each is distributed under its own licence, reproduced below.\n']
     if runtime_license:
@@ -202,7 +202,7 @@ def plugin_files(root: Path, tracked) -> list[str]:
     Raises ValueError when the plugin manifest is missing or a skill cannot become a self-contained bundle."""
     files = sorted({rel for rel in tracked if rel.startswith(skill_bundles.USER_FILES) and (root / rel).is_file()})
     if 'obscura/.claude-plugin/plugin.json' not in files:
-        raise ValueError('у плагіні Claude немає obscura/.claude-plugin/plugin.json')
+        raise ValueError('the Claude plugin has no obscura/.claude-plugin/plugin.json')
     # Check the skills as they will ship: on a copy of the tracked files only, so an untracked reference fails here and an
     # untracked draft skill does not.
     import tempfile
@@ -232,7 +232,7 @@ def package_data_manifest(root: Path, version: str, tracked) -> dict:
             continue
         files[path.relative_to(package).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     if not files:
-        raise ValueError('У робочій копії не знайдено файлів даних пакета')
+        raise ValueError('No package data files found in the working copy')
     return {'version': version, 'files': files}
 
 
@@ -267,20 +267,20 @@ def check_report(report, edition: str, version: str) -> list[str]:
     """Reasons why the built application is not fit to package; empty when it is."""
     if not isinstance(report, dict) or not isinstance(report.get('checks'), list) or \
             not all(isinstance(check, dict) and isinstance(check.get('name'), str) for check in report['checks']):
-        return ['звіт самоперевірки відсутній або пошкоджений']
-    reasons = [f"перевірка {check['name']}: {check.get('detail')}" for check in report['checks'] if check.get('ok') is not True]
+        return ['the self-check report is missing or damaged']
+    reasons = [f"check {check['name']}: {check.get('detail')}" for check in report['checks'] if check.get('ok') is not True]
     ran = [check['name'] for check in report['checks']]
     if ran != CHECK_NAMES:
-        reasons.append('у звіті не той набір перевірок: бракує ' + (', '.join(name for name in CHECK_NAMES if name not in ran) or 'нічого')
-                       + '; зайві чи повторені: ' + (', '.join(name for name in ran if name not in CHECK_NAMES or ran.count(name) > 1) or 'немає'))
+        reasons.append('the report has the wrong set of checks: missing ' + (', '.join(name for name in CHECK_NAMES if name not in ran) or 'nothing')
+                       + '; extra or repeated: ' + (', '.join(name for name in ran if name not in CHECK_NAMES or ran.count(name) > 1) or 'none'))
     if report.get('frozen') is not True:
-        reasons.append('самоперевірку виконано не в замороженій збірці')
+        reasons.append('the self-check did not run in a frozen build')
     if report.get('edition') != edition:
-        reasons.append(f"позначка видання не потрапила в збірку: очікувано {edition}, застосунок повідомляє {report.get('edition')}")
+        reasons.append(f"the edition mark did not reach the build: expected {edition}, the app reports {report.get('edition')}")
     if report.get('version') != version:
-        reasons.append(f"версія застосунку не збігається з версією проєкту: очікувано {version}, застосунок повідомляє {report.get('version')}")
+        reasons.append(f"the app version does not match the project version: expected {version}, the app reports {report.get('version')}")
     if report.get('ok') is not True and not reasons:
-        reasons.append('самоперевірка не пройшла')
+        reasons.append('the self-check failed')
     return reasons
 
 
@@ -290,7 +290,7 @@ def package_version(project_version: str) -> str:
     valid = 1 <= len(parts) <= 4 and all(part.isascii() and part.isdigit() and (part == '0' or not part.startswith('0'))
                                          and int(part) <= MAX_VERSION_PART for part in parts)
     if not valid or (len(parts) == 4 and parts[3] != '0'):
-        raise ValueError(f'Версія пакета MSIX має складатися з чисел 0–65535, а четверта частина — бути 0: {project_version!r}')
+        raise ValueError(f'The MSIX package version must consist of numbers 0–65535, and the fourth part must be 0: {project_version!r}')
     return '.'.join((parts + ['0', '0', '0'])[:4])
 
 
@@ -344,10 +344,10 @@ def find_makeappx(explicit: str | None = None) -> Path:
     if explicit:
         # A path given on purpose is never silently replaced by another tool found elsewhere.
         if not Path(explicit).is_file():
-            raise ValueError(f'makeappx.exe не знайдено за вказаним шляхом: {explicit}')
+            raise ValueError(f'makeappx.exe not found at the given path: {explicit}')
         return Path(explicit)
     for candidate in (os.environ.get('MAKEAPPX'), shutil.which('makeappx')):
         if candidate and Path(candidate).is_file():
             return Path(candidate)
-    raise ValueError('Не знайдено makeappx.exe. Він є в пакеті Microsoft.Windows.SDK.BuildTools (nuget.org) і в Windows SDK; '
-                     'вкажіть шлях аргументом --makeappx або змінною MAKEAPPX.')
+    raise ValueError('makeappx.exe not found. It ships in the Microsoft.Windows.SDK.BuildTools package (nuget.org) and in the Windows SDK; '
+                     'give its path with the --makeappx argument or the MAKEAPPX variable.')

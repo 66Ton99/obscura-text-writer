@@ -18,7 +18,7 @@ def load() -> dict | None:
         return None
     data = json.loads(source.read_text(encoding='utf-8'))
     if not isinstance(data, dict) or not isinstance(data.get('version'), str) or not isinstance(data.get('files'), dict):
-        raise ValueError('Некоректний файл збірки build_manifest.json')
+        raise ValueError('Invalid build file build_manifest.json')
     return data
 
 

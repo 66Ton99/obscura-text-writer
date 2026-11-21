@@ -5,11 +5,11 @@ from .selection import mentions, name_stems
 CATEGORY_ORDER = ('character_states', 'facts', 'open_threads', 'timeline')
 
 
-def future_lines(future: list[dict], cast: set[str], names: dict[str, str], limit: int) -> tuple[list[str], int]:
+def future_lines(future: list[dict], cast: set[str], names: dict[str, str], limit: int, match_names: dict[str, str] | None = None) -> tuple[list[str], int]:
     """Lines for a scene and the number of records left out by `limit` (characters): first the states of the scene's
     heroes, then facts and threads about or mentioning them, then records without heroes; records only about heroes
     outside the scene are not for this scene. Within a group by category, then text."""
-    stems = tuple(stem for id in cast for stem in name_stems(names.get(id, '')))
+    stems = tuple(stem for id in cast for stem in name_stems((match_names or names).get(id, '')))
 
     def group(item):
         heroes = set(item['character_ids'])
@@ -42,7 +42,9 @@ def future_block(reader, story, scene, limit: int) -> tuple[list[str], int]:
     if not future:
         return [], 0
     cards = load_characters(reader.read_text(story.characters_version_id)) if story.characters_version_id else []
-    return future_lines(future, set(scene.character_ids), {card.id: card.name for card in cards}, limit)
+    from ..characters.names import scene_names, scene_match_names
+    scenes = reader.list_scenes(story.id)  # CHARACTER-NAMES: the name current in the scene; mentions by every name
+    return future_lines(future, set(scene.character_ids), scene_names(cards, scenes, scene), limit, scene_match_names(cards, scenes, scene))
 
 
 def future_section(reader, story, scene, language: str, limit: int) -> str | None:

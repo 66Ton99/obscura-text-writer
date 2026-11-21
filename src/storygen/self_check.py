@@ -47,21 +47,21 @@ def _package_data():
         for package, relative in REQUIRED_FILES:
             if not files(package).joinpath(relative).is_file():
                 raise CheckFailed(f'{package}/{relative}')
-        return f'{len(REQUIRED_FILES)} файлів, без маніфесту збірки'
+        return f'{len(REQUIRED_FILES)} files, no build manifest'
     root = files(__package__)
     for relative, digest in manifest['files'].items():
         source = root.joinpath(relative)
         if not source.is_file():
-            raise CheckFailed(f'немає файла {relative}')
+            raise CheckFailed(f'missing file {relative}')
         if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
-            raise CheckFailed(f'файл відрізняється від робочої копії: {relative}')
-    return f"{len(manifest['files'])} файлів за маніфестом збірки"
+            raise CheckFailed(f'file differs from the working copy: {relative}')
+    return f"{len(manifest['files'])} files per the build manifest"
 
 
 def _key_store():
     from .providers import secrets
     if secrets.default_backend() is None:
-        raise CheckFailed('немає сховища облікових даних')
+        raise CheckFailed('no credential store')
     return ''
 
 
@@ -85,13 +85,13 @@ def _database():
         Repository(Path(root) / 'data')
         found = stored_schema_version(Path(root) / 'data')
     if found != SCHEMA_VERSION:
-        raise CheckFailed(f'схема {found}, очікувано {SCHEMA_VERSION}')
-    return f'схема {found}'
+        raise CheckFailed(f'schema {found}, expected {SCHEMA_VERSION}')
+    return f'schema {found}'
 
 
 def _licenses():
     if not getattr(sys, 'frozen', False):
-        return 'не заморожена збірка'
+        return 'not a frozen build'
     if not (Path(sys.executable).parent / NOTICES).is_file():
         raise CheckFailed(NOTICES)
     return NOTICES

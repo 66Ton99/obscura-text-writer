@@ -107,3 +107,32 @@ def test_route_serves_markdown_attachment(tmp_path):
         assert response.text.startswith('# Маяк\n')
         assert client.get('/api/stories/missing/plan.md').status_code == 404
         assert not list((tmp_path).rglob('*.manifest.json'))  # nothing stored
+
+
+@pytest.mark.req('EXPORT-001')
+def test_scene_heading_inside_the_plan_is_not_repeated(tmp_path):
+    repo = Repository(tmp_path)
+    story = repo.create_story(StoryCreate(title='V-K'))
+    upload(repo, story.id, '# План оповідання\n\nРобоча назва: V-K\nЗадум: борги.\n\n## Сцена 1: Вечір\nЛокація: Вітальня\nХто бере участь: Віка, Джордж\n\n## Сцена 2: Ранок\nЛокація: Кухня\n', 'source_plan')
+    first, second = repo.list_scenes(story.id)
+    # A saved plan version keeps its own «Сцена N:» heading, as the scene plan template writes it.
+    plan = repo.save_version(story.id, second.id, 'scene_plan', '## Сцена 2: Ранок\nЛокація: Кухня, світанок\n', [])
+    repo.set_head(second.id, 'plan', plan.id, repo.get_scene(second.id).revision)
+    text = plan_markdown(repo, story.id)[1].decode('utf-8')
+    assert text.count('Вечір') == 1 and text.count('Ранок') == 1
+    assert '### Сцена 1: Вечір\n\nЛокація: Вітальня\nХто бере участь: Віка, Джордж' in text
+    assert '### Сцена 2: Ранок\n\nЛокація: Кухня, світанок' in text
+    # The plan title heading would repeat «## План» one level higher.
+    assert '# План оповідання' not in text
+    assert '## План\n\nРобоча назва: V-K\nЗадум: борги.' in text
+
+
+@pytest.mark.req('EXPORT-001')
+def test_dropped_scene_heading_keeps_the_indent_of_the_next_line(tmp_path):
+    repo = Repository(tmp_path)
+    story = repo.create_story(StoryCreate(title='Код', language='en'))
+    scene = repo.create_scene(story.id, SceneCreate(title='Meeting'))
+    plan = repo.save_version(story.id, scene.id, 'scene_plan', '## Scene 1: Meeting\n\n    first()\n    second()\n', [])
+    repo.set_head(scene.id, 'plan', plan.id, repo.get_scene(scene.id).revision)
+    text = plan_markdown(repo, story.id)[1].decode('utf-8')
+    assert '### Scene 1: Meeting\n\n    first()\n    second()\n' in text

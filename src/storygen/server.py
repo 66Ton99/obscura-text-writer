@@ -13,10 +13,11 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] in {'fsck', 'backup', 'restore'}:
         from .maintenance import main as maintenance_main
         return maintenance_main(argv)
-    parser=argparse.ArgumentParser(description='Локальна майстерня оповідань українською')
+    parser=argparse.ArgumentParser(description='Local story workshop')
     parser.add_argument('--data-dir',type=Path,default=Path.cwd()/'data')
     parser.add_argument('--env-file',type=Path,default=Path.cwd()/'.env')
-    parser.add_argument('--port',type=int,default=8765)
+    # The checkout port differs from the installed app's preferred 8765, so both run side by side (#233).
+    parser.add_argument('--port',type=int,default=8760)
     parser.add_argument('--open-browser',action='store_true')
     args=parser.parse_args(argv)
     from .web.app import create_app

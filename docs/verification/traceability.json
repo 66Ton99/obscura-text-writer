@@ -29,6 +29,15 @@
       ]
     },
     {
+      "id": "RUNTIME-001-S02",
+      "requirement": "RUNTIME-001",
+      "scope": "Повнота lock-файла для документованого встановлення з --no-deps. Не доводить, що сервер стартує на конкретній ОС.",
+      "tests": [
+        "tests/test_requirements_lock.py::test_lock_covers_core_and_documented_extras",
+        "tests/test_requirements_lock.py::test_install_guides_use_lock_then_no_deps_with_documented_extras"
+      ]
+    },
+    {
       "id": "DATA-001-S01",
       "requirement": "DATA-001",
       "scope": "Некоректний файл у наборі. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -101,6 +110,47 @@
       "scope": "Без повтору й підміни історії. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
       "tests": [
         "tests/generation/test_accepted_resume.py::test_remaining_continues_after_accepted_result_without_inference_repeat"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S01",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Прийняття завдання через accept-brief закриває одноетапний запуск; після цього сцена переміщується в кошик.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_accepting_the_brief_completes_its_waiting_run"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S02",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Запуск із наступним завданням лишається needs_review після прийняття.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_accepting_the_brief_keeps_a_run_with_later_tasks_waiting"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S03",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Вибір точкових правок одного проходу закриває запуск редактора.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_applying_point_edits_completes_a_single_edit_run"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S04",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Новий stage-запуск скасовує лише зупинені запуски того самого етапу цієї сцени; повтор request_id нічого не скасовує. Багатопрохідна редактура, що чекає підсумку з cursor за останнім проходом, теж замінюється.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_a_new_run_of_the_same_stage_cancels_the_stopped_one",
+        "tests/generation/test_run_closure.py::test_a_new_edit_run_cancels_an_editor_loop_waiting_for_its_summary"
+      ]
+    },
+    {
+      "id": "RUN-ACCEPT-CLOSE-S05",
+      "requirement": "RUN-ACCEPT-CLOSE",
+      "scope": "Старт закриває запуски з уже прийнятою останньою спробою й лишає неприйняті.",
+      "tests": [
+        "tests/generation/test_run_closure.py::test_startup_completes_runs_whose_result_was_already_accepted"
       ]
     },
     {
@@ -596,6 +646,36 @@
       ]
     },
     {
+      "id": "CONTEXT-002-S07",
+      "requirement": "CONTEXT-002",
+      "scope": "Підказка «раніше цього дня» для одягу: той самий день, інший день, без днів, retire, вимкнений запис, суфікс автора, інші слоти, незмінний вивід без днів; brief, draft і MCP. Не перевіряє якість прози.",
+      "tests": [
+        "tests/memory/test_core_same_day.py::test_earlier_value_of_the_same_day_is_shown",
+        "tests/memory/test_core_same_day.py::test_english_label",
+        "tests/memory/test_core_same_day.py::test_repeated_current_value_skips_to_last_distinct",
+        "tests/memory/test_core_same_day.py::test_value_of_another_day_is_not_shown",
+        "tests/memory/test_core_same_day.py::test_no_hint_without_day_marks",
+        "tests/memory/test_core_same_day.py::test_retire_resets_history",
+        "tests/memory/test_core_same_day.py::test_hidden_slot_has_no_hint",
+        "tests/memory/test_core_same_day.py::test_other_slots_get_no_hint",
+        "tests/memory/test_core_same_day.py::test_author_unquoted_earlier_value_keeps_reader_unknown_suffix",
+        "tests/memory/test_core_same_day.py::test_without_days_output_is_unchanged",
+        "tests/memory/test_core_same_day.py::test_item_text_stays_current_value",
+        "tests/generation/test_clothing_same_day.py::test_brief_draft_and_mcp_see_clothing_of_the_same_day",
+        "tests/generation/test_clothing_same_day.py::test_no_hint_when_the_earlier_value_is_from_another_day"
+      ]
+    },
+    {
+      "id": "CONTEXT-002-S08",
+      "requirement": "CONTEXT-002",
+      "scope": "Селектор дня сцени-джерела в знімку чернетки й зовнішньої чернетки MCP; знімок без нього лишається свіжим і після зміни дня.",
+      "tests": [
+        "tests/generation/test_clothing_same_day.py::test_draft_goes_stale_when_the_source_scene_changes_day",
+        "tests/generation/test_clothing_same_day.py::test_snapshot_without_the_new_selectors_stays_fresh",
+        "tests/generation/test_clothing_same_day.py::test_mcp_draft_goes_stale_when_the_source_scene_changes_day"
+      ]
+    },
+    {
       "id": "CONTEXT-003-S01",
       "requirement": "CONTEXT-003",
       "scope": "Застарілість перед початком. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
@@ -742,6 +822,25 @@
         "tests/memory/test_wire_v4.py::test_separate_evidence_ids_are_not_rewritten",
         "tests/memory/test_wire_v4.py::test_joined_evidence_in_groups_is_still_unknown",
         "tests/memory/test_core_review.py::test_captured_wire_splits_joined_evidence"
+      ]
+    },
+    {
+      "id": "MEMORY-002-S13",
+      "requirement": "MEMORY-002",
+      "scope": "Правило про знятий одяг у вбудованому промпті пам’яті uk/en і незмінний контракт. Перевіряє наявність інструкції, а не виконання моделлю.",
+      "tests": [
+        "tests/generation/test_clothing_same_day.py::test_builtin_memory_prompt_keeps_where_removed_clothing_is"
+      ]
+    },
+    {
+      "id": "MEMORY-002-S14",
+      "requirement": "MEMORY-002",
+      "scope": "Порожній список у core/threads читається як порожні рішення без попередження; непорожній список і відсутні рішення активних ліній дають schema; вхідні дані не мутуються; етап публікує пам’ять, captured_wire читає так само.",
+      "tests": [
+        "tests/memory/test_wire_v4_empty_sections.py::test_empty_lists_read_as_no_decisions",
+        "tests/memory/test_wire_v4_empty_sections.py::test_non_empty_list_and_missing_thread_decisions_stay_violations",
+        "tests/memory/test_wire_v4_empty_sections.py::test_empty_sections_does_not_mutate_and_keeps_other_values",
+        "tests/memory/test_wire_v4_empty_sections.py::test_stage_publishes_memory_and_captured_wire_reads_it"
       ]
     },
     {
@@ -1306,6 +1405,8 @@
         "tests/authoring/test_plan_export.py::test_plan_and_characters_in_reading_order",
         "tests/authoring/test_plan_export.py::test_empty_plan_and_no_characters_are_marked",
         "tests/authoring/test_plan_export.py::test_imported_characters_text_without_cards",
+        "tests/authoring/test_plan_export.py::test_scene_heading_inside_the_plan_is_not_repeated",
+        "tests/authoring/test_plan_export.py::test_dropped_scene_heading_keeps_the_indent_of_the_next_line",
         "tests/authoring/test_plan_export.py::test_english_story_uses_english_labels",
         "tests/authoring/test_plan_export.py::test_english_availability_notes",
         "tests/authoring/test_plan_export.py::test_route_serves_markdown_attachment",
@@ -1466,6 +1567,80 @@
         "tests/authoring/test_scene_description.py::test_cast_parenthetical_notes_are_preserved_and_not_part_of_names",
         "tests/authoring/test_scene_description.py::test_parenthetical_matching_preserves_exact_names_and_ambiguity"
       ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S01",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Секція оповідача в brief/draft після стилю, рядки лиць і англійська, patches без секції.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_field_reaches_brief_and_draft_after_the_style",
+        "tests/generation/test_scene_narrator_context.py::test_limited_and_omniscient_lines_and_english",
+        "tests/generation/test_scene_narrator_context.py::test_patches_get_no_section"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S02",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Розбір рядка «Оповідач:», проблеми без типових значень, перевага рядка над полем.",
+      "tests": [
+        "tests/test_narration.py::test_plan_line_is_parsed",
+        "tests/test_narration.py::test_plan_line_without_clear_meaning_is_a_problem",
+        "tests/test_narration.py::test_plan_line_wins_over_the_field",
+        "tests/test_narration.py::test_no_override_without_line_or_field",
+        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line",
+        "tests/test_narration.py::test_hero_name_with_a_comma_in_parentheses"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S03",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Герой поза складом і нерозібраний рядок дають попередження, збереження вдається.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_hero_outside_the_cast_and_unparsed_line_warn"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S04",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Селектор narrator робить застарілими матеріали сцени без поширення; старі знімки свіжі.",
+      "tests": [
+        "tests/generation/test_scene_narrator_context.py::test_narrator_change_stales_brief_draft_and_prose_of_the_scene_only",
+        "tests/generation/test_scene_narrator_context.py::test_snapshot_without_the_selector_stays_fresh",
+        "tests/generation/test_scene_narrator_context.py::test_unchanged_title_and_target_with_the_narrator_do_not_invalidate_heads"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S05",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Валідація поєднання лиця й героя в моделі та 422 у PATCH; повідомлення перекладено.",
+      "tests": [
+        "tests/test_narration.py::test_field_validation",
+        "tests/web/test_scene_narrator_api.py::test_patch_sets_and_resets_the_narrator",
+        "tests/web/test_scene_narrator_api.py::test_invalid_narrator_is_rejected",
+        "tests/web/test_scene_narrator_api.py::test_narrator_messages_are_translated"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S06",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "MCP add_scene/update_scene, writing-context і залежність зовнішньої чернетки.",
+      "tests": [
+        "tests/mcp/test_bridge_narrator.py::test_add_and_update_scene_set_the_narrator_and_context_shows_it",
+        "tests/mcp/test_bridge_narrator.py::test_external_draft_depends_on_the_narrator_and_own_text_does_not"
+      ]
+    },
+    {
+      "id": "SCENE-NARRATOR-S07",
+      "requirement": "SCENE-NARRATOR",
+      "scope": "Картка сцени: вибір лиця й героя, попередження поза складом, вимкнені поля за рядка плану. Браузерна частина — Playwright.",
+      "tests": [
+        "tests/web/test_scene_narrator_api.py::test_patch_sets_and_resets_the_narrator",
+        "tests/web/test_scene_narrator_api.py::test_story_view_reports_the_plan_line"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#scene-narrator",
+        "reason": "check_docs.py індексує лише pytest; Playwright cases tests/web/browser/scene-narrator.spec.mjs виконуються окремим runner, цей зв’язок не є доказом виконання."
+      }
     },
     {
       "id": "SCENE-PLAN-TEMPLATE-S01",
@@ -2166,6 +2341,16 @@
       ]
     },
     {
+      "id": "CONTEXT-005-S06",
+      "requirement": "CONTEXT-005",
+      "scope": "Межа поточної сцени в режимі all за наявності майбутніх планів для brief/draft/edit/rewrite; остання сцена без орієнтира; орієнтир дає одну секцію; memory і patches/diff без секції.",
+      "tests": [
+        "tests/generation/test_story_horizon.py::test_all_horizon_with_future_plans_has_the_scene_boundary",
+        "tests/generation/test_story_horizon.py::test_last_scene_without_goal_has_no_boundary_and_goal_gives_it_once",
+        "tests/generation/test_story_horizon.py::test_memory_and_diff_do_not_receive_goal_or_future_plans"
+      ]
+    },
+    {
       "id": "STYLE-SAMPLE-001-S01",
       "requirement": "STYLE-SAMPLE-001",
       "scope": "Секція зразка лише в draft, rewrite і повному edit; JSON стилю без зразка; brief, memory, patches/diff і оцінювач без зразка; твір без зразка з незмінним запитом; межа 3000.",
@@ -2701,6 +2886,14 @@
       ]
     },
     {
+      "id": "DATA-006-S04",
+      "requirement": "DATA-006",
+      "scope": "Видалення й відновлення сцени з зупиненим, активним запуском, відмовою та незавершеним скасуванням; блокування буфера під час скасування.",
+      "tests": [
+        "tests/web/test_trash_api.py::test_trash_ui_preserves_unsaved_buffers"
+      ]
+    },
+    {
       "id": "DATA-RENAME-S01",
       "requirement": "DATA-RENAME",
       "scope": "CAS/no-op/валідація/кошик та inline введення без зміни рукопису.",
@@ -2807,6 +3000,28 @@
         "procedure": "docs/verification/manual.md#r24-localization",
         "reason": "Node/API не підтверджують геометрію, повний keyboard/focus і всі браузерні поверхні."
       }
+    },
+    {
+      "id": "R26-CLI-LANG-S01",
+      "requirement": "R26-CLI-LANG",
+      "scope": "Сторожовий AST-тест: службові модулі з явного переліку без кириличних літералів (docstring дозволено); англійські ключі storygen-eval --dry-run; зайняте призначення копії розпізнається за типом.",
+      "tests": [
+        "tests/test_service_text_language.py::test_service_modules_have_no_ukrainian_literals",
+        "tests/test_service_text_language.py::test_the_scan_sees_literals_but_not_docstrings",
+        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed",
+        "tests/evaluation/test_cli.py::test_dry_run_json_keys_are_english"
+      ]
+    },
+    {
+      "id": "R26-CLI-LANG-S02",
+      "requirement": "R26-CLI-LANG",
+      "scope": "Вікно відмови desktop-запуску мовою Windows (uk/en) для кодів 2, 3, 4, непередбаченої помилки й теки даних; технічна причина лише в журналі; збій визначення мови дає англійський текст. Справжнє MessageBoxW у Windows не відкривається в тестах (alert підмінено).",
+      "tests": [
+        "tests/test_desktop_alerts.py::test_refused_start_alert_follows_the_windows_language",
+        "tests/test_desktop_alerts.py::test_technical_reason_goes_to_the_log_not_the_alert",
+        "tests/test_desktop_alerts.py::test_data_folder_alert_names_the_folder",
+        "tests/test_desktop_alerts.py::test_alert_survives_a_failing_language_lookup"
+      ]
     },
     {
       "id": "MEMORY-REUSE-S01",
@@ -3735,6 +3950,73 @@
         "procedure": "docs/verification/manual.md#characters-page",
         "reason": "Геометрія сторінки й browser beforeunload потребують браузера; автоматизована процедура Playwright."
       }
+    },
+    {
+      "id": "CHARACTER-TIME-S04",
+      "requirement": "CHARACTER-TIME",
+      "scope": "Поле «Знайти персонажа»: фільтр за назвою й іншим ім’ям, перехід на Enter і вибір із підказок, правки й збереження під фільтром, зняття фільтра за невалідної прихованої картки, додавання; правило імен JS = Python.",
+      "tests": [
+        "tests/web/test_characters_find.py::test_card_search_helpers_and_parity_with_server_names"
+      ],
+      "manual": {
+        "procedure": "docs/verification/manual.md#characters-find",
+        "reason": "Фільтр, фокус, підказки й перевірка форми потребують браузера; автоматизована процедура Playwright."
+      }
+    },
+    {
+      "id": "CHARACTER-NAMES-S01",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Позначка інших імен двома мовами; розпізнавання в плані, «Знайомий з:», оповідачі й «Протагоніст:» за будь-яким ім’ям.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_marker_line_variants",
+        "tests/characters/test_character_names.py::test_card_names_keep_order_without_repeats",
+        "tests/characters/test_character_names.py::test_every_name_resolves_in_any_scene",
+        "tests/characters/test_character_names.py::test_other_name_works_in_acquaintance_narrator_and_arc_protagonist_lines"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S02",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Чинне ім’я сцени за найпізнішою доступною позначкою from_scene; заголовок «також», оповідач і знайомства в брифі; майбутнє ім’я відсутнє.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_current_name_follows_the_latest_available_marker",
+        "tests/characters/test_character_names.py::test_scene_name_dicts_and_unmarked_cards",
+        "tests/generation/test_character_names_context.py::test_brief_before_and_after_the_rename",
+        "tests/generation/test_character_names_context.py::test_english_story_uses_also"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S03",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Ім’я кількох карток: «Неоднозначне ім’я», попередження «Знайомий з:», «Протагоніст:» без вибору, ID у cast_names, попередження сторінки й preview.",
+      "tests": [
+        "tests/characters/test_character_names.py::test_name_shared_by_two_cards_is_ambiguous_and_warned",
+        "tests/characters/test_character_names.py::test_acquaintance_names_a_shared_other_name_ambiguous_and_arc_skips_it",
+        "tests/characters/test_character_names.py::test_new_scene_cast_line_writes_an_id_for_a_name_shared_through_another_name",
+        "tests/web/test_character_names_api.py::test_shared_name_is_warned_on_load_and_preview"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S04",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Картки без позначок: заголовок з основним ім’ям без «також», імена запитів збігаються з основними.",
+      "tests": [
+        "tests/generation/test_character_names_context.py::test_cards_without_markers_keep_the_card_name_and_no_also",
+        "tests/characters/test_character_names.py::test_scene_name_dicts_and_unmarked_cards"
+      ]
+    },
+    {
+      "id": "CHARACTER-NAMES-S05",
+      "requirement": "CHARACTER-NAMES",
+      "scope": "Пошук фактів пам’яті за ранішими іменами у вибірці письменника й звуженні каталогу; селектор character_names знімка memory.",
+      "tests": [
+        "tests/memory/test_character_names_memory.py::test_writer_selection_finds_a_fact_by_an_earlier_name",
+        "tests/memory/test_character_names_memory.py::test_catalog_narrowing_keeps_a_fact_by_an_earlier_name",
+        "tests/memory/test_character_names_memory.py::test_requests_match_every_name_available_in_the_scene",
+        "tests/memory/test_character_names_memory.py::test_name_change_stales_the_memory_of_the_scene",
+        "tests/memory/test_character_names_memory.py::test_an_added_name_keeps_the_inflected_mentions_of_the_card_name",
+        "tests/memory/test_character_names_memory.py::test_memory_snapshot_has_no_names_selector_without_other_names"
+      ]
     },
     {
       "id": "WORD-TARGET-S01",
@@ -4893,7 +5175,8 @@
         "tests/storage/test_pre_migration.py::test_unreadable_version_is_a_failure_not_a_skipped_backup",
         "tests/storage/test_pre_migration.py::test_failed_copy_is_not_left_looking_like_a_backup",
         "tests/storage/test_pre_migration.py::test_schema_one_cannot_be_verified_and_is_refused",
-        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed"
+        "tests/storage/test_pre_migration.py::test_a_copy_made_by_another_launch_is_never_renamed",
+        "tests/storage/test_pre_migration.py::test_a_taken_destination_is_a_type_not_a_text"
       ]
     },
     {
@@ -5484,6 +5767,16 @@
         "tests/authoring/test_language_periphery.py::test_unsaved_card_defaults_to_story_language",
         "tests/authoring/test_language_periphery.py::test_profile_carries_story_language_and_warns_on_mismatch",
         "tests/authoring/test_language_periphery.py::test_old_profile_without_language_imports_without_warning"
+      ]
+    },
+    {
+      "id": "STORY-LANGUAGE-S10",
+      "requirement": "STORY-LANGUAGE",
+      "scope": "Типовий профіль письма за мовою твору в налаштуваннях і після зміни мови; часткове й порожнє тіло профілю PUT settings дозаповнюється типовим профілем мови твору; збережений профіль читається як записано.",
+      "tests": [
+        "tests/web/test_style_profile_language.py::test_default_profile_follows_story_language",
+        "tests/web/test_style_profile_language.py::test_partial_or_empty_profile_body_uses_story_language_defaults",
+        "tests/web/test_style_profile_language.py::test_saved_profile_is_read_as_saved"
       ]
     },
     {
@@ -6113,7 +6406,8 @@
         "tests/mcp/test_bridge_launch.py::test_nothing_happens_before_the_first_tool_call",
         "tests/mcp/test_bridge_launch.py::test_explicit_url_never_starts_obscura",
         "tests/mcp/test_bridge_launch.py::test_checkout_without_arguments_keeps_the_old_address",
-        "tests/mcp/test_bridge_launch.py::test_installed_bridge_and_explicit_folder_search_the_record"
+        "tests/mcp/test_bridge_launch.py::test_installed_bridge_and_explicit_folder_search_the_record",
+        "tests/mcp/test_bridge_launch.py::test_checkout_port_differs_from_the_installed_app"
       ]
     },
     {

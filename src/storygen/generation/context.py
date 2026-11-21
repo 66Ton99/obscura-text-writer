@@ -14,7 +14,7 @@ from ..memory.service import journal_before
 from ..memory.projection import MemoryProjection, project_memory, memory_catalog_v4, memory_items
 from ..memory.selection import SelectionInput, minimal_chars, select_memory
 from ..providers.models import RoleSettings
-from .models import StyleProfile
+from .models import StyleProfile, default_style_profile
 from .role_routing import WRITER_STAGES, settings_for
 from .prompts import role_prompt, validate_role_prompt
 from .context_labels import label, prose_language_directive
@@ -262,9 +262,26 @@ def memory_projection(repo,story,scene,scenes,language):
     from ..memory.series_start import source_number
     source_numbers={id:source_number(repo.get_version(id),scene_numbers) for id in past.source_prose_ids}
     hidden,forwarded=hidden_before(repo,scene.id),forwarded_before(repo,scene.id)
-    tracked=[] if flashback else scene_tracked(story,cards,scenes,scene);names={card.id:card.name for card in cards}
-    projection=project_memory(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language)
+    from ..characters.names import scene_names
+    tracked=[] if flashback else scene_tracked(story,cards,scenes,scene);names=scene_names(cards,scenes,scene)  # CHARACTER-NAMES
+    from ..memory.story_time import day_key
+    # CONTEXT-002-S07: days of the source scenes date the clothing worn earlier the same day.
+    projection=project_memory(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language,
+        scene_day=day_key(scene),source_days=source_days(story,scenes,scene))
     return past,source_numbers,hidden,forwarded,tracked,names,projection
+
+
+def story_match_names(repo,story,scenes,scene):
+    """CHARACTER-NAMES: every name of each card available in the scene, for finding mentions in memory text."""
+    from ..characters.models import load_characters
+    from ..characters.names import scene_match_names
+    cards=load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else []
+    return scene_match_names(cards,scenes,scene)
+
+
+def source_days(story,scenes,scene):
+    from ..memory.story_time import day_key
+    return {s.position+1:day_key(s) for s in previous_scenes(story,scenes,scene)}
 
 
 def writer_day_change(scene,scenes,tracked,names,language,story=None):
@@ -338,7 +355,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         simple=flashback and not bible and flashback_mode(story,scenes)=='simple'
         tracked=[] if flashback else [cid for cid in everyone if cid in scene.character_ids]
         changed={cid:day_change(scenes,scene,cid,story) for cid in tracked}
-        names={card.id:card.name for card in cards}
+        from ..characters.names import scene_names,scene_match_names
+        # CHARACTER-NAMES: the catalog shows the current name; narrowing finds mentions of every name available here.
+        names=scene_names(cards,scenes,scene);match_names=scene_match_names(cards,scenes,scene)
         prose_text=repo.read_text(prose_id)
         dump=lambda value:json.dumps(value,ensure_ascii=False,separators=(',',':'))
         def catalog_sections(keep=None):
@@ -370,7 +389,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
             from ..memory.series_start import source_number
             numbers={s.id:s.position+1 for s in scenes}
             from ..book.lineage import lineage_numbers
-            narrow=narrow_catalog(past,scene.character_ids,everyone,names,prose_text,scene.position+1,
+            narrow=narrow_catalog(past,scene.character_ids,everyone,match_names,prose_text,scene.position+1,
                 {id:source_number(repo.get_version(id),numbers) for id in past.source_prose_ids},lineage_numbers(story,scenes,scene))
             small,_,small_bounds,small_sections=catalog_sections(set(narrow.keep))
             return (small_sections,{'memory_schema_bounds':json.dumps(small_bounds,ensure_ascii=False)},
@@ -389,7 +408,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         add(label('draft',language),draft_id)
         sections=[repo.read_text(draft_id)] if settings.edit_mode=='diff' else [label('draft_fragments',language,id=draft_id)+'\n'+render_fragments(repo.read_text(draft_id))]
         return make_context(repo,story,scene,stage,settings,sections,refs,{'copyedit_draft_id':draft_id})
-    profile=StyleProfile()
+    profile=default_style_profile(story.language)
     warnings=[]
     if story.style_version_id:
         add(label('style',language),story.style_version_id)
@@ -400,6 +419,12 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         if profile.tone_sample.strip() and stage in {'draft','rewrite','edit'}:
             # STYLE-SAMPLE-001: only the stages that write prose hear the voice; edit here is the full rewrite (patches/diff returned above).
             sections.append(label('tone_sample',language)+'\n'+profile.tone_sample)
+    # SCENE-NARRATOR: right after the style it replaces point_of_view of; nothing at all without an override.
+    from ..narration import narrator_section
+    from ..characters.models import load_characters
+    narrator_text,narrator_warnings=narrator_section(scene,load_characters(repo.read_text(story.characters_version_id)) if story.characters_version_id else [],language,scenes)
+    if narrator_text:sections.append(narrator_text)
+    warnings.extend(narrator_warnings)
     if story.canon_version_id:
         add(label('canon',language),story.canon_version_id)
         warnings.append(OTHER_MATERIAL_WARNING)
@@ -420,7 +445,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
             refs.append(source_plan.id)
             sections.append(label('global_notes',language)+f' [version_id={source_plan.id}]\n'+preamble)
     # Author plans are explicitly future intentions, never evidence of completed events.
+    future_plans=0
     for item in selected_plan_scenes(scenes,scene,settings):
+        future_plans+=item.position>scene.position
         if item.heads.get('plan'):
             add(label('future_plan',language,number=item.position+1),item.heads['plan'])
         else:
@@ -434,6 +461,9 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     if profile.ending_goal.strip():
         sections.append(label('ending_goal',language)+'\n'+profile.ending_goal)
         if count is None:sections.append(horizon_instructions(scene,len(scenes),language))
+    elif count is None and future_plans:
+        # CONTEXT-005-S06 (#231): the «all» horizon shows later plans too, so the request still limits the scene to its own beats.
+        sections.append(horizon_instructions(scene,len(scenes),language))
     if stage in {'brief','draft','edit','rewrite'}:
         from ..memory.future import future_section
         future=future_section(repo,story,scene,language,settings.max_input_chars//8)  # SERIES-S10
@@ -458,7 +488,8 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
     if foreign_warning:warnings.append(foreign_warning)
     def selection_input():
         from ..memory.story_time import day_key
-        items,_=memory_items(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language)
+        items,_=memory_items(past,scene.character_ids,source_numbers,hidden_claim_ids=hidden,forwarded_claim_ids=forwarded,tracked=tracked,names=names,language=language,
+            scene_day=day_key(scene),source_days=source_days(story,scenes,scene))
         # FTS query: the scene's own plan (already in refs) and, where it is a required input, its brief.
         query=[repo.read_text(scene.heads['plan']) if scene.heads.get('plan') else scene.beats]
         if stage in {'draft','edit'} and scene.heads.get('brief'):query.append(repo.read_text(scene.heads['brief']))
@@ -466,7 +497,7 @@ def build_context(repo,scene_id: str,stage: str,settings: RoleSettings,*,editor_
         summaries,stale=usable_summaries(repo,story,scenes,scene.position+1,language)
         return SelectionInput(tuple(items),scene.id,scene.position+1,tuple(scene.character_ids),tuple(tracked),names,'\n'.join(query),kinds(),
             day_key(scene),{s.position+1:day_key(s) for s in previous_scenes(story,scenes,scene)},language,tuple(summaries),tuple(stale),
-            lineage_numbers(story,scenes,scene))
+            lineage_numbers(story,scenes,scene),story_match_names(repo,story,scenes,scene))
     def kinds():
         from ..memory.kinds import kind_overrides
         return kind_overrides(repo if hasattr(repo,'peek_scene') else repo.context_view(story.id),scene.id)

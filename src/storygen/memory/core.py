@@ -8,11 +8,13 @@ class SlotDef:
     label_uk: str
     label_en: str
     expires_on_day_change: bool
+    # CONTEXT-002-S07: the writing stages see the previous value of the same story day (a removed garment still exists).
+    same_day_history: bool = False
 
 
 SLOT_REGISTRY_VERSION='core-slots-v1'
 SLOTS=(
-    SlotDef('clothing','одяг','clothing',True),
+    SlotDef('clothing','одяг','clothing',True,True),
     SlotDef('carried','при собі','carried',True),
     SlotDef('location','місце','location',False),
     SlotDef('body','тілесний стан','body',True),

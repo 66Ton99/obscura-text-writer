@@ -143,7 +143,7 @@ class NotifyIcon:
         try:
             self._items[index][1]()
         except Exception:
-            logger.exception('Дія меню трея «%s» завершилася з помилкою', self._items[index][0])
+            logger.exception('Tray menu action "%s" failed', self._items[index][0])
 
 
 class Win32Api:
@@ -217,7 +217,7 @@ class Win32Api:
             try:
                 result = procedure(hwnd or 0, message, wparam, lparam)
             except Exception:
-                logger.exception('Помилка обробки повідомлення трея %#x', message)
+                logger.exception('Error handling tray message %#x', message)
                 result = None
             return user32.DefWindowProcW(hwnd, message, wparam, lparam) if result is None else result
         callback = self.WNDPROC(window_procedure)

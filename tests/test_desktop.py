@@ -174,7 +174,7 @@ def test_second_launch_opens_the_running_instance(tmp_path):
 
 def test_invalid_edition_marker_is_logged_and_stops_before_data(tmp_path, monkeypatch):
     def broken():
-        raise ValueError('Некоректний файл видання build_edition.json: видання для Store потребує report_url')
+        raise ValueError('Invalid edition file build_edition.json: the Store edition requires report_url')
     monkeypatch.setattr(build_edition, 'current', broken)
     data = tmp_path / 'data'
     assert desktop.main(['--data-dir', str(data), '--no-browser', '--no-tray']) == 2
@@ -216,7 +216,7 @@ def test_maintenance_commands_check_the_edition_marker(tmp_path, monkeypatch, ca
     from storygen import maintenance
 
     def broken():
-        raise ValueError('Некоректний файл видання build_edition.json: невідоме видання або зайві поля')
+        raise ValueError('Invalid edition file build_edition.json: unknown edition or extra fields')
     monkeypatch.setattr(build_edition, 'current', broken)
     assert maintenance.main(['fsck', '--data-dir', str(tmp_path / 'data')]) == 1
     assert 'build_edition.json' in capsys.readouterr().out
@@ -252,7 +252,7 @@ def test_desktop_refuses_to_start_when_backup_fails(tmp_path):
         raise AssertionError('the server must not start without a backup')
     assert desktop.main(['--data-dir', str(data), '--no-browser', '--no-tray'], serve=no_server) == 3
     assert _version(data) == 4 and not (data / 'server.json').exists()
-    assert 'Резервну копію перед оновленням бази не створено' in (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
+    assert 'No backup was created before the database upgrade' in (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
 
 
 def test_discovery_ignores_proxy_settings(tmp_path, other_program, monkeypatch):
@@ -351,7 +351,7 @@ def test_quit_with_an_open_stream_still_shuts_the_server_down(tmp_path, monkeypa
     thread.join(20)
     assert not thread.is_alive() and result == {'code': 0} and time.time() - started < 15
     log = (data / 'logs' / 'obscura.log').read_text(encoding='utf-8')
-    assert 'Сервер зупинено' in log and 'Application shutdown complete' in log
+    assert 'Server stopped' in log and 'Application shutdown complete' in log
     assert not (data / 'server.json').exists()
 
 
@@ -367,7 +367,7 @@ def test_a_refused_start_tells_the_user_where_the_log_is(tmp_path, monkeypatch, 
     serve = None
     if case == 'marker':
         def broken():
-            raise ValueError('Некоректний файл видання build_edition.json: невідоме видання або зайві поля')
+            raise ValueError('Invalid edition file build_edition.json: unknown edition or extra fields')
         monkeypatch.setattr(build_edition, 'current', broken)
     elif case == 'backup':
         data = _old_schema(tmp_path)

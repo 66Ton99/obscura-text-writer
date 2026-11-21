@@ -61,8 +61,9 @@ def name_key(value):
 
 
 def resolve_participants(names,cards):
-    by_id={card.id:card.id for card in cards};by_name={}
-    for card in cards:by_name.setdefault(name_key(card.name),[]).append(card.id)
+    from .characters.names import name_index
+    # CHARACTER-NAMES: the card name and every «Інше ім'я:» name resolve; a name of several cards is ambiguous.
+    by_id={card.id:card.id for card in cards};by_name=name_index(cards)
     ids=[];problems=[]
     for name in names:
         matches=[by_id[name]] if name in by_id else by_name.get(name_key(name),[])

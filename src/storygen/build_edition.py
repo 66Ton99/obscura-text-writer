@@ -16,7 +16,7 @@ from .domain import ContentRating, DomainModel
 from .rating.levels import higher_axes
 
 MARKER = 'build_edition.json'
-INVALID = 'Некоректний файл видання build_edition.json: {reason}'
+INVALID = 'Invalid edition file build_edition.json: {reason}'
 LIMITS = {'full': ContentRating(sexual=2, violence=2, themes=2), 'store': ContentRating(sexual=1, violence=2, themes=2),
           'paid': ContentRating(sexual=2, violence=2, themes=2)}
 URL_FIELDS = ('support_url', 'waitlist_url', 'report_url')
@@ -54,12 +54,12 @@ def load_build_edition(path: Path | None = None) -> BuildEdition:
     if not source.is_file():
         # Present but not a regular file is unreadable, not absent.
         if source.is_dir():
-            raise ValueError(INVALID.format(reason='це не файл'))
+            raise ValueError(INVALID.format(reason='it is not a file'))
         return BuildEdition()
     try:
         text = source.read_text(encoding='utf-8')
     except (OSError, ValueError):
-        raise ValueError(INVALID.format(reason='файл не читається як JSON')) from None
+        raise ValueError(INVALID.format(reason='the file cannot be read as JSON')) from None
     return parse_build_edition(text)
 
 
@@ -69,15 +69,15 @@ def parse_build_edition(text: str) -> BuildEdition:
     try:
         data = json.loads(text)
     except ValueError:
-        raise ValueError(INVALID.format(reason='файл не читається як JSON')) from None
+        raise ValueError(INVALID.format(reason='the file cannot be read as JSON')) from None
     try:
         loaded = BuildEdition.model_validate(data)
     except ValidationError:
-        raise ValueError(INVALID.format(reason='невідоме видання або зайві поля')) from None
+        raise ValueError(INVALID.format(reason='unknown edition or extra fields')) from None
     if any(url and not _clean_https(url) for url in (getattr(loaded, name) for name in URL_FIELDS)):
-        raise ValueError(INVALID.format(reason='адреси мають починатися з https:// і містити хост без пробілів'))
+        raise ValueError(INVALID.format(reason='addresses must start with https:// and contain a host without spaces'))
     if loaded.edition == 'store' and not loaded.report_url:
-        raise ValueError(INVALID.format(reason='видання для Store потребує report_url'))
+        raise ValueError(INVALID.format(reason='the Store edition requires report_url'))
     return loaded
 
 

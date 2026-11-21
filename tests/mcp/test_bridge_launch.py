@@ -222,12 +222,32 @@ def test_help_survives_a_legacy_code_page(monkeypatch):
 
 @pytest.mark.req('STORE-MCP-001')
 def test_checkout_without_arguments_keeps_the_old_address(monkeypatch):
-    # The checkout's `storygen` serves ./data on 8765 and writes no record: searching %USERPROFILE%\Obscura there would
+    # The checkout's `storygen` serves ./data on 8760 and writes no record: searching %USERPROFILE%\Obscura there would
     # start a second Obscura over another library.
     from storygen.mcp import bridge
     monkeypatch.delattr(sys, 'frozen', raising=False)
     connection = bridge.connection_for(None, None)
     assert connection.base == launch.DEFAULT_URL and connection._explicit == launch.DEFAULT_URL and connection._data_dir is None
+
+
+@pytest.mark.req('STORE-MCP-001')
+def test_checkout_port_differs_from_the_installed_app(tmp_path, monkeypatch):
+    # The checkout serves ./data on 8760 so that it runs beside the installed Obscura, which prefers 8765 (#233).
+    from pathlib import Path
+    from storygen import desktop, server
+    from storygen.application.settings import AppSettings
+    assert launch.DEFAULT_URL == 'http://127.0.0.1:8760' and desktop.PREFERRED_PORT == 8765
+    assert AppSettings().port == 8760
+    import uvicorn
+    from storygen.web import app as web_app
+    seen = {}
+    monkeypatch.setattr(web_app, 'create_app', lambda settings: seen.setdefault('port', settings.port))
+    monkeypatch.setattr(uvicorn, 'Config', lambda *args, **kwargs: None)
+    monkeypatch.setattr(uvicorn, 'Server', lambda config: type('S', (), {'run': lambda self: None})())
+    server.main(['--data-dir', str(tmp_path)])
+    assert seen['port'] == 8760
+    script = (Path(__file__).resolve().parents[2] / 'scripts' / 'start.ps1').read_text(encoding='utf-8-sig')
+    assert 'param([int]$Port=8760,' in script
 
 
 @pytest.mark.req('STORE-MCP-001')

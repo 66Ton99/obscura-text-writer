@@ -9,7 +9,8 @@ When creating a story in the library, choose the **Story language**: Ukrainian (
 - the standard prompts of all roles and the context headings the model sees;
 - the outline and character templates for [import](imports.md): an English story uses the `Scene 1:` and `Characters:` headings;
 - the language hints after editing;
-- the default language of the publication card.
+- the default language of the publication card;
+- the default profile in **Settings → Writing** until you save one: for an English story, "third person", "past" and the rule "English. Put dialogue in double quotation marks."
 
 Until the story contains any model-generated text, you can change the language in **Settings → Writing → Story language**. After the first generation the language is fixed: the field is disabled and explains why.
 

@@ -68,7 +68,7 @@ def choose_port(preferred: int = PREFERRED_PORT) -> int:
             except OSError:
                 continue
             return probe.getsockname()[1]
-    raise OSError('Немає вільного порту на 127.0.0.1')
+    raise OSError('No free port on 127.0.0.1')
 
 
 def write_server_record(data_dir: Path, url: str, instance_id: str) -> None:
@@ -119,6 +119,34 @@ def uvicorn_server(app, port: int):
     # timeout_graceful_shutdown: an open run event stream must not keep "Quit" from reaching the app shutdown.
     return uvicorn.Server(uvicorn.Config(app, host='127.0.0.1', port=port, workers=1, log_config=None, access_log=False,
                                          timeout_graceful_shutdown=GRACEFUL_SHUTDOWN))
+
+
+# R26-CLI-LANG-S02: the alert text when the catalog or the Windows language cannot be read.
+ALERT_FALLBACK = {
+    'desktop.alert.data_dir': 'Obscura cannot create the data folder {p0} ({p1}).',
+    'desktop.alert.edition': 'This Obscura build is damaged: its edition file cannot be read. Reinstall the app.',
+    'desktop.alert.backup': 'No backup could be made before updating the database, so the database was not changed.',
+    'desktop.alert.start': 'Obscura could not start.',
+    'desktop.alert.unexpected': 'The start was stopped by an unexpected error.',
+    'desktop.alert.log': 'Details in the log: {p0}',
+}
+
+
+def _alert_text(key: str, *values) -> str:
+    """R26-CLI-LANG-S02: a refused start speaks the Windows display language, like the tray menu; never fails."""
+    params = {f'p{index}': str(value) for index, value in enumerate(values)}
+    try:
+        from .desktop_tray import system_locale
+        from .web.localization import translate
+        text = translate(key, system_locale(), **params)
+        if text != key:
+            return text
+    except Exception:  # noqa: BLE001 - the alert is the last word of a failed start: it must always be shown
+        pass
+    text = ALERT_FALLBACK[key]
+    for name, value in params.items():
+        text = text.replace('{' + name + '}', value)
+    return text
 
 
 def _default_alert(text: str) -> None:
@@ -176,17 +204,17 @@ def main(argv=None, *, opener=None, window=None, tray=None, serve=None, alert=No
     try:
         log = configure_logging(data_dir)
     except OSError as error:
-        alert(f'Obscura не може створити теку даних {data_dir}: {type(error).__name__}')
+        alert(_alert_text('desktop.alert.data_dir', data_dir, type(error).__name__))
         return 4
     try:
         code, reason = _run(args, data_dir, _window_factory(opener, window, data_dir), tray, serve or uvicorn_server)
     except Exception:
-        logger.exception('Запуск зупинено через непередбачену помилку')
-        code, reason = 4, 'Запуск зупинено через непередбачену помилку.'
+        logger.exception('The start was stopped by an unexpected error')
+        code, reason = 4, 'desktop.alert.unexpected'
     finally:
         close_logging()
     if code:
-        alert(f'{reason}\n\nПодробиці в журналі: {log}')
+        alert(_alert_text(reason) + '\n\n' + _alert_text('desktop.alert.log', log))
     return code
 
 
@@ -199,7 +227,7 @@ def _refresh_skills(data_dir: Path) -> None:
                                                   checkout=Path(__file__).resolve().parents[2])
         claude_connect.refresh_marketplace(source, claude_connect.marketplace_target(data_dir), project_version())
     except Exception:  # noqa: BLE001 - a background helper: the log is the only place for it
-        logger.exception('Скіли Claude: оновлення копії не вдалося')
+        logger.exception('Claude skills: updating the copy failed')
 
 
 class _OpenerWindow:
@@ -236,7 +264,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
     except ValueError as error:
         # BUILD-EDITION-001-S04: nothing but the log is created for a build with a broken marker.
         logger.error('%s', error)
-        return 2, str(error)
+        return 2, 'desktop.alert.edition'
 
     def open_page(url):
         # DESKTOP-001-S07: a second launch finds the window of the first one by its Edge profile and brings it forward.
@@ -244,7 +272,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
             make_window(url).show()
     url = running_server(data_dir)
     if url:
-        logger.info('Сервер цієї теки даних уже працює: %s', url)
+        logger.info('A server for this data folder is already running: %s', url)
         open_page(url)
         return 0, None
     from .application.settings import AppSettings
@@ -255,9 +283,9 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
     except PreMigrationBackupFailed as error:
         # DESKTOP-001-S03: without a verified copy the database is not opened, so it is not migrated.
         logger.error('%s', error)
-        return 3, str(error)
+        return 3, 'desktop.alert.backup'
     if copy is not None:
-        logger.info('Перед оновленням бази створено резервну копію: %s', copy)
+        logger.info('A backup was created before the database upgrade: %s', copy)
     port = choose_port()
     env_file = args.env_file.resolve() if args.env_file else data_dir / '.env'
     app = create_app(AppSettings(data_dir=data_dir, env_file=env_file, port=port))
@@ -275,16 +303,16 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
             # Most often another launch of this very folder won the race for the data folder lock: open that one.
             url = _already_running(data_dir, 5.0)
             if url:
-                logger.info('Сервер цієї теки даних уже працює: %s', url)
+                logger.info('A server for this data folder is already running: %s', url)
                 open_page(url)
                 return 0, None
-            logger.error('Сервер не стартував на порту %s', port)
-            return 4, 'Obscura не вдалося запустити.'
+            logger.error('The server did not start on port %s', port)
+            return 4, 'desktop.alert.start'
         url = f'{LOOPBACK}{port}'
         write_server_record(data_dir, url, app.state.instance_id)
         wrote_record = True
         threading.Thread(target=_refresh_skills, args=(data_dir,), name='obscura-skills', daemon=True).start()
-        logger.info('Сервер працює: %s; тека даних: %s', url, data_dir)
+        logger.info('Server running: %s; data folder: %s', url, data_dir)
         # DESKTOP-001-S07: a window left by a crashed run may show an old address; it gives way to a fresh one.
         replace_stale = getattr(window, 'replace_stale', None)
         if replace_stale:
@@ -302,7 +330,7 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
                 (tray or run_tray)(url, data_dir, backups_dir(data_dir), quit_application, opener=lambda *_: window.show())
                 return 0, None
             except TrayUnavailable:
-                logger.warning('Значок у треї недоступний; застосунок працює без нього, доки процес не зупинять')
+                logger.warning('The tray icon is unavailable; the app runs without it until the process is stopped')
         while thread.is_alive():
             thread.join(0.5)
         return 0, None
@@ -315,16 +343,16 @@ def _run(args, data_dir: Path, make_window, tray, serve) -> tuple[int, str | Non
         if wrote_record:
             remove_server_record(data_dir)
         if thread.is_alive():
-            logger.error('Сервер не завершився за %s с; процес завершується примусово', int(STOP_TIMEOUT))
+            logger.error('The server did not stop within %s s; terminating the process', int(STOP_TIMEOUT))
         else:
-            logger.info('Сервер зупинено')
+            logger.info('Server stopped')
 
 
 def _serve(server) -> None:
     try:
         server.run()
     except BaseException:  # uvicorn exits the thread with SystemExit when it cannot bind
-        logger.exception('Сервер завершився з помилкою')
+        logger.exception('The server exited with an error')
 
 
 if __name__ == '__main__':

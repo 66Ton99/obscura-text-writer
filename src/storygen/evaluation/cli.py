@@ -22,9 +22,9 @@ class Parser(argparse.ArgumentParser):
 
 
 def parser() -> argparse.ArgumentParser:
-    root = Parser(description="Автоматичне оцінювання української прози")
+    root = Parser(description="Automatic evaluation of Ukrainian prose")
     commands = root.add_subparsers(dest="command", required=True)
-    run = commands.add_parser("evaluate", help="Оцінити текст")
+    run = commands.add_parser("evaluate", help="Evaluate a text")
     run.add_argument("--case", type=Path, required=True)
     run.add_argument("--config", type=Path, required=True)
     run.add_argument("--profile", type=Path)
@@ -34,10 +34,10 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument('--budget-data-dir',type=Path,default=Path('data'))
     run.add_argument('--budget-scope')
     run.add_argument('--run-limit-usd')
-    compare = commands.add_parser("compare", help="Порівняти два звіти")
+    compare = commands.add_parser("compare", help="Compare two reports")
     compare.add_argument("--baseline", type=Path, required=True)
     compare.add_argument("--candidate", type=Path, required=True)
-    calibration = commands.add_parser("calibrate", help="Перевірити оцінювача на відомих дефектах")
+    calibration = commands.add_parser("calibrate", help="Check the evaluator against known defects")
     calibration.add_argument("--suite", type=Path, required=True)
     calibration.add_argument("--config", type=Path, required=True)
     calibration.add_argument("--profile", type=Path)
@@ -71,13 +71,13 @@ def main(argv: list[str] | None = None) -> int:
             nonlocal budget_lock
             if args.dry_run or not hasattr(gateway,'bind_accounting'):return
             if config.provider in {'venice','openrouter'} and not args.budget_scope:
-                raise BudgetError('Для cloud CLI потрібен --budget-scope')
+                raise BudgetError('A cloud CLI requires --budget-scope')
             if not args.budget_scope: args.budget_scope = 'cli:evaluator'
             if budget_lock is None:
                 budget_lock = AppInstanceLock(args.budget_data_dir)
                 try: budget_lock.__enter__()
                 except RuntimeError:
-                    raise BudgetError('Каталог бюджету відкрито застосунком або іншим CLI; зупиніть його чи виберіть інший каталог') from None
+                    raise BudgetError('The budget directory is open in the app or another CLI; stop it or choose another directory') from None
             if args.budget_scope:
                 from ..storage.repository import Repository
                 from ..providers.accounting import CallAccounting
@@ -89,21 +89,21 @@ def main(argv: list[str] | None = None) -> int:
             from .calibration import calibrate, load_suite
             from .runner import digest, evaluator_fingerprint
             if args.repeats < 1:
-                raise ValueError("Кількість повторів має бути додатною")
+                raise ValueError("The number of repeats must be positive")
             cases = load_suite(args.suite)
             if args.case_id:
                 if not set(args.case_id) <= {case.id for case in cases}:
-                    raise ValueError("Невідомий приклад")
+                    raise ValueError("Unknown case")
                 cases = [case for case in cases if case.id in args.case_id]
             if args.dry_run:
-                print(json.dumps({"провайдер":config.provider,"приклади":[case.id for case in cases],"виклики":len(cases)*args.repeats},ensure_ascii=False,indent=2))
+                print(json.dumps({"provider":config.provider,"cases":[case.id for case in cases],"calls":len(cases)*args.repeats},ensure_ascii=False,indent=2))
                 return 0
             gateway = build_gateway(config)
             outcomes = []
             try:
                 for case in cases:
                     for index in range(args.repeats):
-                        print(f"Оцінювання {case.id}: {index + 1}/{args.repeats}", flush=True)
+                        print(f"Evaluating {case.id}: {index + 1}/{args.repeats}", flush=True)
                         bind_budget(gateway)
                         outcomes.append(evaluate(case, rubric, profile, config, gateway, args.output / "runs", reverse_pair=bool(index % 2)))
                         if outcomes[-1].status == 'refused':
@@ -125,19 +125,19 @@ def main(argv: list[str] | None = None) -> int:
             metrics["calibration_fingerprint"] = digest({"expectations":expectations,"outcomes":[o.model_dump() for o in outcomes]})
             if config.model is None:
                 metrics["eligible"] = False
-                metrics["model_note"] = "Для каліброваного профілю потрібен явний ідентифікатор моделі"
+                metrics["model_note"] = "A calibrated profile requires an explicit model identifier"
             args.output.mkdir(parents=True,exist_ok=True)
             target = args.output / "calibration.json"
             if target.exists():
                 target = args.output / ("calibration-" + metrics["calibration_fingerprint"][:12] + ".json")
             target.write_text(json.dumps(metrics,ensure_ascii=False,indent=2),encoding="utf-8")
-            print(f"Звіт калібрування: {target}")
+            print(f"Calibration report: {target}")
             return 0 if metrics["eligible"] else 1
         case = load_case(args.case)
         request = build_request(case, rubric, config, args.reverse_pair)
         if args.dry_run:
-            print(json.dumps({"провайдер":config.provider, "модель":config.model or "типова модель Codex CLI",
-                "символів":sum(len(m["content"]) for m in request.messages), "документи":[d.id for d in case.documents]}, ensure_ascii=False, indent=2))
+            print(json.dumps({"provider":config.provider, "model":config.model or "Codex CLI default model",
+                "characters":sum(len(m["content"]) for m in request.messages), "documents":[d.id for d in case.documents]}, ensure_ascii=False, indent=2))
             return 0
         gateway = build_gateway(config)
         try:
@@ -147,11 +147,11 @@ def main(argv: list[str] | None = None) -> int:
             close = getattr(gateway, "close", None)
             if close:
                 close()
-        print(f"Оцінювання: {result.status}. Звіт: {result.metadata['report_path']}")
+        print(f"Evaluation: {result.status}. Report: {result.metadata['report_path']}")
         return {"passed":0, "failed":1, "incomplete":2, "error":3, 'refused':4}[result.status]
     except (ValueError, OSError, ValidationError, GatewayFailure) as exc:
-        message = str(exc) if isinstance(exc, (GatewayFailure, BudgetError)) else "Некоректні аргументи, конфігурація або файли"
-        print(f"Помилка: {message}")
+        message = str(exc) if isinstance(exc, (GatewayFailure, BudgetError)) else "Invalid arguments, configuration or files"
+        print(f"Error: {message}")
         return 3
     finally:
         if budget_lock is not None: budget_lock.__exit__(None, None, None)

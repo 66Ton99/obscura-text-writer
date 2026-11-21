@@ -49,8 +49,8 @@ def check_impact(db,report,stories,scenes,versions,root):
                     validate_memory_input(attempt.context,t,check)
                     if check.materials[0]!=item.verdict:raise ValueError('Proof verdict')
                 else:validate_delta(payload,t)
-        except (ValueError,KeyError,TypeError,OSError):report.add('invalid_impact',key,'Некоректний звіт перевірки впливу або його джерела')
+        except (ValueError,KeyError,TypeError,OSError):report.add('invalid_impact',key,'Invalid impact check report or its sources')
     for action in actions:
         record=records.get(action.record_id)
         if not record or action.story_id!=record.story_id or action.version_id!=record.target.version_id:
-            report.add('invalid_impact_application',action.id,'Невідповідне застосування звіту')
+            report.add('invalid_impact_application',action.id,'Mismatched report application')

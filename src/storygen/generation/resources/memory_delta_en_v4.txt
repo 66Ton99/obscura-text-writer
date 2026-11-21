@@ -6,6 +6,7 @@ core: for every ID in "CORE STATE", all slots clothing, carried, location, body,
 - changed: text is the new value, evidence_ids are the evidence;
 - unknown: reason is a short explanation of why the value is no longer certain; without a reason choose unchanged;
 - introduced: evidence_ids is the evidence; only for a slot with reader_unknown: true, when the prose shows this value to the reader for the first time.
+clothing: when a character takes clothes off or changes, and the prose shows where the removed clothes are, add that to the value: "naked; the dress and sandals are left on the shore".
 threads: for every claim_id in "ACTIVE THREADS", the fields status, resolution, evidence_ids: open (the rest empty) or closed (resolution: how it was resolved, evidence_ids). Close a thread only on evidence of its resolution, direct or indirect; a character's absence or the prose's silence does not close a thread.
 
 Group items:

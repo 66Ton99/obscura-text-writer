@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from storygen.evaluation import cli
 from storygen.evaluation.models import ScoringProfile
 from storygen.evaluation.prompting import load_rubric
@@ -22,6 +24,22 @@ def test_dry_run_does_not_create_gateway(tmp_path, sample_case, monkeypatch, cap
     monkeypatch.setattr(cli, "build_gateway", prohibited)
     assert cli.main(["evaluate", "--case", str(case), "--config", str(cfg), "--dry-run"]) == 0
     assert "codex_cli" in capsys.readouterr().out
+
+
+@pytest.mark.req('R26-CLI-LANG')
+def test_dry_run_json_keys_are_english(tmp_path, sample_case, monkeypatch, capsys):
+    # R26-CLI-LANG-S01 (#32): the --dry-run summaries of evaluate and calibrate use English keys.
+    case, cfg = paths(tmp_path, sample_case)
+    monkeypatch.setattr(cli, "build_gateway", lambda config: (_ for _ in ()).throw(AssertionError("no gateway")))
+    assert cli.main(["evaluate", "--case", str(case), "--config", str(cfg), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert sorted(summary) == ["characters", "documents", "model", "provider"]
+    assert (summary["provider"], summary["model"], summary["documents"]) == ("codex_cli", "test", [d.id for d in sample_case.documents])
+    assert isinstance(summary["characters"], int) and summary["characters"] > 0
+    suite = tmp_path / "suite.json"
+    suite.write_text(json.dumps({"cases": [json.loads(sample_case.model_dump_json())]}), encoding="utf-8")
+    assert cli.main(["calibrate", "--suite", str(suite), "--config", str(cfg), "--repeats", "2", "--dry-run"]) == 0
+    assert json.loads(capsys.readouterr().out) == {"provider": "codex_cli", "cases": [sample_case.id], "calls": 2}
 
 
 def test_exit_codes_and_invalid_invocation(tmp_path, sample_case, monkeypatch, good_report):
@@ -77,14 +95,14 @@ def test_revision_regression_keeps_preservation_failures(sample_case, good_repor
     assert compare_reports(base, changed)["status"] == "non_comparable"
 
 
-def test_cli_ukrainian_help_under_windows_legacy_encoding(tmp_path):
+def test_cli_help_under_windows_legacy_encoding(tmp_path):
     import os
     import subprocess
     import sys
     env = dict(os.environ, PYTHONIOENCODING="cp1250")
     result = subprocess.run([sys.executable,"-m","storygen.evaluation.cli","--help"],cwd=tmp_path,env=env,capture_output=True)
     assert result.returncode == 0
-    assert "української" in result.stdout.decode("utf-8")
+    assert "Ukrainian prose" in result.stdout.decode("utf-8")
 
 
 def test_accounted_cli_respects_root_lock_and_dry_run(tmp_path,sample_case,monkeypatch):

@@ -2,7 +2,8 @@
 
 How to use this template:
 - Replace the examples and the text in square brackets; give every character a separate second-level heading with their name.
-- Use the same names in scene casts as in the headings of this file. Nicknames and short forms are not matched automatically.
+- Use the same names in scene casts as in the headings of this file. List the character's other names (a nickname, a real name revealed later) on an “Other name:” line, separated by commas; plans then recognise them too. Short forms without such a line are not matched.
+- If the character goes by another name from some scene on, add the entry “Other name: New name” after the import and set it to “Starting from a scene”: from that scene the models call the character by the new name.
 - After import, the descriptions become the initial cards. A repeated import does not overwrite cards you have already edited.
 - Describe the characters as they are at the start of the story. Add new knowledge, injuries, changed relationships and other later events as separate entries after import.
 - Mark the main character in their card with the line “Role in the story: Protagonist” (or “Main character”). Without a mark, the first character of the earliest scene is treated as the main one.

@@ -10,6 +10,8 @@ If there are many scenes, click the **Scenes** heading with their count: the lis
 
 - In the scene list, the selected scene has a button with a trash icon: **Delete scene**. The app asks for confirmation and moves the scene to the scene trash; the following scenes will then need review.
 - Save your text first: with unsaved changes the scene is not deleted and the app tells you why.
+- If a run of the story stopped and is waiting for your decision, the app offers to cancel such runs together with deleting or restoring the scene. Text and history are preserved. While a model is working, the scene cannot be deleted: wait for the run to finish or cancel it.
+- Accepting a brief or applying point edits finishes the run that was waiting for them, and a new run of the same scene stage cancels the old stopped one.
 - To bring a scene back, expand **Scene trash** under the list and click **Restore**. Scenes are never deleted permanently.
 - On a narrow screen there is no scene list: pick the scene in the selector and click **Delete scene** under it.
 
@@ -60,8 +62,22 @@ The **Full screen** button in the row with **Save** spreads the text over the wh
 
 ## Scene sections
 
-On the right, the **Scene settings** section (participants, word target, scene age rating) and the **Scene evaluation** section collapse and remember their state. Evaluation is hidden when the evaluator is off.
+On the right, the **Scene settings** section (participants, narrator, word target, scene age rating) and the **Scene evaluation** section collapse and remember their state. Evaluation is hidden when the evaluator is off.
 
 On a phone the sections go below the editor, and the top-row buttons show icons only.
 
 ![Workspace on a phone](../../images/site/en/workspace-mobile.png)
+
+## Scene narrator
+
+By default every scene is told by the narrator from the story style. To tell one scene from another point of view, choose the **Narrator** field in **Scene settings**: **First person**, **Third person through a character** or **Third person, omniscient**. For first person and third person through a character also choose the **Character** from the character cards. **As in the story** returns the narrator from the style. The model receives the choice in the brief, the draft and the full edit of this scene.
+
+You can also set the narrator with an outline line:
+
+```
+Narrator: Lera, first person
+```
+
+`Narrator: omniscient` and `Narrator: Marko, third person` work too. The outline line takes precedence: the fields in the settings are then unavailable and show its value. When the line is unclear (no person, no character, or the name does not match a card), an explanation appears under the field, and the choice in the settings applies.
+
+When the narrator is not among the scene participants, Obscura saves the choice and warns about it. Changing the narrator makes only this scene’s brief, draft and prose out of date.

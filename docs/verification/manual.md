@@ -172,6 +172,13 @@ R-22 прокрутка: Playwright `long draft scrolls internally while formatt
 Перевірки desktop/mobile: перехід і повернення до prose, додавання картки, довгий опис, UA/EN без втрати вводу, preview, save, порожній твір без сцен, відмова від виходу з dirty, CAS409 без втрати правок. Переглянути нейтральні `docs/images/characters-page-desktop.png` і `characters-page-mobile.png`: поля видимі, немає горизонтального переповнення.
 
 
+<a id="characters-find"></a>
+## Пошук картки на сторінці персонажів
+
+Запустити `node frontend/node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs characters-page -g "find a character" --reporter=line`.
+Перевірки desktop/mobile (CHARACTER-TIME-S04): фільтр за іншим ім'ям, статус «Показано 1 з 3», Enter переносить фокус, вибір «Анна» з підказок за наявності «Маріанна», введення не переносить фокус, правка під фільтром і збереження всіх карток, зняття фільтра за порожнього поля прихованої картки під час збереження й preview (без запиту preview), приховування після виходу з картки, «Додати персонажа» знімає фільтр, без горизонтальної прокрутки.
+
+
 <a id="additive-import-ui"></a>
 ## Інтерфейс письма та доповнювального імпорту
 
@@ -254,9 +261,9 @@ Playwright model-metadata.spec.mjs: selected model shows tariff units/caps/unkno
 <a id="workspace-one-click"></a>
 ## Телеметрія та зупинка основної дії
 
-На синтетичному сервері запустити `node frontend/node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs workspace-telemetry.spec.mjs workspace-cancel.spec.mjs save-and-run.spec.mjs`. Перевірити desktop/mobile, передзапускову модель, збереження без загального dialog, затриманий і втрачений POST, серверний cancel і відновлення плану після reload. Тести не виконують реальний inference; наявність процедури не означає її виконання.
+На синтетичному сервері запустити `node frontend/node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs workspace-telemetry.spec.mjs workspace-cancel.spec.mjs save-and-run.spec.mjs editor-toolbar.spec.mjs`. Перевірити desktop/mobile, передзапускову модель, збереження без загального dialog, затриманий і втрачений POST, серверний cancel і відновлення плану після reload. Тести не виконують реальний inference; наявність процедури не означає її виконання.
 
-WORKSPACE-TELEMETRY-S01: у `workspace-telemetry.spec.mjs` сценарії `plan/brief/draft/prose shows its model and warning before a single-click start`, а також `draft displays editor and planned calls before starting` перевіряють ролі, попередження, UA/EN і зміну ліміту. WORKSPACE-TELEMETRY-S02: у `workspace-cancel.spec.mjs` сценарії `stop during reconciliation is not lost`, `stopping readiness restores controls without a settings error`, `unknown enqueue is not shown as cancelled and Stop fences it` та інші перевіряють конкретні гонки. WORKSPACE-TELEMETRY-S03: `sidebar retains the planned model after reload` і `legacy run with no saved plan is explicitly unknown`. Playwright тести перелічено тут, бо структурна матриця індексує Python testcase, а не browser test names.
+WORKSPACE-TELEMETRY-S01: у `workspace-telemetry.spec.mjs` сценарії `plan/brief/draft/prose shows its model and warning before a single-click start`, а також `draft displays editor and planned calls before starting` перевіряють ролі, попередження, UA/EN і зміну ліміту. `editor-toolbar.spec.mjs` (`editor buttons share one row with the model line under the primary button`) перевіряє, що на широкому екрані кнопки матеріалу й основна дія стоять в одному ряду, а рядок моделі — під основною кнопкою в межах панелі. WORKSPACE-TELEMETRY-S02: у `workspace-cancel.spec.mjs` сценарії `stop during reconciliation is not lost`, `stopping readiness restores controls without a settings error`, `unknown enqueue is not shown as cancelled and Stop fences it` та інші перевіряють конкретні гонки. WORKSPACE-TELEMETRY-S03: `sidebar retains the planned model after reload` і `legacy run with no saved plan is explicitly unknown`. Playwright тести перелічено тут, бо структурна матриця індексує Python testcase, а не browser test names.
 
 <a id="workspace-speed"></a>
 ## Швидкість відповіді робочого простору
@@ -322,6 +329,11 @@ MEMORY-MERGE-S04. Автоматична частина — Playwright `tests/we
 ## Спогад у браузері
 
 STORY-TIME-S07. Автоматична частина — Playwright `tests/web/browser/flashback.spec.mjs` (три cases на desktop і mobile на нейтральному прикладі: прапорець «Спогад» у параметрах сцени зберігається, а на desktop у списку сцен з’являється позначка «спогад»; сцена з `Початок: Рік -2 (спогад)` має прапорець увімкненим і недоступним із поясненням; панель «Структура книги» показує підказку «Початок арки невідомий» біля арок без відомого початку, коли в книзі є спогад). Запуск: `cd frontend; ./node_modules/.bin/playwright test --grep "flashback|unknown start"`. Прогін 13.11.2026 на гілці `claude/story-flashbacks`: 6 passed. Цей зв’язок не є доказом виконання наступних змін; фактичний запуск фіксується окремо.
+
+<a id="scene-narrator"></a>
+## Оповідач у картці сцени
+
+SCENE-NARRATOR-S07. Автоматична частина — Playwright `tests/web/browser/scene-narrator.spec.mjs` (три cases на desktop і mobile на нейтральному творі з картками: вибір «Перша особа» й героя в параметрах сцени зберігається в полі `narrator`; герой поза складом сцени дає під полем попередження «Оповідача немає серед учасників сцени»; сцена з рядком плану `Оповідач: Лєра, перша особа` показує його значення у вимкнених полях із поясненням). Запуск: `cd frontend; npx playwright test ../tests/web/browser/scene-narrator.spec.mjs`. Прогін 20.11.2026 на гілці `claude/scene-narrator`: 6 passed. Платний запуск моделі ця перевірка не робить. Цей зв’язок не є доказом виконання наступних змін; фактичний запуск фіксується окремо.
 
 <a id="timeline-summaries-panel"></a>
 ## Панель підсумків хронології

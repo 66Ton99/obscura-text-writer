@@ -86,6 +86,9 @@ def commit_copyedit_selection(
             'UPDATE stage_attempts SET state=?,payload=? WHERE id=?',
             (attempt.state, attempt.model_dump_json(), attempt.id)
         )
+        if not loop_run and attempt.run_id:
+            from .run_store import close_run_after_acceptance
+            close_run_after_acceptance(repo, attempt.id, db)  # RUN-ACCEPT-CLOSE: a single editor pass waited for this choice
         if loop_run and loop_run.state=='needs_review':
             if standalone:
                 loop_run.state='completed'

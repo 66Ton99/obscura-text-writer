@@ -70,11 +70,11 @@ def test_backup_failure_blocks_the_migration(tmp_path, monkeypatch):
     data = old_schema_dir(tmp_path)
 
     def failing(source, destination):
-        raise ValueError('Перевірка цілісності не пройдена: missing_file')
+        raise ValueError('Integrity check failed: missing_file')
     monkeypatch.setattr(pre_migration, 'create_backup', failing)
     with pytest.raises(PreMigrationBackupFailed) as error:
         backup_before_migration(data)
-    assert 'Резервну копію перед оновленням бази не створено' in str(error.value) and version(data) == 4
+    assert 'No backup was created before the database upgrade' in str(error.value) and version(data) == 4
 
 
 def test_existing_destination_is_a_failure_not_an_overwrite(tmp_path):
@@ -146,3 +146,14 @@ def test_a_copy_made_by_another_launch_is_never_renamed(tmp_path, monkeypatch):
     kept = backups_dir(data) / 'pre-migration-v4-20261111-093005'
     assert [p.name for p in backups_dir(data).iterdir()] == [kept.name]
     assert json.loads((kept / 'manifest.json').read_text(encoding='utf-8'))['status'] == 'complete'
+
+
+@pytest.mark.req('DESKTOP-001')
+def test_a_taken_destination_is_a_type_not_a_text(tmp_path):
+    # R26-CLI-LANG (#32): the backup texts are English now; a taken destination is recognised by its type.
+    from storygen.storage.backup import DestinationTaken, new_destination
+    taken = tmp_path / 'taken'
+    taken.mkdir()
+    with pytest.raises(DestinationTaken) as error:
+        new_destination(tmp_path / 'data', taken)
+    assert isinstance(error.value, ValueError) and not hasattr(pre_migration, 'DESTINATION_TAKEN')

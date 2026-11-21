@@ -134,3 +134,54 @@ def continue_after_acceptance(repo, id, version_id, expected_cursor, expected_sc
             event=RunEvent(run_id=run.id,seq=seq+offset,type=type,data=data)
             db.execute('INSERT INTO run_events VALUES(?,?,?,?)',(run.id,event.seq,type,event.model_dump_json()))
         return run
+
+
+def _close_accepted(db, run, attempt):
+    """RUN-ACCEPT-CLOSE: the author accepted the result a run waits for at its last task; the run is complete."""
+    if run.state != 'needs_review' or run.cursor != len(run.tasks) - 1:
+        return None
+    task = run.tasks[run.cursor]
+    if (attempt.run_id != run.id or attempt.stage != task['stage'] or attempt.scene_id != task.get('scene_id')
+            or attempt.context.get('run_cursor', run.cursor) != run.cursor or attempt.state != 'completed' or not attempt.result_version_id):
+        return None
+    run.state = 'completed'
+    run.cursor = len(run.tasks)
+    run.error = None
+    db.execute('UPDATE runs SET state=?,payload=? WHERE id=?', (run.state, run.model_dump_json(), run.id))
+    seq = db.execute('SELECT COALESCE(MAX(seq),0)+1 FROM run_events WHERE run_id=?', (run.id,)).fetchone()[0]
+    for offset, (type, data) in enumerate([('accepted_outside_run', {'attempt_id': attempt.id, 'version_id': attempt.result_version_id}),
+                                           ('state', {'state': run.state})]):
+        event = RunEvent(run_id=run.id, seq=seq + offset, type=type, data=data)
+        db.execute('INSERT INTO run_events VALUES(?,?,?,?)', (run.id, event.seq, type, event.model_dump_json()))
+    return run
+
+
+def close_run_after_acceptance(repo, attempt_id, db=None):
+    """Complete the attempt's run when the accepted attempt was its last waiting task; returns the run or None."""
+    if db is None:
+        with repo.db.connection() as own:
+            own.execute('BEGIN IMMEDIATE')
+            return close_run_after_acceptance(repo, attempt_id, own)
+    attempt = repo._get(db, 'stage_attempts', attempt_id, StageAttempt)
+    if not attempt.run_id:
+        return None
+    return _close_accepted(db, repo._get(db, 'runs', attempt.run_id, Run), attempt)
+
+
+def close_accepted_runs(repo):
+    """Startup repair: runs left in needs_review although the author already accepted their last result."""
+    closed = []
+    with repo.db.connection() as db:
+        db.execute('BEGIN IMMEDIATE')
+        for row in db.execute("SELECT payload FROM runs WHERE state='needs_review'").fetchall():
+            run = Run.model_validate_json(row[0])
+            attempts = [StageAttempt.model_validate_json(r[0]) for r in db.execute(
+                'SELECT payload FROM stage_attempts WHERE run_id=? ORDER BY rowid', (run.id,))]
+            if run.cursor >= len(run.tasks):
+                continue
+            task = run.tasks[run.cursor]
+            matching = [a for a in attempts if a.stage == task['stage'] and a.scene_id == task.get('scene_id')
+                        and a.context.get('run_cursor', run.cursor) == run.cursor]
+            if matching and _close_accepted(db, run, matching[-1]):
+                closed.append(run)
+    return closed

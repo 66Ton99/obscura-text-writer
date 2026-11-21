@@ -1,7 +1,7 @@
 import json
 
 from ..domain import RevisionConflict, Story
-from ..generation.models import StoryBlueprint, StyleProfile
+from ..generation.models import StoryBlueprint, StyleProfile, complete_style_profile, default_style_profile
 from ..providers.models import RoleSettings
 
 ROLES={'planner','writer','editor','memory'}
@@ -39,7 +39,9 @@ def update_story_profile(repo,story_id: str,profile: StyleProfile | None,expecte
     if story.revision!=expected_revision:raise RevisionConflict('Налаштування вже змінено')
     if target_words is not None:
         Story.model_validate({**story.model_dump(),'target_words':target_words})
-    current=StyleProfile.model_validate_json(view.read_text(story.style_version_id)) if story.style_version_id else StyleProfile()
+    current=StyleProfile.model_validate_json(view.read_text(story.style_version_id)) if story.style_version_id else default_style_profile(story.language)
+    # STORY-LANGUAGE-S10: omitted fields come from the story-language default, never from the Ukrainian field defaults.
+    if profile is not None:profile=complete_style_profile(profile,story.language)
     style_id=None
     if profile is not None and profile!=current:
         style_id=repo.save_version(story_id,None,'style',profile.model_dump_json(),[]).id

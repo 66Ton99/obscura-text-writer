@@ -38,17 +38,17 @@ class IntegrityReport:
 def contained_path(root: Path, relative: str) -> Path:
     path = Path(relative)
     if not relative or path.is_absolute() or '..' in path.parts or path.drive or ':' in relative:
-        raise ValueError('Небезпечний відносний шлях')
+        raise ValueError('Unsafe relative path')
     candidate = root / path
     if not candidate.resolve().is_relative_to(root.resolve()):
-        raise ValueError('Шлях поза каталогом')
+        raise ValueError('Path outside the directory')
     for part in [candidate, *candidate.parents]:
         if part == root:
             break
         if part.exists() or part.is_symlink():
             info = part.lstat()
             if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
-                raise ValueError('Посилання/reparse point не підтримується')
+                raise ValueError('Links/reparse points are not supported')
     return candidate
 
 
@@ -66,13 +66,13 @@ def regular_files(root: Path, skip: tuple[str, ...] = ()) -> list[Path]:
                 continue
             info = path.lstat()
             if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
-                raise ValueError('Посилання/reparse point не підтримується')
+                raise ValueError('Links/reparse points are not supported')
             if stat.S_ISDIR(info.st_mode):
                 visit(path)
             elif stat.S_ISREG(info.st_mode):
                 result.append(path)
             else:
-                raise ValueError('Неочікуваний тип файла')
+                raise ValueError('Unexpected file type')
     visit(root)
     return sorted(result)
 
@@ -89,12 +89,12 @@ def check_integrity(root: Path) -> IntegrityReport:
     report = IntegrityReport()
     database = root / 'storygen.sqlite3'
     if not database.is_file():
-        report.add('database_missing', 'storygen.sqlite3', 'База даних відсутня')
+        report.add('database_missing', 'storygen.sqlite3', 'The database is missing')
         return report
     try:
         files = regular_files(root, skip=(WINDOW_PROFILE,))
     except (OSError, ValueError):
-        report.add('unsafe_path', '.', 'Небезпечне або недоступне дерево файлів')
+        report.add('unsafe_path', '.', 'Unsafe or inaccessible file tree')
         return report
     tracked = set()
 
@@ -103,13 +103,13 @@ def check_integrity(root: Path) -> IntegrityReport:
             path = contained_path(root, relative)
             tracked.add(path)
             if not path.is_file():
-                report.add('file_missing', relative, 'Файл відсутній')
+                report.add('file_missing', relative, 'File is missing')
             elif hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-                report.add('hash_mismatch', relative, 'SHA-256 не відповідає каталогу')
+                report.add('hash_mismatch', relative, 'SHA-256 does not match the catalog')
         except ValueError:
-            report.add('unsafe_path', relative, 'Шлях поза каталогом або посилання')
+            report.add('unsafe_path', relative, 'Path outside the directory or a link')
         except OSError:
-            report.add('file_unreadable', relative, 'Файл недоступний')
+            report.add('file_unreadable', relative, 'File is inaccessible')
 
     try:
         db = readonly_database(database)
@@ -118,12 +118,12 @@ def check_integrity(root: Path) -> IntegrityReport:
             db.execute('BEGIN')
             schema=db.execute('PRAGMA user_version').fetchone()[0]
             if schema not in {2,3,4,5,6}:
-                report.add('unsupported_schema', 'storygen.sqlite3', 'Підтримуються схеми 2–6; міграції не виконуються')
+                report.add('unsupported_schema', 'storygen.sqlite3', 'Schemas 2–6 are supported; migrations are not run')
                 return report
             if db.execute('PRAGMA integrity_check').fetchall() != [('ok',)]:
-                report.add('sqlite_integrity', 'storygen.sqlite3', 'SQLite integrity_check виявив помилки')
+                report.add('sqlite_integrity', 'storygen.sqlite3', 'SQLite integrity_check found errors')
             if db.execute('PRAGMA foreign_key_check').fetchall():
-                report.add('foreign_key', 'storygen.sqlite3', 'Порушено SQL foreign key')
+                report.add('foreign_key', 'storygen.sqlite3', 'SQL foreign key violated')
             stories, scenes, versions = {}, {}, {}
             for table, model, result, columns in [
                 ('stories', Story, stories, ['id']),
@@ -135,9 +135,9 @@ def check_integrity(root: Path) -> IntegrityReport:
                         item = model.model_validate_json(row[-1])
                         result[row[0]] = item
                         if any(getattr(item, column) != value for column, value in zip(columns, row[:-1])):
-                            report.add('payload_mismatch', row[0], 'Payload не відповідає SQL-колонкам')
+                            report.add('payload_mismatch', row[0], 'Payload does not match the SQL columns')
                     except ValueError:
-                        report.add('invalid_payload', row[0], 'Некоректний доменний payload')
+                        report.add('invalid_payload', row[0], 'Invalid domain payload')
             from .memory_checks import check_memory_versions
             from .billing_checks import check_billing
             check_billing(report,db,stories)
@@ -152,7 +152,7 @@ def check_integrity(root: Path) -> IntegrityReport:
                 report.versions_checked += 1
                 verify_file(ref.relative_path, ref.sha256)
                 if ref.story_id not in stories or (ref.scene_id and (ref.scene_id not in scenes or scenes[ref.scene_id].story_id != ref.story_id)):
-                    report.add('invalid_owner', ref.id, 'Невірний власник версії')
+                    report.add('invalid_owner', ref.id, 'Invalid version owner')
                 if ref.dependency_snapshot is not None:
                     snapshot=ref.dependency_snapshot
                     invalid=any(id not in versions or versions[id].story_id!=ref.story_id or versions[id].sha256!=sha for id,sha in snapshot.refs.items())
@@ -168,11 +168,11 @@ def check_integrity(root: Path) -> IntegrityReport:
                         else:
                             invalid=invalid or selector.owner_id!=ref.story_id
                     if invalid:
-                        report.add('invalid_snapshot',ref.id,'Невірна власність або хеш залежностей знімка')
+                        report.add('invalid_snapshot',ref.id,'Invalid ownership or dependency hash of a snapshot')
                 for source in ref.input_refs:
                     expected_edges.add((source, ref.id))
                     if source not in versions or versions[source].story_id != ref.story_id:
-                        report.add('invalid_source', ref.id, 'Невірне джерело залежності')
+                        report.add('invalid_source', ref.id, 'Invalid dependency source')
             from ..dependency_models import AcceptanceRecord
             decisions={}
             for key,payload in db.execute("SELECT key,payload FROM app_settings WHERE key LIKE 'acceptance:%' ORDER BY rowid"):
@@ -193,29 +193,29 @@ def check_integrity(root: Path) -> IntegrityReport:
                     invalid=invalid or len(record.baseline.scene_order)!=len(set(record.baseline.scene_order)) or not set(record.baseline.ref_baselines)<=set(record.baseline.refs)
                     for id,baseline in record.baseline.ref_baselines.items():
                         invalid=invalid or baseline is not None and (baseline not in decisions or decisions[baseline].version_id!=id)
-                    if invalid:raise ValueError('Некоректний запис')
+                    if invalid:raise ValueError('Invalid record')
                     decisions[record.id]=record
                 except (ValueError,TypeError):
-                    report.add('invalid_acceptance',key,'Некоректний формат або власність рішення автора')
+                    report.add('invalid_acceptance',key,'Invalid format or ownership of an author decision')
             for ref in versions.values():
                 if ref.dependency_snapshot:
                     for id,baseline in ref.dependency_snapshot.ref_baselines.items():
                         if baseline and (baseline not in decisions or decisions[baseline].version_id!=id):
-                            report.add('invalid_snapshot',ref.id,'Невірне посилання на baseline джерела')
+                            report.add('invalid_snapshot',ref.id,'Invalid reference to a source baseline')
             if edges != expected_edges:
-                report.add('dependency_mismatch', 'dependency_edges', 'Граф не відповідає input_refs')
+                report.add('dependency_mismatch', 'dependency_edges', 'The graph does not match input_refs')
             allowed = {'plan': {'scene_plan'}, 'brief': {'brief'}, 'draft': {'draft'}, 'prose': {'edited', 'manual'}, 'memory': {'memory'}}
             for scene in scenes.values():
                 for head, version_id in scene.heads.items():
                     ref = versions.get(version_id)
                     if not ref or ref.scene_id != scene.id or ref.story_id != scene.story_id or ref.kind not in allowed.get(head, set()) or not ref.complete:
-                        report.add('invalid_head', scene.id, 'Невірна головна версія сцени')
+                        report.add('invalid_head', scene.id, 'Invalid head version of a scene')
             for story in stories.values():
                 for attr, kind in [('canon_version_id', 'canon'), ('style_version_id', 'style'), ('characters_version_id', 'character_cards')]:
                     version_id = getattr(story, attr)
                     ref = versions.get(version_id)
                     if version_id and (not ref or ref.story_id != story.id or ref.scene_id is not None or ref.kind != kind):
-                        report.add('invalid_head', story.id, 'Невірний матеріал твору')
+                        report.add('invalid_head', story.id, 'Invalid story material')
             from .book_checks import check_book_structure
             check_book_structure(report,stories,scenes)
             from .summary_checks import check_summary_heads
@@ -229,14 +229,14 @@ def check_integrity(root: Path) -> IntegrityReport:
                     verify_file(source['relative_path'], source['sha256'])
                     ref = versions.get(source['version_id'])
                     if not ref or ref.story_id != story_id or ref.kind != source['kind']:
-                        report.add('invalid_source', source.get('id', story_id), 'Невірний імпортований матеріал')
+                        report.add('invalid_source', source.get('id', story_id), 'Invalid imported material')
                 except (ValueError, KeyError, TypeError):
-                    report.add('invalid_payload', story_id, 'Некоректні метадані джерела')
+                    report.add('invalid_payload', story_id, 'Invalid source metadata')
             if schema>=5:
                 for owner,kind,id in db.execute('SELECT story_id,kind,version_id FROM active_sources'):
                     ref=versions.get(id)
                     if owner not in stories or not ref or ref.story_id!=owner or ref.kind!=kind or not ref.complete:
-                        report.add('invalid_active_source',id,'Невірний активний матеріал')
+                        report.add('invalid_active_source',id,'Invalid active material')
             if schema>=3:
                 from .publication_checks import check_publications
                 check_publications(db,report,stories,verify_file,root)
@@ -250,14 +250,14 @@ def check_integrity(root: Path) -> IntegrityReport:
         finally:
             db.close()
     except sqlite3.Error:
-        report.add('database_error', 'storygen.sqlite3', 'Не вдалося прочитати каталог SQLite')
+        report.add('database_error', 'storygen.sqlite3', 'Could not read the SQLite catalog')
         return report
     for path in files:
         relative = path.relative_to(root)
         if path in tracked or relative.as_posix() in {'storygen.sqlite3', 'storygen.sqlite3-wal', 'storygen.sqlite3-shm', 'storygen.sqlite3-journal', 'worker.lock'}:
             continue
         if len(relative.parts) >= 4 and relative.parts[0] == 'stories' and (relative.parts[2] in {'versions', 'sources','c'} or relative.parts[2:4]==('publication','covers')):
-            report.add('orphan_blob', relative, 'Immutable файл не зареєстрований у каталозі')
+            report.add('orphan_blob', relative, 'Immutable file is not registered in the catalog')
         else:
             report.auxiliary_files += 1
     return report

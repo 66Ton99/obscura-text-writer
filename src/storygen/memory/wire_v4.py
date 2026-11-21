@@ -83,6 +83,15 @@ _FRAGMENT_ID=re.compile(r'f?(\d+)')
 _JOINERS=' \t\r\n,;._-–—/|+'
 
 
+def empty_sections(data):
+    """MEMORY-002-S14: read an empty list in `core` or `threads` as an empty object ("no decisions").
+
+    Some models answer `"threads": []` when there is nothing to decide; a non-empty list stays for check_v4 to reject.
+    Returns a copy; the input is never mutated."""
+    if not isinstance(data,dict) or not any(data.get(section)==[] for section in SECTIONS):return data
+    return {key:({} if key in SECTIONS and value==[] else value) for key,value in data.items()}
+
+
 def split_joined_evidence(data,bounds):
     """Read one string holding several known fragment IDs as separate IDs in core and thread decisions.
 

@@ -30,7 +30,7 @@ UK_BASELINE = {
     'role:edit:prose': '6c2fd38d50e1fd8a',
     'role:edit:patches': '4bdb0bdcdff5b486',
     'role:edit:diff': '5d1b6c79ae42a112',
-    'role:memory': 'eb1dc2403f01490f',
+    'role:memory': '9f264f1639f2c8bb',
     'assisted_writer_v1': '3922abece0145c4a',
     'impact_check_v1': '862da22806b8833a',
     'impact_delta_v1': '6d166bd41dc2412b',
@@ -140,7 +140,7 @@ def test_custom_prompt_kept_in_english_story(tmp_path):
 # SHA-256 prefixes of composed Ukrainian system messages, computed on 3d53405 (before #32) for this exact world.
 # brief and draft: brief_v3/writer_v2 (CONTEXT-002-S06).
 UK_COMPOSED = {'brief': 'ac7c79fe465e7738', 'draft': '06f123331f73a056', 'edit:prose': '0dc1fc7617be6fee',
-               'edit:patches': '6c75942798c4c7f9', 'edit:diff': 'edc929e832088342', 'memory': 'eb1dc2403f01490f',
+               'edit:patches': '6c75942798c4c7f9', 'edit:diff': 'edc929e832088342', 'memory': '9f264f1639f2c8bb',
                'rewrite': 'e1fc4a0a52f7ad36'}
 
 

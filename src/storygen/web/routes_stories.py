@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from ..authoring.imports import SourceFile, import_sources, ImportBatchConflict, ImportBatchFailure, ImportTooLarge
 from ..authoring.service import reorder_scenes, update_scene, update_scene_plan, rename_story
-from ..domain import DomainModel, RevisionConflict, Scene, SceneCreate, StoryCreate
+from ..domain import DomainModel, RevisionConflict, Scene, SceneCreate, SceneNarrator, StoryCreate
 
 router=APIRouter()
 
@@ -27,6 +27,8 @@ class ScenePatch(DomainModel):
     prose_language: Literal['uk','en','story'] | None=None
     # STORY-TIME: the flashback flag; None leaves it unchanged.
     flashback: bool | None=None
+    # SCENE-NARRATOR: null resets to the story style; a missing field leaves it unchanged.
+    narrator: SceneNarrator | None=None
     # MCP-BRIDGE-S19: the plan head the external client read; null means it read a scene without a plan version.
     expected_plan_version_id: str | None=Field(default=None,max_length=64)
 
@@ -100,7 +102,8 @@ def story_view(id: str,request: Request):
     view=request.app.state.repo.context_view(id)
     story=view.get_story(id)
     from ..characters.models import load_characters
-    names={card.id:card.name for card in load_characters(view.read_text(story.characters_version_id))} if story.characters_version_id else {}
+    cards=load_characters(view.read_text(story.characters_version_id)) if story.characters_version_id else []
+    names={card.id:card.name for card in cards}
     from ..impact.presentation import scene_status
     from ..rating.levels import effective_rating
     listed=view.list_scenes(id)
@@ -120,8 +123,9 @@ def story_view(id: str,request: Request):
     from ..storage.memory_merges import merge_markers
     from ..memory.story_time import flashback_marked
     marks=merge_markers(view,story,listed) if story.book_structure is not None else {}
+    from ..narration import narrator_card
     scenes=[{**view.effective_scene(scene.id).model_dump(),"arc_id":structure.arc_of.get(scene.id),"arc_ids":list(structure.arcs_of.get(scene.id,())),"memory_merge":marks.get(scene.id),
-        "flashback_marked":flashback_marked(scene.beats)} for scene in listed]
+        "flashback_marked":flashback_marked(scene.beats),**narrator_card(scene,cards)} for scene in listed]
     from .routes_series import series_block
     # SERIES: the block is present only for a book in a series.
     series=series_block(request.app.state.repo,story)
@@ -193,6 +197,8 @@ def patch_scene(id: str,data: ScenePatch,request: Request):
     changes={key:value for key,value in data.model_dump().items() if key in {"title","target_words","character_ids","flashback"} and value is not None}
     if data.prose_language is not None:
         changes['prose_language']=None if data.prose_language=='story' else data.prose_language
+    if 'narrator' in data.model_fields_set:
+        changes['narrator']=data.narrator
     # The whole patch is validated before the first change, so a bad field leaves neither plan nor properties written.
     Scene.model_validate({**scene.model_dump(),**changes})
     if data.beats is not None:

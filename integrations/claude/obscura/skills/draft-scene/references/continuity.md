@@ -6,6 +6,7 @@ Check these against the plan, the character cards, the memory in the scene conte
 
 - **Time:** the day and hour from the plan, and how much time has passed since the previous scene.
 - **Who is present:** only the characters in «Хто бере участь» ("who takes part"), plus anyone the plan clearly brings in. No one appears from nowhere.
+- **Narrator:** if the scene context has a «ОПОВІДАЧ СЦЕНИ» ("scene narrator") section, it replaces the point of view from the style for this scene: first person through that character, third person through their perception only, or an omniscient narrator.
 - **Objects:** what each character holds, carries, wears or left behind earlier.
 - **State:** injuries, tiredness, sober or drunk, mood, powers that are recharging, and secrets they already know.
 - **Facts already introduced:** names, places, rules of the world. Never contradict them, and never introduce something twice.

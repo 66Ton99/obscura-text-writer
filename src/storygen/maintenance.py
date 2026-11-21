@@ -9,7 +9,7 @@ from .storage.integrity import check_integrity
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Перевірка й резервування Storygen')
+    parser = argparse.ArgumentParser(description='Storygen integrity checks and backups')
     subparsers = parser.add_subparsers(dest='command', required=True)
     for command in ('fsck', 'backup', 'restore'):
         child = subparsers.add_parser(command)
@@ -35,7 +35,7 @@ def main(argv=None):
     if args.json:
         print(json.dumps(result, ensure_ascii=False))
     else:
-        print('Успішно' if result['ok'] else 'Помилка')
+        print('Success' if result['ok'] else 'Failure')
         for issue in result.get('issues', []):
             print(f"{issue['code']}: {issue['path']} — {issue['message']}")
         if 'error' in result:
