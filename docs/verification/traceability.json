@@ -29,6 +29,15 @@
       ]
     },
     {
+      "id": "RUNTIME-001-S02",
+      "requirement": "RUNTIME-001",
+      "scope": "Повнота lock-файла для документованого встановлення з --no-deps. Не доводить, що сервер стартує на конкретній ОС.",
+      "tests": [
+        "tests/test_requirements_lock.py::test_lock_covers_core_and_documented_extras",
+        "tests/test_requirements_lock.py::test_install_guides_use_lock_then_no_deps_with_documented_extras"
+      ]
+    },
+    {
       "id": "DATA-001-S01",
       "requirement": "DATA-001",
       "scope": "Некоректний файл у наборі. Перевірка зазначеного сценарію; не є доказом усієї вимоги або літературного допуску.",
