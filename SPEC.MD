@@ -154,6 +154,14 @@ Storygen автоматизує створення українського оп
 - WHEN сервер запускається з тим самим каталогом даних
 - THEN збережені матеріали доступні без повторної генерації.
 
+<a id="runtime-001-s02"></a>
+#### Scenario: RUNTIME-001-S02 — Встановлення з вихідного коду за lock-файлом
+- GIVEN користувач ставить застосунок за інструкцією: `pip install -r requirements-lock.txt`, потім `pip install --no-deps -e ".[web,publication]"`
+- WHEN запускається сервер
+- THEN кожна залежність ядра та extra `web` і `publication` з `pyproject.toml` закріплена в `requirements-lock.txt`, тож сервер стартує без додаткових установок.
+
+Усунене відхилення: `tomlkit` (extra `web`, імпорт у `codex_connect.py` з інтеграції Codex, #206) не був закріплений у `requirements-lock.txt`, тож після встановлення з `--no-deps` сервер падав під час запуску з `ModuleNotFoundError`. Виявлено workflow `nix.yml` у PR #211; збірку Store вада не зачіпала, бо вона ставить extra без `--no-deps`.
+
 <a id="data-001"></a>
 ### Requirement: DATA-001 — Перевірений імпорт
 
